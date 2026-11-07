@@ -948,7 +948,7 @@ button.site-header__menu-toggle {
 }
 
 .newsletter-result {
-  padding-block: var(--space-8);
+  padding-bottom: var(--space-8);
 }
 
 .newsletter .cf-turnstile {
@@ -1637,6 +1637,19 @@ button.site-header__menu-toggle {
 .breadcrumbs__current {
   color: var(--color-ink);
   font-weight: 600;
+}
+
+.page-shell {
+  padding-bottom: var(--space-8);
+}
+
+.page-shell > .section__title,
+.search-page > .section__title {
+  margin-bottom: var(--space-5);
+}
+
+.search-page {
+  padding-bottom: var(--space-8);
 }
 
 .search-plp {
@@ -2539,7 +2552,7 @@ button.site-header__menu-toggle {
 }
 
 .cart {
-  padding: var(--space-8) 0;
+  padding-bottom: var(--space-8);
   max-width: 40rem;
 }
 
@@ -2594,7 +2607,7 @@ button.site-header__menu-toggle {
 }
 
 .empty-state {
-  padding: var(--space-8) 0;
+  padding-bottom: var(--space-8);
   text-align: center;
 }
 

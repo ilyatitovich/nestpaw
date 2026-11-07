@@ -1,6 +1,7 @@
 ---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import ProductFilters from "../../components/ProductFilters";
-import { type Locale, locales, t } from "../../i18n/ui";
+import { type Locale, locales, localizePath, t } from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { apiGet } from "../../lib/api";
 
@@ -27,6 +28,11 @@ try {
 } catch {
   products = [];
 }
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "shop.title") },
+];
 ---
 
 <BaseLayout
@@ -35,21 +41,23 @@ try {
   description={t(locale, "home.lead")}
   canonicalPath="/shop"
 >
-  <section class="section">
-    <div class="container">
-      <h1 class="section__title">{t(locale, "shop.title")}</h1>
-      <ProductFilters
-        client:load
-        locale={locale}
-        products={products}
-        labels={{
-          sort: t(locale, "shop.sort"),
-          filterLife: t(locale, "shop.filterLife"),
-          filterType: t(locale, "shop.filterType"),
-          all: t(locale, "shop.all"),
-          from: t(locale, "product.from"),
-        }}
-      />
-    </div>
-  </section>
+  <div class="container page-shell">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
+    <h1 class="section__title">{t(locale, "shop.title")}</h1>
+    <ProductFilters
+      client:load
+      locale={locale}
+      products={products}
+      labels={{
+        sort: t(locale, "shop.sort"),
+        filterLife: t(locale, "shop.filterLife"),
+        filterType: t(locale, "shop.filterType"),
+        all: t(locale, "shop.all"),
+        from: t(locale, "product.from"),
+      }}
+    />
+  </div>
 </BaseLayout>

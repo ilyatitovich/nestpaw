@@ -1,5 +1,6 @@
 ---
-import { type Locale, locales } from "../../../i18n/ui";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { apiGet } from "../../../lib/api";
 
@@ -52,7 +53,12 @@ try {
 }
 
 const tr =
-  page.translations.find((t) => t.locale === locale) ?? page.translations[0];
+  page.translations.find((x) => x.locale === locale) ?? page.translations[0];
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: tr?.title ?? slug },
+];
 ---
 
 <BaseLayout
@@ -61,7 +67,11 @@ const tr =
   description={tr?.seoDescription ?? tr?.body?.slice(0, 160)}
   canonicalPath={`/pages/${slug}`}
 >
-  <div class="container section prose">
+  <div class="container page-shell prose">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
     <h1 class="section__title">{tr?.title}</h1>
     <p>{tr?.body}</p>
   </div>

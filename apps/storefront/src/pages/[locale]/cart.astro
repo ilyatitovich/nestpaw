@@ -1,6 +1,7 @@
 ---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import CartClient from "../../components/CartClient";
-import { type Locale, locales, t } from "../../i18n/ui";
+import { type Locale, locales, localizePath, t } from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { API_URL } from "../../lib/api";
 
@@ -9,10 +10,19 @@ export function getStaticPaths() {
 }
 
 const locale = Astro.params.locale as Locale;
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "cart.title") },
+];
 ---
 
 <BaseLayout locale={locale} title={t(locale, "cart.title")} canonicalPath="/cart">
   <div class="container cart">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
     <h1 class="section__title">{t(locale, "cart.title")}</h1>
     <CartClient
       client:load

@@ -1,6 +1,7 @@
 ---
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import AccountClient from "../../components/AccountClient";
-import { type Locale, locales, t } from "../../i18n/ui";
+import { type Locale, locales, localizePath, t } from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { API_URL } from "../../lib/api";
 
@@ -9,10 +10,19 @@ export function getStaticPaths() {
 }
 
 const locale = Astro.params.locale as Locale;
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "account.login") },
+];
 ---
 
 <BaseLayout locale={locale} title={t(locale, "account.login")} canonicalPath="/account">
-  <div class="container section" style="max-width:36rem">
+  <div class="container page-shell" style="max-width:36rem">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
     <h1 class="section__title">{t(locale, "account.login")}</h1>
     <AccountClient
       client:load

@@ -133,6 +133,7 @@ const collectionTrail = (product?.collections ?? [])
   .filter((x): x is { label: string; href: string } => Boolean(x));
 
 const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
   ...collectionTrail,
   ...(tr ? [{ label: tr.title }] : []),
 ];
@@ -388,7 +389,14 @@ if (product) {
     </BaseLayout>
   ) : (
     <BaseLayout locale={locale} title="Not found" canonicalPath={`/products/${slug}`}>
-      <div class="container section empty-state">
+      <div class="container page-shell empty-state">
+        <Breadcrumbs
+          items={[
+            { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+            { label: t(locale, "404.title") },
+          ]}
+          label={t(locale, "product.breadcrumb")}
+        />
         <h1 class="section__title">{t(locale, "404.title")}</h1>
         <p class="section__lead">{t(locale, "404.lead")}</p>
         <a class="btn btn--primary" href={localizePath(locale, "/shop")}>

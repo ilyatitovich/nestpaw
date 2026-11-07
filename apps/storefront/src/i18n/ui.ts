@@ -74,6 +74,10 @@ export const ui = {
     "cart.viewCart": "View cart",
     "cart.subtotal": "Subtotal",
     "cart.qty": "Qty",
+    "checkout.successTitle": "Thank you",
+    "checkout.successLead":
+      "Your payment was received. A confirmation email is on the way.",
+    "checkout.continue": "Continue shopping",
     "search.placeholder": "Search products",
     "search.title": "Search",
     "search.empty": "No products matched your search.",
@@ -227,6 +231,10 @@ export const ui = {
     "cart.viewCart": "Warenkorb ansehen",
     "cart.subtotal": "Zwischensumme",
     "cart.qty": "Anz.",
+    "checkout.successTitle": "Danke",
+    "checkout.successLead":
+      "Ihre Zahlung ist eingegangen. Eine Bestätigungs-E-Mail ist unterwegs.",
+    "checkout.continue": "Weiter einkaufen",
     "search.placeholder": "Produkte suchen",
     "search.title": "Suche",
     "search.empty": "Keine Produkte gefunden.",

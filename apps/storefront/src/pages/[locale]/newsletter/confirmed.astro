@@ -1,4 +1,5 @@
 ---
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import {
   type Locale,
   locales,
@@ -13,6 +14,11 @@ export function getStaticPaths() {
 }
 
 const locale = Astro.params.locale as Locale;
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "newsletter.confirmedTitle") },
+];
 ---
 
 <BaseLayout
@@ -21,7 +27,11 @@ const locale = Astro.params.locale as Locale;
   locale={locale}
   canonicalPath="/newsletter/confirmed"
 >
-  <section class="container section newsletter-result">
+  <section class="container page-shell newsletter-result">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
     <h1>{t(locale, "newsletter.confirmedTitle")}</h1>
     <p class="section__lead">{t(locale, "newsletter.confirmedLead")}</p>
     <p>

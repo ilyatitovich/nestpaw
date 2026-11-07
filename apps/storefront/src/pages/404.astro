@@ -1,12 +1,22 @@
 ---
+import Breadcrumbs from "../components/Breadcrumbs.astro";
 import { defaultLocale, localizePath, t } from "../i18n/ui";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const locale = defaultLocale;
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "404.title") },
+];
 ---
 
 <BaseLayout locale={locale} title={t(locale, "404.title")} canonicalPath="/404">
-  <div class="container section empty-state">
+  <div class="container page-shell empty-state">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
     <h1 class="section__title">{t(locale, "404.title")}</h1>
     <p class="section__lead">{t(locale, "404.lead")}</p>
     <a class="btn btn--primary" href={localizePath(locale, "/")}>

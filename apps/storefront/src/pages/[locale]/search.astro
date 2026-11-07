@@ -24,46 +24,44 @@ const breadcrumbs = [
   description={t(locale, "search.placeholder")}
   canonicalPath="/search"
 >
-  <section class="section">
-    <div class="container">
-      <Breadcrumbs
-        items={breadcrumbs}
-        label={t(locale, "product.breadcrumb")}
-      />
-      <h1 class="section__title">{t(locale, "search.title")}</h1>
-      <SearchClient
-        client:load
-        apiUrl={API_URL}
-        locale={locale}
-        initialQuery={initialQuery}
-        labels={{
-          empty: t(locale, "search.empty"),
-          from: t(locale, "product.from"),
-          clearAll: t(locale, "search.clearAll"),
-          queryChip: t(locale, "search.queryChip"),
-          onSale: t(locale, "search.onSale"),
-          price: t(locale, "search.price"),
-          priceMin: t(locale, "search.priceMin"),
-          priceMax: t(locale, "search.priceMax"),
-          filters: t(locale, "search.filters"),
-          sort: t(locale, "shop.sort"),
-          sortRelevance: t(locale, "search.sortRelevance"),
-          sortPriceAsc: t(locale, "search.sortPriceAsc"),
-          sortPriceDesc: t(locale, "search.sortPriceDesc"),
-          sortName: t(locale, "search.sortName"),
-          viewGrid: t(locale, "search.viewGrid"),
-          viewList: t(locale, "search.viewList"),
-          viewGroup: t(locale, "search.viewGroup"),
-          noQuery: t(locale, "search.noQuery"),
-          removeFilter: t(locale, "search.removeFilter"),
-          species: t(locale, "product.species"),
-          lifeStage: t(locale, "product.lifeStage"),
-          type: t(locale, "product.type"),
-          size: t(locale, "product.size"),
-          sale: t(locale, "product.sale"),
-          loading: t(locale, "search.loading"),
-        }}
-      />
-    </div>
-  </section>
+  <div class="container page-shell search-page">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
+    <h1 class="section__title">{t(locale, "search.title")}</h1>
+    <SearchClient
+      client:load
+      apiUrl={API_URL}
+      locale={locale}
+      initialQuery={initialQuery}
+      labels={{
+        empty: t(locale, "search.empty"),
+        from: t(locale, "product.from"),
+        clearAll: t(locale, "search.clearAll"),
+        queryChip: t(locale, "search.queryChip"),
+        onSale: t(locale, "search.onSale"),
+        price: t(locale, "search.price"),
+        priceMin: t(locale, "search.priceMin"),
+        priceMax: t(locale, "search.priceMax"),
+        filters: t(locale, "search.filters"),
+        sort: t(locale, "shop.sort"),
+        sortRelevance: t(locale, "search.sortRelevance"),
+        sortPriceAsc: t(locale, "search.sortPriceAsc"),
+        sortPriceDesc: t(locale, "search.sortPriceDesc"),
+        sortName: t(locale, "search.sortName"),
+        viewGrid: t(locale, "search.viewGrid"),
+        viewList: t(locale, "search.viewList"),
+        viewGroup: t(locale, "search.viewGroup"),
+        noQuery: t(locale, "search.noQuery"),
+        removeFilter: t(locale, "search.removeFilter"),
+        species: t(locale, "product.species"),
+        lifeStage: t(locale, "product.lifeStage"),
+        type: t(locale, "product.type"),
+        size: t(locale, "product.size"),
+        sale: t(locale, "product.sale"),
+        loading: t(locale, "search.loading"),
+      }}
+    />
+  </div>
 </BaseLayout>
