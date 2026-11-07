@@ -8,3 +8,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_GA4_MEASUREMENT_ID?: string;
   readonly PUBLIC_ANALYTICS_PROVIDER?: string;
 }
+
+interface Window {
+  __activateAnalyticsConsent?: () => void;
+}

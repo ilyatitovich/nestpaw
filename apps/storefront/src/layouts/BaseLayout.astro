@@ -1,7 +1,12 @@
 ---
+import CookieConsent from "../components/CookieConsent.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import "../styles/global.css";
 import { type Locale, localizePath, storeName, t } from "../i18n/ui";
+import {
+  COOKIE_CONSENT_ACCEPTED,
+  COOKIE_CONSENT_KEY,
+} from "../lib/cookie-consent";
 
 interface Props {
   title: string;
@@ -25,8 +30,14 @@ const site =
   Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
 const canonical = `${site}${localizePath(locale, canonicalPath)}`;
 const provider = import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? "plausible";
-const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;
+// Keep a disabled Plausible tag in HTML even when env is unset (local/demo).
+const plausibleDomain =
+  import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN ||
+  (provider === "plausible" ? "localhost" : undefined);
 const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
+const hasAnalytics =
+  (provider === "plausible" && Boolean(plausibleDomain)) ||
+  (provider === "ga4" && Boolean(ga4));
 ---
 
 <!doctype html>
@@ -58,6 +69,10 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
     {
       provider === "plausible" && plausibleDomain ? (
         <script
+          is:inline
+          type="text/plain"
+          data-consent="analytics"
+          data-consent-state="disabled"
           defer
           data-domain={plausibleDomain}
           src="https://plausible.io/js/script.js"
@@ -67,12 +82,62 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
     {
       provider === "ga4" && ga4 ? (
         <>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`} />
           <script
             is:inline
-            define:vars={{ ga4 }}
-          >{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ga4);`}</script>
+            type="text/plain"
+            data-consent="analytics"
+            data-consent-state="disabled"
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`}
+          />
+          <script
+            is:inline
+            type="text/plain"
+            data-consent="analytics"
+            data-consent-state="disabled"
+          >
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${JSON.stringify(ga4)});`}
+          </script>
         </>
+      ) : null
+    }
+    {
+      hasAnalytics ? (
+        <script
+          is:inline
+          define:vars={{
+            COOKIE_CONSENT_KEY,
+            COOKIE_CONSENT_ACCEPTED,
+          }}
+        >
+          window.__activateAnalyticsConsent = function activateAnalyticsConsent() {
+            document
+              .querySelectorAll(
+                'script[data-consent="analytics"][data-consent-state="disabled"]',
+              )
+              .forEach(function (old) {
+                var next = document.createElement("script");
+                for (var i = 0; i < old.attributes.length; i++) {
+                  var attr = old.attributes[i];
+                  if (attr.name === "type" || attr.name === "data-consent-state")
+                    continue;
+                  next.setAttribute(attr.name, attr.value);
+                }
+                next.type = "text/javascript";
+                next.setAttribute("data-consent-state", "accepted");
+                if (!old.src) next.textContent = old.textContent;
+                old.replaceWith(next);
+              });
+          };
+
+          try {
+            if (
+              localStorage.getItem(COOKIE_CONSENT_KEY) === COOKIE_CONSENT_ACCEPTED
+            ) {
+              window.__activateAnalyticsConsent();
+            }
+          } catch (e) {}
+        </script>
       ) : null
     }
   </head>
@@ -90,11 +155,13 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
             <a href={localizePath(locale, "/pages/shipping")}>{t(locale, "footer.shipping")}</a>
             <a href={localizePath(locale, "/pages/returns")}>{t(locale, "footer.returns")}</a>
             <a href={localizePath(locale, "/pages/privacy")}>{t(locale, "footer.privacy")}</a>
+            <a href={localizePath(locale, "/pages/cookies")}>{t(locale, "footer.cookies")}</a>
             <a href={localizePath(locale, "/pages/terms")}>{t(locale, "footer.terms")}</a>
             <a href={localizePath(locale, "/pages/contact")}>{t(locale, "footer.contact")}</a>
           </div>
         </div>
       </footer>
     </div>
+    <CookieConsent locale={locale} />
   </body>
 </html>

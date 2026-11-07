@@ -7,6 +7,7 @@ export function getStaticPaths() {
   const slugs = [
     "about",
     "privacy",
+    "cookies",
     "shipping",
     "returns",
     "terms",
@@ -38,11 +39,13 @@ try {
     translations: [
       {
         locale,
-        title: slug,
+        title: slug === "cookies" ? "Cookie policy" : slug,
         body:
           slug === "privacy"
             ? "We process order data to fulfill purchases."
-            : "We make durable goods for everyday use.",
+            : slug === "cookies"
+              ? "Nestpaw stores your analytics consent choice in localStorage (nestpaw-cookie-consent). Essential cookies may be used for cart and account sessions. Optional analytics (Plausible or Google Analytics 4, depending on configuration) load only after you accept. You can clear site data in your browser to reset the choice and see the banner again."
+              : "We make durable goods for everyday use.",
       },
     ],
   };

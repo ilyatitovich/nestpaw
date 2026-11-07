@@ -1399,11 +1399,23 @@ async function main() {
     "privacy",
     {
       title: "Privacy",
-      body: "We process order and account data to fulfill purchases and support. Contact hello@nestpaw.example to export or delete your personal data. Analytics use privacy-friendly defaults where configured.",
+      body: "We process order and account data to fulfill purchases and support. Contact hello@nestpaw.example to export or delete your personal data. Analytics use privacy-friendly defaults where configured. See our Cookie policy for consent details.",
     },
     {
       title: "Datenschutz",
-      body: "Wir verarbeiten Bestell- und Kontodaten zur Abwicklung und zum Support. Kontaktieren Sie hello@nestpaw.example für Auskunft oder Löschung. Analytics nutzen datenschutzfreundliche Defaults, sofern konfiguriert.",
+      body: "Wir verarbeiten Bestell- und Kontodaten zur Abwicklung und zum Support. Kontaktieren Sie hello@nestpaw.example für Auskunft oder Löschung. Analytics nutzen datenschutzfreundliche Defaults, sofern konfiguriert. Details zur Einwilligung finden Sie in der Cookie-Richtlinie.",
+    },
+  );
+
+  await upsertPage(
+    "cookies",
+    {
+      title: "Cookie policy",
+      body: "Nestpaw uses essential storage for cart and signed-in account sessions. Your analytics choice is remembered in localStorage under nestpaw-cookie-consent (accepted or rejected). Optional analytics scripts (Plausible by default, or Google Analytics 4 when configured) stay disabled in the page until you accept; rejecting keeps them off. First-party server events for purchases may still be recorded for order operations. To change your mind later, clear this site’s data in your browser and reload — the consent bar will appear again. Contact hello@nestpaw.example with privacy questions.",
+    },
+    {
+      title: "Cookie-Richtlinie",
+      body: "Nestpaw nutzt essenziellen Speicher für Warenkorb und Konto-Sessions. Ihre Analyse-Entscheidung speichern wir in localStorage unter nestpaw-cookie-consent (accepted oder rejected). Optionale Analyse-Skripte (standardmäßig Plausible, oder Google Analytics 4 je nach Konfiguration) bleiben deaktiviert, bis Sie zustimmen; bei Ablehnung bleiben sie aus. Serverseitige Bestell-Events können für den Betrieb weiterhin erfasst werden. Zum Ändern der Wahl löschen Sie die Websitedaten im Browser und laden neu — die Leiste erscheint erneut. Fragen an hello@nestpaw.example.",
     },
   );
 

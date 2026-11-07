@@ -1,0 +1,165 @@
+---
+import { type Locale, localizePath, t } from "../i18n/ui";
+import { COOKIE_CONSENT_KEY } from "../lib/cookie-consent";
+
+interface Props {
+  locale: Locale | string;
+}
+
+const { locale } = Astro.props;
+const cookiesHref = localizePath(locale, "/pages/cookies");
+---
+
+<div
+  id="cookie-consent"
+  class="cookie-consent"
+  role="region"
+  aria-labelledby="cookie-consent-title"
+  hidden
+  data-consent-key={COOKIE_CONSENT_KEY}
+>
+  <div class="cookie-consent__inner">
+    <div class="cookie-consent__copy">
+      <p id="cookie-consent-title" class="cookie-consent__title">
+        {t(locale, "cookies.title")}
+      </p>
+      <p class="cookie-consent__text">
+        {t(locale, "cookies.body")}
+        <a href={cookiesHref}>{t(locale, "cookies.learnMore")}</a>
+      </p>
+    </div>
+    <div class="cookie-consent__actions">
+      <button
+        type="button"
+        class="btn btn--ghost cookie-consent__btn"
+        data-consent-action="reject"
+      >
+        {t(locale, "cookies.reject")}
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary cookie-consent__btn"
+        data-consent-action="accept"
+      >
+        {t(locale, "cookies.accept")}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import {
+    COOKIE_CONSENT_ACCEPTED,
+    COOKIE_CONSENT_KEY,
+    COOKIE_CONSENT_REJECTED,
+    type CookieConsentChoice,
+  } from "../lib/cookie-consent";
+
+  let supportsDisplayTransition: boolean | undefined;
+
+  function canTransitionDisplay() {
+    if (supportsDisplayTransition !== undefined) return supportsDisplayTransition;
+    if (
+      !window.CSS?.supports?.("transition-behavior", "allow-discrete") ||
+      !document.body
+    ) {
+      return false;
+    }
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "transition: display 1s allow-discrete !important; display: block;";
+    document.body.appendChild(probe);
+    getComputedStyle(probe).display;
+    probe.style.display = "none";
+    supportsDisplayTransition = getComputedStyle(probe).display === "block";
+    probe.remove();
+    return supportsDisplayTransition;
+  }
+
+  async function hideBanner(el: HTMLElement) {
+    if (canTransitionDisplay()) {
+      el.hidden = true;
+    } else {
+      el.setAttribute("data-closing", "");
+    }
+
+    const animations = el.getAnimations();
+    if (animations.length > 0) {
+      await Promise.race([
+        Promise.allSettled(animations.map((a) => a.finished)),
+        new Promise((r) => setTimeout(r, 2000)),
+      ]);
+    }
+
+    if (el.hasAttribute("data-closing")) {
+      el.removeAttribute("data-closing");
+      el.hidden = true;
+    }
+  }
+
+  function showBanner(el: HTMLElement) {
+    el.removeAttribute("data-closing");
+    el.hidden = false;
+  }
+
+  function readChoice(key: string): CookieConsentChoice | null {
+    try {
+      const value = localStorage.getItem(key);
+      if (
+        value === COOKIE_CONSENT_ACCEPTED ||
+        value === COOKIE_CONSENT_REJECTED
+      ) {
+        return value;
+      }
+    } catch {
+      /* private mode / blocked storage */
+    }
+    return null;
+  }
+
+  function writeChoice(key: string, choice: CookieConsentChoice) {
+    try {
+      localStorage.setItem(key, choice);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function init() {
+    const banner = document.getElementById("cookie-consent");
+    if (!(banner instanceof HTMLElement)) return;
+
+    const key = banner.dataset.consentKey || COOKIE_CONSENT_KEY;
+    const existing = readChoice(key);
+
+    if (existing === COOKIE_CONSENT_ACCEPTED) {
+      window.__activateAnalyticsConsent?.();
+      return;
+    }
+    if (existing === COOKIE_CONSENT_REJECTED) return;
+
+    showBanner(banner);
+
+    banner.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.closest<HTMLElement>("[data-consent-action]")
+        ?.dataset.consentAction;
+      if (action !== "accept" && action !== "reject") return;
+
+      const choice =
+        action === "accept"
+          ? COOKIE_CONSENT_ACCEPTED
+          : COOKIE_CONSENT_REJECTED;
+      writeChoice(key, choice);
+
+      if (choice === COOKIE_CONSENT_ACCEPTED) {
+        window.__activateAnalyticsConsent?.();
+      }
+
+      await hideBanner(banner);
+    });
+  }
+
+  init();
+</script>
