@@ -1,0 +1,42 @@
+---
+import { type Locale, locales, t } from "../i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+}
+
+const { locale } = Astro.props;
+
+const activeLocale = (
+  locales.includes(locale as Locale) ? locale : "en"
+) as Locale;
+---
+
+<div class="promo-banner" data-promo-banner role="region" aria-label={t(activeLocale, "home.freeShip")}>
+  <div class="container promo-banner__inner">
+    {t(activeLocale, "home.freeShip")}
+  </div>
+</div>
+
+<script>
+  const chrome = document.querySelector("[data-site-chrome]");
+  if (chrome instanceof HTMLElement) {
+    const root = chrome;
+    const threshold = 12;
+    let ticking = false;
+
+    function syncScrolled() {
+      ticking = false;
+      root.classList.toggle("is-scrolled", window.scrollY > threshold);
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(syncScrolled);
+    }
+
+    syncScrolled();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+</script>

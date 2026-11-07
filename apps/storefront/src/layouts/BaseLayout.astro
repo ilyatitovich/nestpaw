@@ -1,5 +1,6 @@
 ---
 import CookieConsent from "../components/CookieConsent.astro";
+import PromoBanner from "../components/PromoBanner.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import "../styles/global.css";
 import { type Locale, localizePath, storeName, t } from "../i18n/ui";
@@ -143,7 +144,10 @@ const hasAnalytics =
   </head>
   <body>
     <div class="page">
-      <SiteHeader locale={locale} />
+      <div class="site-chrome" data-site-chrome>
+        <PromoBanner locale={locale} />
+        <SiteHeader locale={locale} />
+      </div>
       <main class="page__main">
         <slot />
       </main>
