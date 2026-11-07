@@ -4,18 +4,18 @@
 
 Copy `.env.example` → `.env` and set production values. Critical:
 
-| Variable | Production value |
-|---|---|
-| `NODE_ENV` | `production` |
-| `JWT_ACCESS_SECRET` | strong secret, **≥ 32 chars** (boot fails otherwise) |
-| `ALLOW_MOCK_PAYMENTS` | `false` (also forced in Compose) |
-| `COOKIE_SECURE` | `true` |
-| `DATABASE_URL` | `postgresql://USER:PASS@postgres:5432/DB?schema=public` (Compose DNS, not `localhost`) |
-| `REDIS_URL` | `redis://redis:6379` |
-| `API_PORT` | Container listens on **3000** (Compose overrides this) |
-| `CORS_ORIGINS` | storefront + admin origins |
-| `PUBLIC_API_URL` | public HTTPS API URL (admin build arg) |
-| Stripe / S3 / SMTP / `SENTRY_DSN` | live credentials |
+| Variable                          | Production value                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `NODE_ENV`                        | `production`                                                                           |
+| `JWT_ACCESS_SECRET`               | strong secret, **≥ 32 chars** (boot fails otherwise)                                   |
+| `ALLOW_MOCK_PAYMENTS`             | `false` (also forced in Compose)                                                       |
+| `COOKIE_SECURE`                   | `true`                                                                                 |
+| `DATABASE_URL`                    | `postgresql://USER:PASS@postgres:5432/DB?schema=public` (Compose DNS, not `localhost`) |
+| `REDIS_URL`                       | `redis://redis:6379`                                                                   |
+| `API_PORT`                        | Container listens on **3000** (Compose overrides this)                                 |
+| `CORS_ORIGINS`                    | storefront + admin origins                                                             |
+| `PUBLIC_API_URL`                  | public HTTPS API URL (admin build arg)                                                 |
+| Stripe / S3 / SMTP / `SENTRY_DSN` | live credentials                                                                       |
 
 Do **not** reuse local `localhost:5434` / `localhost:6381` URLs inside Compose.
 

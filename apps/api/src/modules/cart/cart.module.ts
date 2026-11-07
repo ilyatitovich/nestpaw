@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { DiscountsModule } from "../discounts/discounts.module";
-import { CartController } from "./cart.controller";
-import { CartService } from "./cart.service";
+import { DiscountsModule } from "../discounts/discounts.module.js";
+import { CartController } from "./cart.controller.js";
+import { CartService } from "./cart.service.js";
 
 @Module({
   imports: [DiscountsModule],

@@ -1,9 +1,9 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { locales, t, localizePath, type Locale } from "../../../i18n/ui";
-import { apiGet, API_URL } from "../../../lib/api";
 import AddToCart from "../../../components/AddToCart";
 import ReviewForm from "../../../components/ReviewForm";
+import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { API_URL, apiGet } from "../../../lib/api";
 
 export async function getStaticPaths() {
   const paths: { params: { locale: string; slug: string } }[] = [];
@@ -51,7 +51,12 @@ type Product = {
     inventory?: { quantity: number } | null;
   }[];
   metafields?: { namespace: string; key: string; value: unknown }[];
-  reviews?: { rating: number; title?: string; body: string; authorName: string }[];
+  reviews?: {
+    rating: number;
+    title?: string;
+    body: string;
+    authorName: string;
+  }[];
 };
 
 let product: Product | null = null;
@@ -68,7 +73,9 @@ const img = product?.media[0];
 const variant = product?.variants[0];
 
 function petMeta(key: string) {
-  const m = product?.metafields?.find((x) => x.namespace === "pet" && x.key === key);
+  const m = product?.metafields?.find(
+    (x) => x.namespace === "pet" && x.key === key,
+  );
   return typeof m?.value === "string" ? m.value : null;
 }
 

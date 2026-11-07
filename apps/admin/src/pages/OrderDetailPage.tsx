@@ -17,7 +17,12 @@ export function OrderDetailPage() {
         email: string;
         total: number;
         currency: string;
-        lines: { title: string; quantity: number; total: number; sku: string }[];
+        lines: {
+          title: string;
+          quantity: number;
+          total: number;
+          sku: string;
+        }[];
       }>(`/admin/orders/${id}`),
   });
 
@@ -51,8 +56,8 @@ export function OrderDetailPage() {
             </tr>
           </thead>
           <tbody>
-            {o.lines.map((l, i) => (
-              <tr key={`${l.sku}-${i}`}>
+            {o.lines.map((l) => (
+              <tr key={`${l.sku}:${l.title}:${l.quantity}:${l.total}`}>
                 <td>{l.title}</td>
                 <td className="admin-mono">{l.sku}</td>
                 <td>{l.quantity}</td>
@@ -80,7 +85,8 @@ export function OrderDetailPage() {
               Cancel
             </button>
           ) : null}
-          {user?.role === "owner" && ["paid", "fulfilled"].includes(o.status) ? (
+          {user?.role === "owner" &&
+          ["paid", "fulfilled"].includes(o.status) ? (
             <button
               type="button"
               className="admin-btn admin-btn--danger"

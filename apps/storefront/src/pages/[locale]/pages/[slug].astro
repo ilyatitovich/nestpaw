@@ -1,6 +1,6 @@
 ---
+import { type Locale, locales } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { locales, type Locale } from "../../../i18n/ui";
 import { apiGet } from "../../../lib/api";
 
 export function getStaticPaths() {
@@ -22,7 +22,12 @@ const locale = Astro.params.locale as Locale;
 const slug = Astro.params.slug!;
 
 type Page = {
-  translations: { locale: string; title: string; body: string; seoDescription?: string }[];
+  translations: {
+    locale: string;
+    title: string;
+    body: string;
+    seoDescription?: string;
+  }[];
 };
 
 let page: Page | null = null;
@@ -43,7 +48,8 @@ try {
   };
 }
 
-const tr = page.translations.find((t) => t.locale === locale) ?? page.translations[0];
+const tr =
+  page.translations.find((t) => t.locale === locale) ?? page.translations[0];
 ---
 
 <BaseLayout

@@ -33,7 +33,9 @@ export function PagesCmsPage() {
             </thead>
             <tbody>
               {(data ?? []).map((p) => {
-                const t = p.translations.find((x) => x.locale === "en") ?? p.translations[0];
+                const t =
+                  p.translations.find((x) => x.locale === "en") ??
+                  p.translations[0];
                 return (
                   <tr key={p.id}>
                     <td>{t?.title}</td>

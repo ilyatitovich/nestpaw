@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateCheckoutSchema } from "@online-store/shared-types";
-import { PrismaService } from "../../prisma/prisma.service";
-import { CartService } from "../cart/cart.service";
-import { DiscountsService } from "../discounts/discounts.service";
-import { PaymentsService } from "../payments/payments.service";
-import { ShippingService } from "../shipping/shipping.service";
-import { TaxService } from "../tax/tax.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import type { CartService } from "../cart/cart.service.js";
+import type { DiscountsService } from "../discounts/discounts.service.js";
+import type { PaymentsService } from "../payments/payments.service.js";
+import type { ShippingService } from "../shipping/shipping.service.js";
+import type { TaxService } from "../tax/tax.service.js";
 
 @Injectable()
 export class CheckoutService {
@@ -18,7 +18,11 @@ export class CheckoutService {
     private discounts: DiscountsService,
   ) {}
 
-  async create(token: string | undefined, input: unknown, idempotencyKey?: string) {
+  async create(
+    token: string | undefined,
+    input: unknown,
+    idempotencyKey?: string,
+  ) {
     const data = CreateCheckoutSchema.parse(input);
     if (!token) throw new BadRequestException("Cart token required");
 
@@ -27,7 +31,9 @@ export class CheckoutService {
         where: { idempotencyKey },
       });
       if (existing?.stripeSessionId) {
-        const session = await this.payments.retrieveSession(existing.stripeSessionId);
+        const session = await this.payments.retrieveSession(
+          existing.stripeSessionId,
+        );
         return { orderId: existing.id, checkoutUrl: session.url };
       }
     }
@@ -43,7 +49,10 @@ export class CheckoutService {
     let discountTotal = 0;
     let freeShipping = false;
     if (cart.discountCode) {
-      const discount = await this.discounts.validate(cart.discountCode, subtotal);
+      const discount = await this.discounts.validate(
+        cart.discountCode,
+        subtotal,
+      );
       if (discount.type === "free_shipping") freeShipping = true;
       else discountTotal = this.discounts.computeAmount(discount, subtotal);
     }
@@ -54,10 +63,7 @@ export class CheckoutService {
     );
     const rate = data.shippingRateId
       ? await this.shipping.getRate(data.shippingRateId)
-      : await this.shipping.quote(
-          data.shippingAddress.country,
-          weight,
-        );
+      : await this.shipping.quote(data.shippingAddress.country, weight);
     const shippingTotal = freeShipping ? 0 : (rate?.price ?? 0);
 
     const taxable = Math.max(0, subtotal - discountTotal + shippingTotal);
@@ -85,9 +91,14 @@ export class CheckoutService {
         lines: {
           create: cart.lines.map((l) => {
             const t =
-              l.variant.product.translations.find((x) => x.locale === data.locale) ??
-              l.variant.product.translations[0];
-            const variantTitle = [l.variant.option1, l.variant.option2, l.variant.option3]
+              l.variant.product.translations.find(
+                (x) => x.locale === data.locale,
+              ) ?? l.variant.product.translations[0];
+            const variantTitle = [
+              l.variant.option1,
+              l.variant.option2,
+              l.variant.option3,
+            ]
               .filter(Boolean)
               .join(" / ");
             return {
@@ -120,8 +131,9 @@ export class CheckoutService {
       cancelUrl: data.cancelUrl,
       lineItems: cart.lines.map((l) => {
         const t =
-          l.variant.product.translations.find((x) => x.locale === data.locale) ??
-          l.variant.product.translations[0];
+          l.variant.product.translations.find(
+            (x) => x.locale === data.locale,
+          ) ?? l.variant.product.translations[0];
         return {
           name: t?.title ?? l.variant.sku,
           amount: l.variant.price,

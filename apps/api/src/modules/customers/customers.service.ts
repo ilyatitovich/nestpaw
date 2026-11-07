@@ -3,13 +3,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import type { JwtService } from "@nestjs/jwt";
 import {
   CustomerRegisterSchema,
   LoginSchema,
 } from "@online-store/shared-types";
 import * as argon2 from "argon2";
-import { PrismaService } from "../../prisma/prisma.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class CustomersService {
@@ -59,7 +59,9 @@ export class CustomersService {
 
   async login(input: unknown) {
     const { email, password } = LoginSchema.parse(input);
-    const customer = await this.prisma.customer.findUnique({ where: { email } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { email },
+    });
     if (!customer?.passwordHash) {
       throw new UnauthorizedException("Invalid credentials");
     }
@@ -97,7 +99,9 @@ export class CustomersService {
   }
 
   async deleteByEmail(email: string) {
-    const customer = await this.prisma.customer.findUnique({ where: { email } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { email },
+    });
     if (!customer) return { ok: true };
     await this.prisma.customer.delete({ where: { id: customer.id } });
     return { ok: true };

@@ -10,6 +10,8 @@ minimumReleaseAge: 0
 
 overrides:
   multer: "^2.5.0"
+  # Astro 7 / rolldown pull @emnapi/runtime@2.0.0-beta, which breaks @astrojs/check.
+  "@emnapi/runtime": "1.11.3"
 
 allowBuilds:
   "@biomejs/biome": true

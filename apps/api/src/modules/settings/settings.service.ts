@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { z } from "zod";
-import { PrismaService } from "../../prisma/prisma.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 const CurrencyRateSchema = z.object({
   code: z.string().length(3),
@@ -57,11 +57,18 @@ export class SettingsService {
     });
   }
 
-  convert(amountEurCents: number, toCurrency: string, rates: { code: string; rateToEur: { toNumber(): number } | number }[]) {
+  convert(
+    amountEurCents: number,
+    toCurrency: string,
+    rates: { code: string; rateToEur: { toNumber(): number } | number }[],
+  ) {
     if (toCurrency === "EUR") return amountEurCents;
     const rate = rates.find((r) => r.code === toCurrency);
     if (!rate) return amountEurCents;
-    const r = typeof rate.rateToEur === "number" ? rate.rateToEur : Number(rate.rateToEur);
+    const r =
+      typeof rate.rateToEur === "number"
+        ? rate.rateToEur
+        : Number(rate.rateToEur);
     return Math.round(amountEurCents * r);
   }
 }

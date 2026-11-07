@@ -1,9 +1,9 @@
-import { Module, forwardRef } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
-import { DiscountsModule } from "../discounts/discounts.module";
-import { PaymentsModule } from "../payments/payments.module";
-import { OrdersController } from "./orders.controller";
-import { OrdersService } from "./orders.service";
+import { forwardRef, Module } from "@nestjs/common";
+import { DiscountsModule } from "../discounts/discounts.module.js";
+import { PaymentsModule } from "../payments/payments.module.js";
+import { OrdersController } from "./orders.controller.js";
+import { OrdersService } from "./orders.service.js";
 
 @Module({
   imports: [

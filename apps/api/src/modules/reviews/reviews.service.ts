@@ -4,7 +4,7 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { CreateReviewSchema } from "@online-store/shared-types";
-import { PrismaService } from "../../prisma/prisma.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class ReviewsService {

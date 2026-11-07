@@ -1,11 +1,11 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import {
-  CurrentUser,
   type AuthUser,
-} from "../../common/decorators/current-user.decorator";
-import { Public } from "../../common/decorators/public.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { SettingsService } from "./settings.service";
+  CurrentUser,
+} from "../../common/decorators/current-user.decorator.js";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { SettingsService } from "./settings.service.js";
 
 @Controller()
 export class SettingsController {

@@ -5,15 +5,17 @@ import {
 } from "@nestjs/common";
 import { CreateDiscountSchema } from "@online-store/shared-types";
 import type { DiscountCode } from "@prisma/client";
-import { PrismaService } from "../../prisma/prisma.service";
-import { computeDiscountAmount } from "./compute-amount";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import { computeDiscountAmount } from "./compute-amount.js";
 
 @Injectable()
 export class DiscountsService {
   constructor(private prisma: PrismaService) {}
 
   list() {
-    return this.prisma.discountCode.findMany({ orderBy: { createdAt: "desc" } });
+    return this.prisma.discountCode.findMany({
+      orderBy: { createdAt: "desc" },
+    });
   }
 
   create(input: unknown) {
@@ -46,7 +48,10 @@ export class DiscountsService {
     if (discount.endsAt && discount.endsAt < now) {
       throw new BadRequestException("Discount expired");
     }
-    if (discount.usageLimit != null && discount.usageCount >= discount.usageLimit) {
+    if (
+      discount.usageLimit != null &&
+      discount.usageCount >= discount.usageLimit
+    ) {
       throw new BadRequestException("Discount usage limit reached");
     }
     if (subtotal < discount.minSubtotal) {

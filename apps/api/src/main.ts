@@ -3,9 +3,9 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import * as Sentry from "@sentry/node";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import { AppModule } from "./app.module";
-import { ZodExceptionFilter } from "./common/filters/zod-exception.filter";
-import { assertProductionSecrets } from "./modules/payments/mock-payments";
+import { AppModule } from "./app.module.js";
+import { ZodExceptionFilter } from "./common/filters/zod-exception.filter.js";
+import { assertProductionSecrets } from "./modules/payments/mock-payments.js";
 
 async function bootstrap() {
   assertProductionSecrets();
@@ -29,16 +29,21 @@ async function bootstrap() {
       .filter(Boolean),
   );
   const isDev = process.env.NODE_ENV !== "production";
-  const localhostOrigin =
-    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+  const localhostOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Non-browser / same-origin requests omit Origin.
       if (!origin) {
         callback(null, true);
         return;
       }
-      if (allowedOrigins.has(origin) || (isDev && localhostOrigin.test(origin))) {
+      if (
+        allowedOrigins.has(origin) ||
+        (isDev && localhostOrigin.test(origin))
+      ) {
         callback(null, true);
         return;
       }

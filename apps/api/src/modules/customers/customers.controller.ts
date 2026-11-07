@@ -8,13 +8,13 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import {
-  CurrentCustomer,
   type AuthCustomer,
-} from "../../common/decorators/current-customer.decorator";
-import { Public } from "../../common/decorators/public.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { CustomerJwtGuard } from "../../common/guards/customer-jwt.guard";
-import { CustomersService } from "./customers.service";
+  CurrentCustomer,
+} from "../../common/decorators/current-customer.decorator.js";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import { CustomerJwtGuard } from "../../common/guards/customer-jwt.guard.js";
+import type { CustomersService } from "./customers.service.js";
 
 @Controller()
 export class CustomersController {

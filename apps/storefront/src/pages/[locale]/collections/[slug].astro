@@ -1,8 +1,8 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { locales, t, localizePath, type Locale } from "../../../i18n/ui";
-import { apiGet } from "../../../lib/api";
 import ProductFilters from "../../../components/ProductFilters";
+import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { apiGet } from "../../../lib/api";
 
 export async function getStaticPaths() {
   const seen = new Set<string>();
@@ -22,7 +22,8 @@ export async function getStaticPaths() {
         }[]
       >(`/collections?locale=${locale}`);
       for (const c of collections) {
-        const tr = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+        const tr =
+          c.translations.find((x) => x.locale === locale) ?? c.translations[0];
         if (tr?.slug) push(locale, tr.slug);
         for (const child of c.children ?? []) {
           const ctr =
@@ -37,7 +38,14 @@ export async function getStaticPaths() {
   }
   if (!paths.length) {
     for (const locale of locales) {
-      for (const slug of ["dogs", "cats", "small-pets", "hunde", "katzen", "kleintiere"]) {
+      for (const slug of [
+        "dogs",
+        "cats",
+        "small-pets",
+        "hunde",
+        "katzen",
+        "kleintiere",
+      ]) {
         push(locale, slug);
       }
     }
@@ -50,10 +58,20 @@ const slug = Astro.params.slug!;
 
 type Collection = {
   id: string;
-  translations: { locale: string; title: string; slug: string; description: string }[];
+  translations: {
+    locale: string;
+    title: string;
+    slug: string;
+    description: string;
+  }[];
   children?: {
     id: string;
-    translations: { locale: string; title: string; slug: string; description: string }[];
+    translations: {
+      locale: string;
+      title: string;
+      slug: string;
+      description: string;
+    }[];
   }[];
   products?: {
     product: {

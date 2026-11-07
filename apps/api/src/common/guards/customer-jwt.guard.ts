@@ -1,13 +1,13 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import type { JwtService } from "@nestjs/jwt";
 import type { Request } from "express";
-import { PrismaService } from "../../prisma/prisma.service";
-import type { AuthCustomer } from "../decorators/current-customer.decorator";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import type { AuthCustomer } from "../decorators/current-customer.decorator.js";
 
 @Injectable()
 export class CustomerJwtGuard implements CanActivate {
@@ -17,9 +17,9 @@ export class CustomerJwtGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<
-      Request & { customer?: AuthCustomer }
-    >();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { customer?: AuthCustomer }>();
     const header = request.headers.authorization;
     if (!header?.startsWith("Bearer ")) {
       throw new UnauthorizedException("Customer token required");

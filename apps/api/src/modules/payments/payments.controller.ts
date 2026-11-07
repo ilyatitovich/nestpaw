@@ -1,3 +1,4 @@
+import type { RawBodyRequest } from "@nestjs/common";
 import {
   Body,
   Controller,
@@ -6,11 +7,10 @@ import {
   Post,
   Req,
 } from "@nestjs/common";
-import type { RawBodyRequest } from "@nestjs/common";
 import type { Request } from "express";
-import { Public } from "../../common/decorators/public.decorator";
-import { allowMockPayments } from "./mock-payments";
-import { PaymentsService } from "./payments.service";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { allowMockPayments } from "./mock-payments.js";
+import type { PaymentsService } from "./payments.service.js";
 
 @Controller("payments")
 export class PaymentsController {

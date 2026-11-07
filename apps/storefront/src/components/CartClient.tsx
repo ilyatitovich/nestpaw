@@ -85,6 +85,7 @@ export default function CartClient({
     setCart(data);
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only cart load
   useEffect(() => {
     load().catch(() => setError("Could not load cart"));
   }, []);
@@ -290,7 +291,13 @@ export default function CartClient({
         <h2 className="section__title" style={{ fontSize: "1.25rem" }}>
           {labels.shipping}
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "0.5rem",
+          }}
+        >
           <input
             required
             placeholder="First name"
@@ -322,7 +329,13 @@ export default function CartClient({
           value={shipping.line2}
           onChange={(e) => updateField("line2", e.target.value)}
         />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "0.5rem",
+          }}
+        >
           <input
             required
             placeholder="City"
@@ -336,7 +349,13 @@ export default function CartClient({
             onChange={(e) => updateField("postalCode", e.target.value)}
           />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "0.5rem",
+          }}
+        >
           <input
             required
             placeholder="Country (ISO)"
@@ -350,11 +369,7 @@ export default function CartClient({
             onChange={(e) => updateField("phone", e.target.value)}
           />
         </div>
-        <button
-          type="submit"
-          className="btn btn--primary"
-          disabled={busy}
-        >
+        <button type="submit" className="btn btn--primary" disabled={busy}>
           {labels.checkout}
         </button>
       </form>

@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { t, localizePath, storeName, type Locale } from "../i18n/ui";
+import { type Locale, localizePath, storeName, t } from "../i18n/ui";
 
 interface Props {
   title: string;
@@ -20,7 +20,8 @@ const {
   jsonLd,
 } = Astro.props;
 
-const site = Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
+const site =
+  Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
 const canonical = `${site}${localizePath(locale, canonicalPath)}`;
 const provider = import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? "plausible";
 const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;

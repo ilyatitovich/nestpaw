@@ -80,16 +80,16 @@ test.describe("commerce smoke", () => {
       );
       expect(publicList.ok()).toBeTruthy();
       const listed = await publicList.json();
-      expect(listed.items.some((p: { id: string }) => p.id === productId)).toBeTruthy();
+      expect(
+        listed.items.some((p: { id: string }) => p.id === productId),
+      ).toBeTruthy();
 
       await request.delete(`${API}/admin/collections/${collection.id}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
     });
 
-    test("cart → checkout → mock pay marks order paid", async ({
-      request,
-    }) => {
+    test("cart → checkout → mock pay marks order paid", async ({ request }) => {
       const products = await request.get(`${API}/products`);
       expect(products.ok()).toBeTruthy();
       const catalog = await products.json();
@@ -167,10 +167,14 @@ test.describe("commerce smoke", () => {
 
     test("Nestpaw home and dogs browse", async ({ page }) => {
       await page.goto(`${STORE}/en/`);
-      await expect(page.locator(".site-header__brand")).toContainText("Nestpaw");
+      await expect(page.locator(".site-header__brand")).toContainText(
+        "Nestpaw",
+      );
       await expect(page.locator(".hero__brand")).toContainText("Nestpaw");
       await page.goto(`${STORE}/en/collections/dogs`);
-      await expect(page.locator(".section__title").first()).toContainText("Dogs");
+      await expect(page.locator(".section__title").first()).toContainText(
+        "Dogs",
+      );
       await expect(page.locator(".product-card").first()).toBeVisible();
     });
 

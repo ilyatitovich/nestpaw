@@ -2,11 +2,11 @@
 
 Commerce monorepo for **Nestpaw**, a DACH specialty shop for dogs, cats, and small pets (Astro storefront, NestJS API, React admin).
 
-| App | Stack | Deploy |
-|---|---|---|
+| App               | Stack                                             | Deploy                 |
+| ----------------- | ------------------------------------------------- | ---------------------- |
 | `apps/storefront` | Astro, TypeScript, BEM CSS, i18n (`en`/`de`), SEO | CDN (Cloudflare Pages) |
-| `apps/api` | NestJS, Prisma, PostgreSQL, Redis, Stripe, BullMQ | Docker |
-| `apps/admin` | React 19, TanStack Query, Vite | Docker (nginx) |
+| `apps/api`        | NestJS, Prisma, PostgreSQL, Redis, Stripe, BullMQ | Docker                 |
+| `apps/admin`      | React 19, TanStack Query, Vite                    | Docker (nginx)         |
 
 ## Demo credentials
 

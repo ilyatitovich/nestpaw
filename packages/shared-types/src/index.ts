@@ -184,7 +184,7 @@ export const CreatePageSchema = z.object({
       }),
     )
     .min(1),
-  blocks: z.array(z.record(z.unknown())).default([]),
+  blocks: z.array(z.record(z.string(), z.unknown())).default([]),
 });
 
 export const CreateReviewSchema = z.object({
@@ -211,7 +211,7 @@ export const AnalyticsEventSchema = z.object({
     "purchase",
     "search",
   ]),
-  payload: z.record(z.unknown()).default({}),
+  payload: z.record(z.string(), z.unknown()).default({}),
   locale: LocaleSchema.optional(),
   sessionId: z.string().max(100).optional(),
 });

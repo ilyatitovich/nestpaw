@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import nodemailer from "nodemailer";
-import { PrismaService } from "../../prisma/prisma.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class NotificationsService {
@@ -28,7 +28,10 @@ export class NotificationsService {
 
     const storeName = process.env.STORE_NAME ?? "Online Store";
     const lines = order.lines
-      .map((l) => `${l.quantity}x ${l.title} — ${(l.total / 100).toFixed(2)} ${order.currency}`)
+      .map(
+        (l) =>
+          `${l.quantity}x ${l.title} — ${(l.total / 100).toFixed(2)} ${order.currency}`,
+      )
       .join("\n");
 
     try {

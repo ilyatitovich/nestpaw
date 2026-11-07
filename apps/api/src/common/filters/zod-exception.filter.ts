@@ -1,7 +1,7 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
 } from "@nestjs/common";
@@ -18,7 +18,7 @@ export class ZodExceptionFilter implements ExceptionFilter {
     if (exception instanceof ZodError) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
-        message: exception.errors.map((e) => e.message),
+        message: exception.issues.map((e) => e.message),
         code: "VALIDATION_ERROR",
       });
     }
@@ -26,11 +26,13 @@ export class ZodExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      return response.status(status).json(
-        typeof body === "string"
-          ? { statusCode: status, message: body }
-          : body,
-      );
+      return response
+        .status(status)
+        .json(
+          typeof body === "string"
+            ? { statusCode: status, message: body }
+            : body,
+        );
     }
 
     // eslint-disable-next-line no-console

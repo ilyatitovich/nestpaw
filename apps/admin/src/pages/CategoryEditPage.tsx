@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 
@@ -37,8 +37,7 @@ export function CategoryEditPage() {
   });
   const allProducts = useQuery({
     queryKey: ["admin-products-all"],
-    queryFn: () =>
-      api.get<{ items: ProductRow[] }>("/admin/products?take=100"),
+    queryFn: () => api.get<{ items: ProductRow[] }>("/admin/products?take=100"),
   });
 
   const [titleEn, setTitleEn] = useState("");
@@ -120,7 +119,10 @@ export function CategoryEditPage() {
       <form className="admin-panel admin-form" onSubmit={onSubmit}>
         <label>
           Parent
-          <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
+          <select
+            value={parentId}
+            onChange={(e) => setParentId(e.target.value)}
+          >
             <option value="">— none (top level) —</option>
             {parentOptions.map((c) => {
               const t =
@@ -188,6 +190,7 @@ export function CategoryEditPage() {
           </p>
         ) : null}
         <button
+          type="submit"
           className="admin-btn admin-btn--primary"
           disabled={save.isPending}
         >

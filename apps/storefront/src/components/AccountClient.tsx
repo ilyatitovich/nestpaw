@@ -29,6 +29,7 @@ export default function AccountClient({ apiUrl, labels }: Props) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
     const existing = localStorage.getItem("customer_token");
     if (existing) {
@@ -94,7 +95,10 @@ export default function AccountClient({ apiUrl, labels }: Props) {
         <button type="button" className="btn btn--ghost" onClick={logout}>
           {labels.logout}
         </button>
-        <h2 className="section__title" style={{ fontSize: "1.35rem", marginTop: "2rem" }}>
+        <h2
+          className="section__title"
+          style={{ fontSize: "1.35rem", marginTop: "2rem" }}
+        >
           {labels.orders}
         </h2>
         {!orders.length ? <p>{labels.noOrders}</p> : null}

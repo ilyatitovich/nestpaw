@@ -1,17 +1,17 @@
+import { InjectQueue } from "@nestjs/bullmq";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
 import type { OrderStatus } from "@prisma/client";
 import type { Queue } from "bullmq";
-import { PrismaService } from "../../prisma/prisma.service";
-import { DiscountsService } from "../discounts/discounts.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import type { DiscountsService } from "../discounts/discounts.service.js";
 import {
   decrementInventoryForLine,
   restockInventoryForLines,
-} from "./inventory-ops";
+} from "./inventory-ops.js";
 
 @Injectable()
 export class OrdersService {

@@ -1,8 +1,8 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { locales, t, type Locale } from "../../i18n/ui";
-import { API_URL } from "../../lib/api";
 import CartClient from "../../components/CartClient";
+import { type Locale, locales, t } from "../../i18n/ui";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { API_URL } from "../../lib/api";
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { computeDiscountAmount } from "../discounts/compute-amount";
+import { computeDiscountAmount } from "../discounts/compute-amount.js";
 import {
   buildStripeLineItems,
   sumStripeLineItems,
-} from "../payments/build-stripe-line-items";
+} from "../payments/build-stripe-line-items.js";
 
 /** Mirrors CheckoutService totals → Stripe session amount invariant. */
 function orderTotals(input: {
@@ -14,10 +14,7 @@ function orderTotals(input: {
   shipping: number;
   taxBps: number;
 }) {
-  const subtotal = input.lines.reduce(
-    (s, l) => s + l.price * l.quantity,
-    0,
-  );
+  const subtotal = input.lines.reduce((s, l) => s + l.price * l.quantity, 0);
   let discountTotal = 0;
   let shippingTotal = input.shipping;
   if (input.discountType && input.discountValue != null) {
@@ -43,7 +40,14 @@ function orderTotals(input: {
     discountAmount: discountTotal,
     expectedTotal: total,
   });
-  return { subtotal, discountTotal, shippingTotal, taxTotal, total, stripeItems };
+  return {
+    subtotal,
+    discountTotal,
+    shippingTotal,
+    taxTotal,
+    total,
+    stripeItems,
+  };
 }
 
 describe("checkout pricing invariant", () => {

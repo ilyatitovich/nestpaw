@@ -1,15 +1,15 @@
 import {
   ForbiddenException,
+  forwardRef,
   Inject,
   Injectable,
   Logger,
-  forwardRef,
 } from "@nestjs/common";
 import Stripe from "stripe";
-import { PrismaService } from "../../prisma/prisma.service";
-import { OrdersService } from "../orders/orders.service";
-import { buildStripeLineItems } from "./build-stripe-line-items";
-import { allowMockPayments } from "./mock-payments";
+import type { PrismaService } from "../../prisma/prisma.service.js";
+import { OrdersService } from "../orders/orders.service.js";
+import { buildStripeLineItems } from "./build-stripe-line-items.js";
+import { allowMockPayments } from "./mock-payments.js";
 
 @Injectable()
 export class PaymentsService {

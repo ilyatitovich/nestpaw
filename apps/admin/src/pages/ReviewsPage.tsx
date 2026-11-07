@@ -18,8 +18,13 @@ export function ReviewsPage() {
   });
 
   const moderate = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: "approve" | "reject" }) =>
-      api.post(`/admin/reviews/${id}/${action}`),
+    mutationFn: ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: "approve" | "reject";
+    }) => api.post(`/admin/reviews/${id}/${action}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reviews"] }),
   });
 
@@ -53,7 +58,9 @@ export function ReviewsPage() {
             </div>
           </div>
         ))}
-        {!data?.length ? <p className="admin-muted">No pending reviews</p> : null}
+        {!data?.length ? (
+          <p className="admin-muted">No pending reviews</p>
+        ) : null}
       </div>
     </div>
   );

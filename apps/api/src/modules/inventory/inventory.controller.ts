@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { InventoryService } from "./inventory.service";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { InventoryService } from "./inventory.service.js";
 
 @Controller("admin/inventory")
 export class InventoryController {

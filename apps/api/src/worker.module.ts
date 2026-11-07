@@ -1,8 +1,8 @@
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { NotificationsModule } from "./modules/notifications/notifications.module";
-import { PrismaModule } from "./prisma/prisma.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module.js";
+import { PrismaModule } from "./prisma/prisma.module.js";
 
 @Module({
   imports: [

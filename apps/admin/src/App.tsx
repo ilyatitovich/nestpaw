@@ -1,21 +1,21 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth";
 import { Layout } from "./components/Layout";
+import { CategoriesPage } from "./pages/CategoriesPage";
+import { CategoryEditPage } from "./pages/CategoryEditPage";
+import { CustomersPage } from "./pages/CustomersPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DiscountsPage } from "./pages/DiscountsPage";
 import { InventoryPage } from "./pages/InventoryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { PagesCmsPage } from "./pages/PagesCmsPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { ReviewsPage } from "./pages/ReviewsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ShippingPage } from "./pages/ShippingPage";
-import { CustomersPage } from "./pages/CustomersPage";
-import { ReviewsPage } from "./pages/ReviewsPage";
-import { PagesCmsPage } from "./pages/PagesCmsPage";
-import { CategoriesPage } from "./pages/CategoriesPage";
-import { CategoryEditPage } from "./pages/CategoryEditPage";
 
 function Private({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

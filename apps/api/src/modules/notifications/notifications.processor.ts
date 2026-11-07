@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import type { Job } from "bullmq";
-import { NotificationsService } from "./notifications.service";
+import type { NotificationsService } from "./notifications.service.js";
 
 @Processor("notifications")
 export class NotificationsProcessor extends WorkerHost {

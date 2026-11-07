@@ -48,8 +48,9 @@ export function InventoryPage() {
             <tbody>
               {(data ?? []).map((row) => {
                 const title =
-                  row.variant.product.translations.find((t) => t.locale === "en")
-                    ?.title ?? row.variant.sku;
+                  row.variant.product.translations.find(
+                    (t) => t.locale === "en",
+                  )?.title ?? row.variant.sku;
                 const value = drafts[row.variantId] ?? String(row.quantity);
                 return (
                   <tr key={row.variantId}>

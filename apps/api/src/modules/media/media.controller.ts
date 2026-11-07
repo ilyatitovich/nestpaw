@@ -9,8 +9,8 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { MediaService } from "./media.service";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { MediaService } from "./media.service.js";
 
 @Controller("admin/media")
 export class MediaController {
@@ -30,10 +30,7 @@ export class MediaController {
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  upload(
-    @UploadedFile() file: Express.Multer.File,
-    @Body("alt") alt?: string,
-  ) {
+  upload(@UploadedFile() file: Express.Multer.File, @Body("alt") alt?: string) {
     return this.media.upload(file, alt);
   }
 

@@ -1,7 +1,7 @@
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
-import { NotificationsProcessor } from "./notifications.processor";
-import { NotificationsService } from "./notifications.service";
+import { NotificationsProcessor } from "./notifications.processor.js";
+import { NotificationsService } from "./notifications.service.js";
 
 @Module({
   imports: [BullModule.registerQueue({ name: "notifications" })],

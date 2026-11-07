@@ -1,13 +1,13 @@
+import { createHash, randomBytes } from "node:crypto";
 import {
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
-  ForbiddenException,
 } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import * as argon2 from "argon2";
-import { createHash, randomBytes } from "node:crypto";
+import type { JwtService } from "@nestjs/jwt";
 import { LoginSchema } from "@online-store/shared-types";
-import { PrismaService } from "../../prisma/prisma.service";
+import * as argon2 from "argon2";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 const MAX_FAILED = 5;
 const LOCK_MS = 15 * 60 * 1000;
@@ -36,9 +36,7 @@ export class AuthService {
         data: {
           failedLogins,
           lockedUntil:
-            failedLogins >= MAX_FAILED
-              ? new Date(Date.now() + LOCK_MS)
-              : null,
+            failedLogins >= MAX_FAILED ? new Date(Date.now() + LOCK_MS) : null,
         },
       });
       throw new UnauthorizedException("Invalid credentials");
@@ -80,13 +78,10 @@ export class AuthService {
     email: string,
     role: "owner" | "staff",
   ) {
-    const accessToken = await this.jwt.signAsync(
-      { sub: userId, email, role },
-      {
-        secret: process.env.JWT_ACCESS_SECRET ?? "dev-access-secret",
-        expiresIn: process.env.JWT_ACCESS_TTL ?? "15m",
-      },
-    );
+    const accessToken = await this.jwt.signAsync({ sub: userId, email, role }, {
+      secret: process.env.JWT_ACCESS_SECRET ?? "dev-access-secret",
+      expiresIn: process.env.JWT_ACCESS_TTL || "15m",
+    } as Parameters<JwtService["signAsync"]>[1]);
     const refreshToken = randomBytes(48).toString("hex");
     const days = Number((process.env.JWT_REFRESH_TTL ?? "7d").replace("d", ""));
     await this.prisma.refreshToken.create({

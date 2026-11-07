@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { TaxService } from "./tax.service";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { TaxService } from "./tax.service.js";
 
 @Controller("admin/tax")
 export class TaxController {

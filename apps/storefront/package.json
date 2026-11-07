@@ -12,21 +12,22 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@astrojs/react": "^4.1.2",
+    "@astrojs/react": "^7.1.4",
+    "@astrojs/sitemap": "^3.7.4",
     "@online-store/api-client": "workspace:*",
     "@online-store/shared-types": "workspace:*",
     "@online-store/ui-tokens": "workspace:*",
-    "astro": "^5.1.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "astro": "^7.4.7",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
+    "@astrojs/check": "^0.9.12",
     "@astrojs/ts-plugin": "^1.10.12",
     "@online-store/config-tsconfig": "workspace:*",
-    "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.0"
   }
 }

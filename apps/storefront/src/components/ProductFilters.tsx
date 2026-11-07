@@ -31,7 +31,9 @@ export default function ProductFilters({ locale, products, labels }: Props) {
   const [sort, setSort] = useState("featured");
 
   const lifeOptions = useMemo(() => {
-    const set = new Set(products.map((p) => meta(p, "life_stage")).filter(Boolean));
+    const set = new Set(
+      products.map((p) => meta(p, "life_stage")).filter(Boolean),
+    );
     return ["all", ...Array.from(set)];
   }, [products]);
 
@@ -108,7 +110,8 @@ export default function ProductFilters({ locale, products, labels }: Props) {
       <div className="product-grid">
         {filtered.map((p) => {
           const tr =
-            p.translations.find((x) => x.locale === locale) ?? p.translations[0];
+            p.translations.find((x) => x.locale === locale) ??
+            p.translations[0];
           const price = p.variants[0]?.price ?? 0;
           const img = p.media[0];
           return (
@@ -119,7 +122,11 @@ export default function ProductFilters({ locale, products, labels }: Props) {
             >
               <div className="product-card__media">
                 {img ? (
-                  <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" />
+                  <img
+                    src={img.url}
+                    alt={img.alt || tr?.title || ""}
+                    loading="lazy"
+                  />
                 ) : null}
               </div>
               <h2 className="product-card__title">{tr?.title}</h2>

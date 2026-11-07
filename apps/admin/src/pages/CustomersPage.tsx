@@ -5,9 +5,9 @@ export function CustomersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["customers"],
     queryFn: () =>
-      api.get<{ id: string; email: string; firstName: string; lastName: string }[]>(
-        "/admin/customers",
-      ),
+      api.get<
+        { id: string; email: string; firstName: string; lastName: string }[]
+      >("/admin/customers"),
   });
 
   return (

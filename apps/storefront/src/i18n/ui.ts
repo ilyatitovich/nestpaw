@@ -15,7 +15,8 @@ export const ui = {
     "nav.search": "Search",
     "nav.account": "Account",
     "home.cta": "Shop for dogs",
-    "home.lead": "Everyday essentials for dogs, cats, and small pets — curated for DACH homes.",
+    "home.lead":
+      "Everyday essentials for dogs, cats, and small pets — curated for DACH homes.",
     "home.headline": "Care that feels like home",
     "home.shopByPet": "Shop by pet",
     "home.featured": "Fresh picks",
@@ -73,7 +74,8 @@ export const ui = {
     "nav.search": "Suche",
     "nav.account": "Konto",
     "home.cta": "Hunde entdecken",
-    "home.lead": "Alltagsessentials für Hunde, Katzen und Kleintiere — kuratiert für Zuhause in DE & AT.",
+    "home.lead":
+      "Alltagsessentials für Hunde, Katzen und Kleintiere — kuratiert für Zuhause in DE & AT.",
     "home.headline": "Fürsorge, die sich wie Zuhause anfühlt",
     "home.shopByPet": "Nach Tier einkaufen",
     "home.featured": "Frisch ausgewählt",
@@ -124,7 +126,9 @@ export const ui = {
 } as const;
 
 export function t(locale: string, key: keyof (typeof ui)["en"]) {
-  const l = (locales.includes(locale as Locale) ? locale : defaultLocale) as Locale;
+  const l = (
+    locales.includes(locale as Locale) ? locale : defaultLocale
+  ) as Locale;
   return ui[l][key] ?? ui.en[key];
 }
 

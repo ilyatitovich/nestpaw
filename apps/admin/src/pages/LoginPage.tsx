@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth";
 
@@ -47,7 +47,11 @@ export function LoginPage() {
           />
         </label>
         {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
-        <button className="admin-btn admin-btn--primary" disabled={pending}>
+        <button
+          type="submit"
+          className="admin-btn admin-btn--primary"
+          disabled={pending}
+        >
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>

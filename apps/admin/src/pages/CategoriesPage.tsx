@@ -79,7 +79,9 @@ export function CategoriesPage() {
                 rows.push(
                   <tr key={child.id}>
                     <td style={{ paddingLeft: "1.5rem" }}>
-                      <Link to={`/categories/${child.id}`}>↳ {title(child)}</Link>
+                      <Link to={`/categories/${child.id}`}>
+                        ↳ {title(child)}
+                      </Link>
                     </td>
                     <td>
                       {child.translations.find((t) => t.locale === "en")?.slug}

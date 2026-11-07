@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { canFulfillDenyPolicy } from "./inventory-ops";
+import { canFulfillDenyPolicy } from "./inventory-ops.js";
 
 describe("canFulfillDenyPolicy", () => {
   it("allows continue policy even when qty is low", () => {

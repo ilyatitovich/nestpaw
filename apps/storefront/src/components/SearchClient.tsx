@@ -53,6 +53,7 @@ export default function SearchClient({
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only initial search
   useEffect(() => {
     if (initialQuery) void run(initialQuery);
   }, []);
@@ -80,7 +81,8 @@ export default function SearchClient({
       <div className="product-grid">
         {items.map((p) => {
           const tr =
-            p.translations.find((x) => x.locale === locale) ?? p.translations[0];
+            p.translations.find((x) => x.locale === locale) ??
+            p.translations[0];
           const price = p.variants[0]?.price ?? 0;
           const img = p.media[0];
           return (
@@ -91,7 +93,11 @@ export default function SearchClient({
             >
               <div className="product-card__media">
                 {img ? (
-                  <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" />
+                  <img
+                    src={img.url}
+                    alt={img.alt || tr?.title || ""}
+                    loading="lazy"
+                  />
                 ) : null}
               </div>
               <h2 className="product-card__title">{tr?.title}</h2>

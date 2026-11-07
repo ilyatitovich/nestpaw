@@ -23,8 +23,11 @@ export function DashboardPage() {
           <p className="admin-muted">Loading…</p>
         ) : (
           <p className="admin-muted">
-            {(orders.data as { number: number; status: string; total: number }[] | undefined)
-              ?.length ?? 0}{" "}
+            {(
+              orders.data as
+                | { number: number; status: string; total: number }[]
+                | undefined
+            )?.length ?? 0}{" "}
             shown · open Orders for fulfillment
           </p>
         )}

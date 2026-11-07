@@ -10,8 +10,8 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Response } from "express";
-import { Public } from "../../common/decorators/public.decorator";
-import { CartService } from "./cart.service";
+import { Public } from "../../common/decorators/public.decorator.js";
+import type { CartService } from "./cart.service.js";
 
 @Controller("cart")
 export class CartController {
@@ -52,10 +52,7 @@ export class CartController {
 
   @Public()
   @Post("discount")
-  applyDiscount(
-    @Headers("x-cart-token") token: string,
-    @Body() body: unknown,
-  ) {
+  applyDiscount(@Headers("x-cart-token") token: string, @Body() body: unknown) {
     return this.cart.applyDiscount(token, body);
   }
 

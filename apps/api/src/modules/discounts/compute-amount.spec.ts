@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { computeDiscountAmount } from "./compute-amount";
+import { computeDiscountAmount } from "./compute-amount.js";
 
 describe("computeDiscountAmount", () => {
   it("computes percentage discount", () => {

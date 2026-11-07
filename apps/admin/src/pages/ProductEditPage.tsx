@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 
@@ -123,7 +123,8 @@ export function ProductEditPage() {
           {
             locale: "de",
             title: titleDe || titleEn,
-            slug: slugDe || slugEn || titleEn.toLowerCase().replace(/\s+/g, "-"),
+            slug:
+              slugDe || slugEn || titleEn.toLowerCase().replace(/\s+/g, "-"),
             description,
           },
         ],
@@ -140,7 +141,12 @@ export function ProductEditPage() {
           ? [{ url: imageUrl, alt: imageAlt || titleEn, position: 0 }]
           : [],
         metafields: [
-          { namespace: "pet", key: "species", type: "string" as const, value: species },
+          {
+            namespace: "pet",
+            key: "species",
+            type: "string" as const,
+            value: species,
+          },
           {
             namespace: "pet",
             key: "life_stage",
@@ -226,7 +232,11 @@ export function ProductEditPage() {
         </label>
         <label>
           SKU
-          <input value={sku} onChange={(e) => setSku(e.target.value)} required />
+          <input
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            required
+          />
         </label>
         <label>
           Price (EUR)
@@ -334,6 +344,7 @@ export function ProductEditPage() {
           </p>
         ) : null}
         <button
+          type="submit"
           className="admin-btn admin-btn--primary"
           disabled={save.isPending}
         >

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Query } from "@nestjs/common";
-import { Public } from "../../common/decorators/public.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { ShippingService } from "./shipping.service";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { ShippingService } from "./shipping.service.js";
 
 @Controller()
 export class ShippingController {

@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildStripeLineItems,
   sumStripeLineItems,
-} from "./build-stripe-line-items";
+} from "./build-stripe-line-items.js";
 
 describe("buildStripeLineItems", () => {
   it("matches expected total with percentage-style discount", () => {

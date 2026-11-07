@@ -9,9 +9,9 @@ import {
   Put,
   Query,
 } from "@nestjs/common";
-import { Public } from "../../common/decorators/public.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { CatalogService } from "./catalog.service";
+import { Public } from "../../common/decorators/public.decorator.js";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { CatalogService } from "./catalog.service.js";
 
 @Controller()
 export class CatalogController {
@@ -43,11 +43,7 @@ export class CatalogController {
     @Query("locale") locale = "en",
     @Query("take") take?: string,
   ) {
-    return this.catalog.relatedProducts(
-      id,
-      locale,
-      take ? Number(take) : 4,
-    );
+    return this.catalog.relatedProducts(id, locale, take ? Number(take) : 4);
   }
 
   @Public()

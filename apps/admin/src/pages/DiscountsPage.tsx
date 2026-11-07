@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { api } from "../api";
 
 export function DiscountsPage() {
@@ -8,7 +8,13 @@ export function DiscountsPage() {
     queryKey: ["discounts"],
     queryFn: () =>
       api.get<
-        { id: string; code: string; type: string; value: number; active: boolean }[]
+        {
+          id: string;
+          code: string;
+          type: string;
+          value: number;
+          active: boolean;
+        }[]
       >("/admin/discounts"),
   });
   const [code, setCode] = useState("");
@@ -41,13 +47,23 @@ export function DiscountsPage() {
       <form className="admin-panel admin-form" onSubmit={onSubmit}>
         <label>
           Code
-          <input value={code} onChange={(e) => setCode(e.target.value)} required />
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+          />
         </label>
         <label>
           Percent
-          <input value={value} onChange={(e) => setValue(e.target.value)} required />
+          <input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            required
+          />
         </label>
-        <button className="admin-btn admin-btn--primary">Create</button>
+        <button type="submit" className="admin-btn admin-btn--primary">
+          Create
+        </button>
       </form>
       <div className="admin-panel">
         <table className="admin-table">

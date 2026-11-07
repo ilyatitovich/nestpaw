@@ -1,13 +1,7 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Req,
-  Res,
-} from "@nestjs/common";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { Public } from "../../common/decorators/public.decorator";
-import { AuthService } from "./auth.service";
+import { Public } from "../../common/decorators/public.decorator.js";
+import type { AuthService } from "./auth.service.js";
 
 @Controller("auth")
 export class AuthController {
@@ -42,10 +36,7 @@ export class AuthController {
 
   @Public()
   @Post("logout")
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.refreshToken as string | undefined;
     await this.auth.logout(token);
     res.clearCookie("refreshToken");

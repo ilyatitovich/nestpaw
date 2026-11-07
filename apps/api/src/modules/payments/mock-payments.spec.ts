@@ -4,7 +4,7 @@ import {
   allowMockPayments,
   assertProductionSecrets,
   isProduction,
-} from "./mock-payments";
+} from "./mock-payments.js";
 
 describe("mock-payments", () => {
   const env = { ...process.env };

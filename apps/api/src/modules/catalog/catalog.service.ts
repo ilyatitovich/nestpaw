@@ -1,8 +1,8 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
-  BadRequestException,
 } from "@nestjs/common";
 import {
   CreateCollectionSchema,
@@ -11,7 +11,7 @@ import {
   UpdateCollectionSchema,
 } from "@online-store/shared-types";
 import { Prisma } from "@prisma/client";
-import { PrismaService } from "../../prisma/prisma.service";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class CatalogService {
@@ -70,7 +70,9 @@ export class CatalogService {
           variants: { include: { inventory: true } },
           media: { orderBy: { position: "asc" } },
           metafields: true,
-          collections: { include: { collection: { include: { translations: true } } } },
+          collections: {
+            include: { collection: { include: { translations: true } } },
+          },
         },
         orderBy: { updatedAt: "desc" },
         take,

@@ -1,11 +1,11 @@
 import { Controller, Get, Param, Post, Query } from "@nestjs/common";
 import {
-  CurrentUser,
   type AuthUser,
-} from "../../common/decorators/current-user.decorator";
-import { Roles } from "../../common/decorators/roles.decorator";
-import { PaymentsService } from "../payments/payments.service";
-import { OrdersService } from "./orders.service";
+  CurrentUser,
+} from "../../common/decorators/current-user.decorator.js";
+import { Roles } from "../../common/decorators/roles.decorator.js";
+import type { PaymentsService } from "../payments/payments.service.js";
+import type { OrdersService } from "./orders.service.js";
 
 @Controller("admin/orders")
 export class OrdersController {

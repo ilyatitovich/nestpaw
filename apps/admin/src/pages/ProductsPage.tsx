@@ -38,7 +38,9 @@ export function ProductsPage() {
             </thead>
             <tbody>
               {(products.data?.items ?? []).map((p) => {
-                const t = p.translations.find((x) => x.locale === "en") ?? p.translations[0];
+                const t =
+                  p.translations.find((x) => x.locale === "en") ??
+                  p.translations[0];
                 const v = p.variants[0];
                 return (
                   <tr key={p.id}>

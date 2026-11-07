@@ -1,13 +1,7 @@
-import {
-  BadRequestException,
-  Injectable,
-} from "@nestjs/common";
-import {
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
-import { PrismaService } from "../../prisma/prisma.service";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import type { PrismaService } from "../../prisma/prisma.service.js";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -72,7 +66,12 @@ export class MediaService {
     });
   }
 
-  async attachToProduct(productId: string, url: string, alt = "", position = 0) {
+  async attachToProduct(
+    productId: string,
+    url: string,
+    alt = "",
+    position = 0,
+  ) {
     return this.prisma.productMedia.create({
       data: { productId, url, alt, position },
     });
