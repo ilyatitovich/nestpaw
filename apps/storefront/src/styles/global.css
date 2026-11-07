@@ -87,7 +87,7 @@ a {
   gap: 0.35rem;
 }
 
-.site-header__menu-toggle {
+button.site-header__menu-toggle {
   display: none;
   border: 0;
   background: transparent;
@@ -1209,7 +1209,7 @@ a {
     gap: var(--space-3);
   }
 
-  .site-header__menu-toggle {
+  button.site-header__menu-toggle {
     display: inline-flex;
   }
 
