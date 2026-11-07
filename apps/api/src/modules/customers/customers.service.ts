@@ -71,7 +71,11 @@ export class CustomersService {
   async me(customerId: string) {
     return this.prisma.customer.findUnique({
       where: { id: customerId },
-      include: { addresses: true, wishlists: true, orders: { take: 20 } },
+      include: {
+        addresses: true,
+        wishlists: true,
+        orders: { take: 20, orderBy: { createdAt: "desc" } },
+      },
     });
   }
 

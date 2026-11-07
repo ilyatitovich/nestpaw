@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { locales, t, localizePath, type Locale } from "../../i18n/ui";
+import { locales, t, localizePath, storeName, type Locale } from "../../i18n/ui";
 import { apiGet } from "../../lib/api";
 
 export function getStaticPaths() {
@@ -26,34 +26,82 @@ try {
   products = [];
 }
 
-const storeName = "Online Store";
+const dogsSlug = locale === "de" ? "hunde" : "dogs";
+const catsSlug = locale === "de" ? "katzen" : "cats";
+const smallSlug = locale === "de" ? "kleintiere" : "small-pets";
+
+const petTiles = [
+  {
+    slug: dogsSlug,
+    label: t(locale, "nav.dogs"),
+    image:
+      "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=900&q=80",
+  },
+  {
+    slug: catsSlug,
+    label: t(locale, "nav.cats"),
+    image:
+      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=900&q=80",
+  },
+  {
+    slug: smallSlug,
+    label: t(locale, "nav.smallPets"),
+    image:
+      "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=900&q=80",
+  },
+];
 ---
 
 <BaseLayout
   locale={locale}
-  title={storeName}
+  title={`${storeName} — ${t(locale, "home.headline")}`}
   description={t(locale, "home.lead")}
   canonicalPath="/"
+  ogImage="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&q=80"
   jsonLd={{
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "PetStore",
     name: storeName,
     url: Astro.site?.toString(),
+    description: t(locale, "home.lead"),
   }}
 >
   <section class="hero">
     <div class="container hero__content">
       <h1 class="hero__brand">{storeName}</h1>
+      <p class="hero__headline">{t(locale, "home.headline")}</p>
       <p class="hero__lead">{t(locale, "home.lead")}</p>
-      <a class="btn btn--primary" href={localizePath(locale, "/collections/home")}>
+      <a class="btn btn--primary" href={localizePath(locale, `/collections/${dogsSlug}`)}>
         {t(locale, "home.cta")}
       </a>
     </div>
   </section>
 
+  <div class="free-ship">
+    <div class="container">{t(locale, "home.freeShip")}</div>
+  </div>
+
   <section class="section">
     <div class="container">
-      <h2 class="section__title">{t(locale, "nav.shop")}</h2>
+      <h2 class="section__title">{t(locale, "home.shopByPet")}</h2>
+      <div class="pet-grid">
+        {
+          petTiles.map((tile) => (
+            <a class="pet-tile" href={localizePath(locale, `/collections/${tile.slug}`)}>
+              <div class="pet-tile__media">
+                <img src={tile.image} alt={tile.label} loading="lazy" />
+              </div>
+              <span class="pet-tile__label">{tile.label}</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section__title">{t(locale, "home.featured")}</h2>
       <p class="section__lead">{t(locale, "home.lead")}</p>
       <div class="product-grid">
         {
@@ -68,7 +116,9 @@ const storeName = "Online Store";
                 href={localizePath(locale, `/products/${tr?.slug}`)}
               >
                 <div class="product-card__media">
-                  {img ? <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" /> : null}
+                  {img ? (
+                    <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" />
+                  ) : null}
                 </div>
                 <h3 class="product-card__title">{tr?.title}</h3>
                 <p class="product-card__price">

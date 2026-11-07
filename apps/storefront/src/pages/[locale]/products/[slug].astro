@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { locales, t, type Locale } from "../../../i18n/ui";
+import { locales, t, localizePath, type Locale } from "../../../i18n/ui";
 import { apiGet, API_URL } from "../../../lib/api";
-import AddToCart from "@components/AddToCart";
+import AddToCart from "../../../components/AddToCart";
+import ReviewForm from "../../../components/ReviewForm";
 
 export async function getStaticPaths() {
   const paths: { params: { locale: string; slug: string } }[] = [];
@@ -16,13 +17,13 @@ export async function getStaticPaths() {
         if (tr) paths.push({ params: { locale, slug: tr.slug } });
       }
     } catch {
-      // API may be offline during build; fall back empty
+      // API may be offline during build
     }
   }
   if (!paths.length) {
     return [
-      { params: { locale: "en", slug: "ceramic-mug" } },
-      { params: { locale: "de", slug: "keramiktasse" } },
+      { params: { locale: "en", slug: "meadow-adult-dry-food" } },
+      { params: { locale: "de", slug: "wiesen-adult-trockenfutter" } },
     ];
   }
   return paths;
@@ -33,6 +34,7 @@ const slug = Astro.params.slug!;
 
 type Product = {
   id: string;
+  option1Name?: string | null;
   translations: {
     locale: string;
     title: string;
@@ -45,10 +47,11 @@ type Product = {
   variants: {
     id: string;
     price: number;
-    option1?: string;
-    inventory?: { quantity: number };
+    option1?: string | null;
+    inventory?: { quantity: number } | null;
   }[];
-  reviews?: { rating: number; body: string; authorName: string }[];
+  metafields?: { namespace: string; key: string; value: unknown }[];
+  reviews?: { rating: number; title?: string; body: string; authorName: string }[];
 };
 
 let product: Product | null = null;
@@ -63,6 +66,29 @@ const tr =
   product?.translations[0];
 const img = product?.media[0];
 const variant = product?.variants[0];
+
+function petMeta(key: string) {
+  const m = product?.metafields?.find((x) => x.namespace === "pet" && x.key === key);
+  return typeof m?.value === "string" ? m.value : null;
+}
+
+let related: {
+  id: string;
+  translations: { locale: string; title: string; slug: string }[];
+  media: { url: string; alt: string }[];
+  variants: { price: number }[];
+}[] = [];
+
+if (product) {
+  try {
+    const data = await apiGet<{ items: typeof related }>(
+      `/products/${product.id}/related?locale=${locale}&take=4`,
+    );
+    related = data.items;
+  } catch {
+    related = [];
+  }
+}
 ---
 
 {
@@ -73,19 +99,34 @@ const variant = product?.variants[0];
       description={tr.seoDescription ?? tr.description.slice(0, 160)}
       canonicalPath={`/products/${slug}`}
       ogImage={img?.url}
-      jsonLd={{
-        "@context": "https://schema.org",
-        "@type": "Product",
-        name: tr.title,
-        description: tr.description,
-        image: img?.url,
-        offers: {
-          "@type": "Offer",
-          priceCurrency: "EUR",
-          price: (variant.price / 100).toFixed(2),
-          availability: "https://schema.org/InStock",
+      jsonLd={[
+        {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: tr.title,
+          description: tr.description,
+          image: img?.url,
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "EUR",
+            price: (variant.price / 100).toFixed(2),
+            availability: "https://schema.org/InStock",
+          },
         },
-      }}
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: `/${locale}/` },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: tr.title,
+              item: `/${locale}/products/${slug}`,
+            },
+          ],
+        },
+      ]}
     >
       <div class="container pdp">
         <div class="pdp__media">
@@ -93,37 +134,105 @@ const variant = product?.variants[0];
         </div>
         <div>
           <h1 class="pdp__title">{tr.title}</h1>
-          <p class="pdp__price">€{(variant.price / 100).toFixed(2)}</p>
           <p class="pdp__desc">{tr.description}</p>
+          <div class="pdp__meta">
+            {petMeta("species") ? (
+              <div>
+                <strong>{t(locale, "product.species")}:</strong> {petMeta("species")}
+              </div>
+            ) : null}
+            {petMeta("life_stage") ? (
+              <div>
+                <strong>{t(locale, "product.lifeStage")}:</strong> {petMeta("life_stage")}
+              </div>
+            ) : null}
+            {petMeta("product_type") ? (
+              <div>
+                <strong>{t(locale, "product.type")}:</strong> {petMeta("product_type")}
+              </div>
+            ) : null}
+            {petMeta("size_class") && petMeta("size_class") !== "na" ? (
+              <div>
+                <strong>{t(locale, "product.size")}:</strong> {petMeta("size_class")}
+              </div>
+            ) : null}
+          </div>
           <AddToCart
             client:load
             apiUrl={API_URL}
-            variantId={variant.id}
+            variants={product.variants}
+            option1Name={product.option1Name}
             label={t(locale, "product.add")}
             locale={locale}
           />
-          {product.reviews?.length ? (
-            <section class="section">
-              <h2 class="section__title">Reviews</h2>
-              {product.reviews.map((r) => (
-                <p>
-                  <strong>
-                    {r.authorName} · {r.rating}/5
-                  </strong>
-                  <br />
-                  {r.body}
-                </p>
-              ))}
-            </section>
-          ) : null}
+          <section class="section" style="padding-bottom:0">
+            <h2 class="section__title" style="font-size:1.4rem">
+              {t(locale, "product.reviews")}
+            </h2>
+            {product.reviews?.length ? (
+              <div class="review-list">
+                {product.reviews.map((r) => (
+                  <div class="review-item">
+                    <strong>
+                      {r.authorName} · {r.rating}/5
+                    </strong>
+                    {r.title ? <div>{r.title}</div> : null}
+                    <p style="margin:0.35rem 0 0">{r.body}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p class="section__lead">No reviews yet.</p>
+            )}
+            <ReviewForm
+              client:load
+              apiUrl={API_URL}
+              productId={product.id}
+              label={t(locale, "product.writeReview")}
+            />
+          </section>
         </div>
       </div>
+      {related.length ? (
+        <section class="section">
+          <div class="container">
+            <h2 class="section__title">{t(locale, "product.related")}</h2>
+            <div class="product-grid">
+              {related.map((p) => {
+                const rtr =
+                  p.translations.find((x) => x.locale === locale) ?? p.translations[0];
+                const price = p.variants[0]?.price ?? 0;
+                const rimg = p.media[0];
+                return (
+                  <a
+                    class="product-card"
+                    href={localizePath(locale, `/products/${rtr?.slug}`)}
+                  >
+                    <div class="product-card__media">
+                      {rimg ? (
+                        <img src={rimg.url} alt={rimg.alt || rtr?.title || ""} loading="lazy" />
+                      ) : null}
+                    </div>
+                    <h3 class="product-card__title">{rtr?.title}</h3>
+                    <p class="product-card__price">
+                      {t(locale, "product.from")} €{(price / 100).toFixed(2)}
+                    </p>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </BaseLayout>
   ) : (
     <BaseLayout locale={locale} title="Not found" canonicalPath={`/products/${slug}`}>
-      <div class="container section">
-        <h1>Product unavailable</h1>
-        <p>Start the API and rebuild, or open an active product from the catalog.</p>
+      <div class="container section empty-state">
+        <h1 class="section__title">{t(locale, "404.title")}</h1>
+        <p class="section__lead">{t(locale, "404.lead")}</p>
+        <a class="btn btn--primary" href={localizePath(locale, "/shop")}>
+          {t(locale, "404.cta")}
+        </a>
       </div>
     </BaseLayout>
   )

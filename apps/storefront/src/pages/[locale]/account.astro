@@ -2,7 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { locales, t, type Locale } from "../../i18n/ui";
 import { API_URL } from "../../lib/api";
-import AccountClient from "@components/AccountClient";
+import AccountClient from "../../components/AccountClient";
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -12,8 +12,16 @@ const locale = Astro.params.locale as Locale;
 ---
 
 <BaseLayout locale={locale} title={t(locale, "account.login")} canonicalPath="/account">
-  <div class="container section" style="max-width:28rem">
+  <div class="container section" style="max-width:36rem">
     <h1 class="section__title">{t(locale, "account.login")}</h1>
-    <AccountClient client:load apiUrl={API_URL} />
+    <AccountClient
+      client:load
+      apiUrl={API_URL}
+      labels={{
+        orders: t(locale, "account.orders"),
+        logout: t(locale, "account.logout"),
+        noOrders: t(locale, "account.noOrders"),
+      }}
+    />
   </div>
 </BaseLayout>

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
 } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator";
@@ -33,6 +34,20 @@ export class CatalogController {
       take: take ? Number(take) : undefined,
       skip: skip ? Number(skip) : undefined,
     });
+  }
+
+  @Public()
+  @Get("products/:id/related")
+  related(
+    @Param("id") id: string,
+    @Query("locale") locale = "en",
+    @Query("take") take?: string,
+  ) {
+    return this.catalog.relatedProducts(
+      id,
+      locale,
+      take ? Number(take) : 4,
+    );
   }
 
   @Public()
@@ -94,9 +109,48 @@ export class CatalogController {
     return this.catalog.listCollections(locale);
   }
 
+  @Public()
+  @Get("collections/:locale/:slug")
+  collectionBySlug(
+    @Param("locale") locale: string,
+    @Param("slug") slug: string,
+  ) {
+    return this.catalog.getCollectionBySlug(locale, slug);
+  }
+
+  @Roles("owner", "staff")
+  @Get("admin/collections")
+  listAdminCollections() {
+    return this.catalog.listCollections();
+  }
+
+  @Roles("owner", "staff")
+  @Get("admin/collections/:id")
+  getAdminCollection(@Param("id") id: string) {
+    return this.catalog.getCollection(id);
+  }
+
   @Roles("owner", "staff")
   @Post("admin/collections")
   createCollection(@Body() body: unknown) {
     return this.catalog.createCollection(body);
+  }
+
+  @Roles("owner", "staff")
+  @Patch("admin/collections/:id")
+  updateCollection(@Param("id") id: string, @Body() body: unknown) {
+    return this.catalog.updateCollection(id, body);
+  }
+
+  @Roles("owner", "staff")
+  @Delete("admin/collections/:id")
+  deleteCollection(@Param("id") id: string) {
+    return this.catalog.deleteCollection(id);
+  }
+
+  @Roles("owner", "staff")
+  @Put("admin/collections/:id/products")
+  setCollectionProducts(@Param("id") id: string, @Body() body: unknown) {
+    return this.catalog.setCollectionProducts(id, body);
   }
 }

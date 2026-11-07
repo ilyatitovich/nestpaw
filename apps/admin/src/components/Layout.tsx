@@ -4,6 +4,7 @@ import { useAuth } from "../auth";
 const links = [
   ["/", "Dashboard"],
   ["/products", "Products"],
+  ["/categories", "Categories"],
   ["/inventory", "Inventory"],
   ["/orders", "Orders"],
   ["/customers", "Customers"],
@@ -19,7 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin-shell">
       <aside className="admin-nav">
-        <p className="admin-nav__brand">Store Admin</p>
+        <p className="admin-nav__brand">Nestpaw Admin</p>
         <ul className="admin-nav__list">
           {links.map(([to, label]) => (
             <li key={to}>

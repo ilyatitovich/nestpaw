@@ -2,10 +2,13 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   CreateCollectionSchema,
   CreateProductSchema,
+  SetCollectionProductsSchema,
+  UpdateCollectionSchema,
 } from "@online-store/shared-types";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -67,6 +70,7 @@ export class CatalogService {
           variants: { include: { inventory: true } },
           media: { orderBy: { position: "asc" } },
           metafields: true,
+          collections: { include: { collection: { include: { translations: true } } } },
         },
         orderBy: { updatedAt: "desc" },
         take,
@@ -87,6 +91,9 @@ export class CatalogService {
             variants: { include: { inventory: true } },
             media: { orderBy: { position: "asc" } },
             metafields: true,
+            collections: {
+              include: { collection: { include: { translations: true } } },
+            },
             reviews: {
               where: { status: "approved" },
               orderBy: { createdAt: "desc" },
@@ -112,6 +119,9 @@ export class CatalogService {
         variants: { include: { inventory: true } },
         media: { orderBy: { position: "asc" } },
         metafields: true,
+        collections: {
+          include: { collection: { include: { translations: true } } },
+        },
       },
     });
     if (!product) throw new NotFoundException("Product not found");
@@ -153,11 +163,30 @@ export class CatalogService {
                 })),
               }
             : undefined,
+          media: data.media
+            ? {
+                create: data.media.map((m, i) => ({
+                  url: m.url,
+                  alt: m.alt,
+                  position: m.position ?? i,
+                })),
+              }
+            : undefined,
+          collections: data.collectionIds
+            ? {
+                create: data.collectionIds.map((collectionId, position) => ({
+                  collectionId,
+                  position,
+                })),
+              }
+            : undefined,
         },
         include: {
           translations: true,
           variants: { include: { inventory: true } },
+          media: true,
           metafields: true,
+          collections: true,
         },
       });
     } catch (e) {
@@ -188,6 +217,78 @@ export class CatalogService {
         }
       }
 
+      if (data.metafields) {
+        await tx.metafield.deleteMany({ where: { productId: id } });
+        if (data.metafields.length) {
+          await tx.metafield.createMany({
+            data: data.metafields.map((m) => ({
+              productId: id,
+              namespace: m.namespace,
+              key: m.key,
+              type: m.type,
+              value: m.value as Prisma.InputJsonValue,
+            })),
+          });
+        }
+      }
+
+      if (data.media) {
+        await tx.productMedia.deleteMany({ where: { productId: id } });
+        if (data.media.length) {
+          await tx.productMedia.createMany({
+            data: data.media.map((m, i) => ({
+              productId: id,
+              url: m.url,
+              alt: m.alt,
+              position: m.position ?? i,
+            })),
+          });
+        }
+      }
+
+      if (data.collectionIds) {
+        await tx.collectionProduct.deleteMany({ where: { productId: id } });
+        if (data.collectionIds.length) {
+          await tx.collectionProduct.createMany({
+            data: data.collectionIds.map((collectionId, position) => ({
+              productId: id,
+              collectionId,
+              position,
+            })),
+          });
+        }
+      }
+
+      if (data.variants?.length) {
+        for (const v of data.variants) {
+          const existing = await tx.productVariant.findFirst({
+            where: { productId: id, sku: v.sku },
+          });
+          if (existing) {
+            await tx.productVariant.update({
+              where: { id: existing.id },
+              data: {
+                price: v.price,
+                compareAtPrice: v.compareAtPrice,
+                option1: v.option1,
+                option2: v.option2,
+                option3: v.option3,
+                weightGrams: v.weightGrams,
+              },
+            });
+            await tx.inventoryItem.upsert({
+              where: { variantId: existing.id },
+              create: {
+                variantId: existing.id,
+                quantity: v.stock,
+                policy: v.stockPolicy,
+              },
+              update: { quantity: v.stock, policy: v.stockPolicy },
+            });
+          }
+        }
+      }
+
       return tx.product.update({
         where: { id },
         data: {
@@ -201,6 +302,9 @@ export class CatalogService {
           variants: { include: { inventory: true } },
           media: true,
           metafields: true,
+          collections: {
+            include: { collection: { include: { translations: true } } },
+          },
         },
       });
     });
@@ -214,45 +318,179 @@ export class CatalogService {
     });
   }
 
-  async listCollections(locale?: string) {
-    return this.prisma.collection.findMany({
-      include: {
-        translations: locale ? { where: { locale } } : true,
-        products: {
-          include: {
-            product: {
-              include: {
-                translations: true,
-                media: { take: 1, orderBy: { position: "asc" } },
-                variants: { take: 1, include: { inventory: true } },
-              },
-            },
-          },
-          orderBy: { position: "asc" },
+  private collectionInclude(locale?: string): Prisma.CollectionInclude {
+    return {
+      translations: locale ? { where: { locale } } : true,
+      children: {
+        include: {
+          translations: locale ? { where: { locale } } : true,
+          _count: { select: { products: true, children: true } },
         },
       },
-      orderBy: { createdAt: "desc" },
+      _count: { select: { products: true, children: true } },
+      products: {
+        include: {
+          product: {
+            include: {
+              translations: true,
+              media: { take: 1, orderBy: { position: "asc" as const } },
+              variants: { take: 1, include: { inventory: true } },
+              metafields: true,
+            },
+          },
+        },
+        orderBy: { position: "asc" as const },
+      },
+    };
+  }
+
+  async listCollections(locale?: string) {
+    return this.prisma.collection.findMany({
+      include: this.collectionInclude(locale),
+      orderBy: { createdAt: "asc" },
     });
+  }
+
+  async getCollection(id: string) {
+    const collection = await this.prisma.collection.findUnique({
+      where: { id },
+      include: this.collectionInclude(),
+    });
+    if (!collection) throw new NotFoundException("Collection not found");
+    return collection;
+  }
+
+  async getCollectionBySlug(locale: string, slug: string) {
+    const translation = await this.prisma.collectionTranslation.findUnique({
+      where: { locale_slug: { locale, slug } },
+    });
+    if (!translation) throw new NotFoundException("Collection not found");
+    return this.getCollection(translation.collectionId);
   }
 
   async createCollection(input: unknown) {
     const data = CreateCollectionSchema.parse(input);
-    return this.prisma.collection.create({
-      data: {
-        translations: { create: data.translations },
-        products: {
-          create: data.productIds.map((productId, position) => ({
-            productId,
-            position,
-          })),
+    if (data.parentId) {
+      const parent = await this.prisma.collection.findUnique({
+        where: { id: data.parentId },
+      });
+      if (!parent) throw new BadRequestException("Parent collection not found");
+    }
+    try {
+      return await this.prisma.collection.create({
+        data: {
+          parentId: data.parentId ?? null,
+          translations: { create: data.translations },
+          products: {
+            create: data.productIds.map((productId, position) => ({
+              productId,
+              position,
+            })),
+          },
         },
-      },
-      include: { translations: true, products: true },
+        include: this.collectionInclude(),
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2002"
+      ) {
+        throw new ConflictException("Collection slug already exists");
+      }
+      throw e;
+    }
+  }
+
+  async updateCollection(id: string, input: unknown) {
+    const data = UpdateCollectionSchema.parse(input);
+    await this.getCollection(id);
+    if (data.parentId === id) {
+      throw new BadRequestException("Collection cannot be its own parent");
+    }
+    if (data.parentId) {
+      const parent = await this.prisma.collection.findUnique({
+        where: { id: data.parentId },
+      });
+      if (!parent) throw new BadRequestException("Parent collection not found");
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (data.translations) {
+        for (const t of data.translations) {
+          await tx.collectionTranslation.upsert({
+            where: {
+              collectionId_locale: { collectionId: id, locale: t.locale },
+            },
+            create: { collectionId: id, ...t },
+            update: t,
+          });
+        }
+      }
+      return tx.collection.update({
+        where: { id },
+        data: {
+          ...(data.parentId !== undefined ? { parentId: data.parentId } : {}),
+        },
+        include: this.collectionInclude(),
+      });
     });
   }
 
+  async deleteCollection(id: string) {
+    await this.getCollection(id);
+    await this.prisma.collection.delete({ where: { id } });
+    return { ok: true };
+  }
+
+  async setCollectionProducts(id: string, input: unknown) {
+    const data = SetCollectionProductsSchema.parse(input);
+    await this.getCollection(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.collectionProduct.deleteMany({ where: { collectionId: id } });
+      if (data.productIds.length) {
+        await tx.collectionProduct.createMany({
+          data: data.productIds.map((productId, position) => ({
+            collectionId: id,
+            productId,
+            position,
+          })),
+        });
+      }
+    });
+    return this.getCollection(id);
+  }
+
   async search(q: string, locale = "en") {
-    // ponytail: Postgres ILIKE until Meilisearch needed
     return this.listProducts({ q, locale, status: "active" });
+  }
+
+  async relatedProducts(productId: string, locale: string, take = 4) {
+    const memberships = await this.prisma.collectionProduct.findMany({
+      where: { productId },
+      select: { collectionId: true },
+    });
+    if (!memberships.length) {
+      return this.listProducts({ locale, status: "active", take });
+    }
+    const items = await this.prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        status: "active",
+        id: { not: productId },
+        collections: {
+          some: {
+            collectionId: { in: memberships.map((m) => m.collectionId) },
+          },
+        },
+      },
+      include: {
+        translations: true,
+        media: { take: 1, orderBy: { position: "asc" } },
+        variants: { take: 1 },
+        metafields: true,
+      },
+      take,
+    });
+    return { items, total: items.length };
   }
 }

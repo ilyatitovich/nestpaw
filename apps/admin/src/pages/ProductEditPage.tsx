@@ -3,6 +3,50 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 
+type Translation = {
+  locale: string;
+  title: string;
+  slug: string;
+  description: string;
+};
+type Collection = {
+  id: string;
+  translations: { locale: string; title: string }[];
+};
+type Product = {
+  status: string;
+  translations: Translation[];
+  variants: {
+    sku: string;
+    price: number;
+    inventory?: { quantity: number };
+  }[];
+  media: { url: string; alt: string }[];
+  metafields: { namespace: string; key: string; value: unknown }[];
+  collections: { collectionId: string }[];
+};
+
+const SPECIES = ["dog", "cat", "small_pet"] as const;
+const LIFE_STAGES = ["puppy_kitten", "adult", "senior", "all"] as const;
+const PRODUCT_TYPES = [
+  "food",
+  "treats",
+  "toys",
+  "care",
+  "litter",
+  "beds_travel",
+  "bowls",
+] as const;
+const SIZE_CLASSES = ["xs", "s", "m", "l", "xl", "na"] as const;
+
+function metaValue(
+  metafields: Product["metafields"] | undefined,
+  key: string,
+): string {
+  const m = metafields?.find((x) => x.namespace === "pet" && x.key === key);
+  return typeof m?.value === "string" ? m.value : "";
+}
+
 export function ProductEditPage() {
   const { id } = useParams();
   const isNew = !id || id === "new";
@@ -12,7 +56,11 @@ export function ProductEditPage() {
   const existing = useQuery({
     queryKey: ["product", id],
     enabled: !isNew,
-    queryFn: () => api.get<Record<string, unknown>>(`/admin/products/${id}`),
+    queryFn: () => api.get<Product>(`/admin/products/${id}`),
+  });
+  const collections = useQuery({
+    queryKey: ["admin-collections"],
+    queryFn: () => api.get<Collection[]>("/admin/collections"),
   });
 
   const [titleEn, setTitleEn] = useState("");
@@ -24,14 +72,17 @@ export function ProductEditPage() {
   const [price, setPrice] = useState("19.99");
   const [stock, setStock] = useState("10");
   const [status, setStatus] = useState("draft");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageAlt, setImageAlt] = useState("");
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
+  const [species, setSpecies] = useState("dog");
+  const [lifeStage, setLifeStage] = useState("all");
+  const [productType, setProductType] = useState("food");
+  const [sizeClass, setSizeClass] = useState("na");
 
   useEffect(() => {
     if (!existing.data) return;
-    const p = existing.data as {
-      status: string;
-      translations: { locale: string; title: string; slug: string; description: string }[];
-      variants: { sku: string; price: number; inventory?: { quantity: number } }[];
-    };
+    const p = existing.data;
     const en = p.translations.find((t) => t.locale === "en");
     const de = p.translations.find((t) => t.locale === "de");
     setTitleEn(en?.title ?? "");
@@ -46,6 +97,16 @@ export function ProductEditPage() {
       setPrice((v.price / 100).toFixed(2));
       setStock(String(v.inventory?.quantity ?? 0));
     }
+    const img = p.media[0];
+    if (img) {
+      setImageUrl(img.url);
+      setImageAlt(img.alt);
+    }
+    setCollectionIds(p.collections.map((c) => c.collectionId));
+    setSpecies(metaValue(p.metafields, "species") || "dog");
+    setLifeStage(metaValue(p.metafields, "life_stage") || "all");
+    setProductType(metaValue(p.metafields, "product_type") || "food");
+    setSizeClass(metaValue(p.metafields, "size_class") || "na");
   }, [existing.data]);
 
   const save = useMutation({
@@ -74,6 +135,31 @@ export function ProductEditPage() {
             stockPolicy: "deny" as const,
           },
         ],
+        collectionIds,
+        media: imageUrl
+          ? [{ url: imageUrl, alt: imageAlt || titleEn, position: 0 }]
+          : [],
+        metafields: [
+          { namespace: "pet", key: "species", type: "string" as const, value: species },
+          {
+            namespace: "pet",
+            key: "life_stage",
+            type: "string" as const,
+            value: lifeStage,
+          },
+          {
+            namespace: "pet",
+            key: "product_type",
+            type: "string" as const,
+            value: productType,
+          },
+          {
+            namespace: "pet",
+            key: "size_class",
+            type: "string" as const,
+            value: sizeClass,
+          },
+        ],
       };
       if (isNew) return api.post("/admin/products", payload);
       return api.patch(`/admin/products/${id}`, payload);
@@ -84,6 +170,12 @@ export function ProductEditPage() {
       navigate(`/products/${created.id ?? id}`);
     },
   });
+
+  function toggleCollection(cid: string) {
+    setCollectionIds((prev) =>
+      prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid],
+    );
+  }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -106,7 +198,11 @@ export function ProductEditPage() {
         </label>
         <label>
           Title (EN)
-          <input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} required />
+          <input
+            value={titleEn}
+            onChange={(e) => setTitleEn(e.target.value)}
+            required
+          />
         </label>
         <label>
           Title (DE)
@@ -134,18 +230,113 @@ export function ProductEditPage() {
         </label>
         <label>
           Price (EUR)
-          <input value={price} onChange={(e) => setPrice(e.target.value)} required />
+          <input
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+          />
         </label>
         <label>
           Stock
-          <input value={stock} onChange={(e) => setStock(e.target.value)} required />
+          <input
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            required
+          />
         </label>
+        <label>
+          Image URL
+          <input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://images.unsplash.com/..."
+          />
+        </label>
+        <label>
+          Image alt
+          <input
+            value={imageAlt}
+            onChange={(e) => setImageAlt(e.target.value)}
+          />
+        </label>
+        <label>
+          Species
+          <select value={species} onChange={(e) => setSpecies(e.target.value)}>
+            {SPECIES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Life stage
+          <select
+            value={lifeStage}
+            onChange={(e) => setLifeStage(e.target.value)}
+          >
+            {LIFE_STAGES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Product type
+          <select
+            value={productType}
+            onChange={(e) => setProductType(e.target.value)}
+          >
+            {PRODUCT_TYPES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Size class
+          <select
+            value={sizeClass}
+            onChange={(e) => setSizeClass(e.target.value)}
+          >
+            {SIZE_CLASSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <fieldset>
+          <legend>Categories</legend>
+          <div className="admin-checklist">
+            {(collections.data ?? []).map((c) => {
+              const t =
+                c.translations.find((x) => x.locale === "en") ??
+                c.translations[0];
+              return (
+                <label key={c.id} className="admin-check">
+                  <input
+                    type="checkbox"
+                    checked={collectionIds.includes(c.id)}
+                    onChange={() => toggleCollection(c.id)}
+                  />
+                  {t?.title ?? c.id}
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
         {save.isError ? (
           <p style={{ color: "var(--danger)" }}>
             {(save.error as Error).message}
           </p>
         ) : null}
-        <button className="admin-btn admin-btn--primary" disabled={save.isPending}>
+        <button
+          className="admin-btn admin-btn--primary"
+          disabled={save.isPending}
+        >
           Save
         </button>
       </form>

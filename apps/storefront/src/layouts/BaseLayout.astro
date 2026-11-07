@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import { t, localizePath, type Locale } from "../i18n/ui";
+import { t, localizePath, storeName, type Locale } from "../i18n/ui";
 
 interface Props {
   title: string;
@@ -13,7 +13,7 @@ interface Props {
 
 const {
   title,
-  description = "Small-batch goods for everyday life",
+  description = "Everyday essentials for dogs, cats, and small pets",
   locale,
   canonicalPath = "/",
   ogImage,
@@ -22,10 +22,12 @@ const {
 
 const site = Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
 const canonical = `${site}${localizePath(locale, canonicalPath)}`;
-const storeName = "Online Store";
 const provider = import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? "plausible";
 const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;
 const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
+const dogsSlug = locale === "de" ? "hunde" : "dogs";
+const catsSlug = locale === "de" ? "katzen" : "cats";
+const smallSlug = locale === "de" ? "kleintiere" : "small-pets";
 ---
 
 <!doctype html>
@@ -48,7 +50,7 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Source+Sans+3:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Outfit:wght@500;650;700&display=swap"
       rel="stylesheet"
     />
     {jsonLd ? (
@@ -81,17 +83,26 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
         <div class="container site-header__inner">
           <a class="site-header__brand" href={localizePath(locale, "/")}>{storeName}</a>
           <nav class="site-nav" aria-label="Primary">
-            <a class="site-nav__link" href={localizePath(locale, "/collections/home")}>
+            <a class="site-nav__link" href={localizePath(locale, `/collections/${dogsSlug}`)}>
+              {t(locale, "nav.dogs")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, `/collections/${catsSlug}`)}>
+              {t(locale, "nav.cats")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, `/collections/${smallSlug}`)}>
+              {t(locale, "nav.smallPets")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, "/shop")}>
               {t(locale, "nav.shop")}
             </a>
-            <a class="site-nav__link" href={localizePath(locale, "/pages/about")}>
-              {t(locale, "nav.about")}
+            <a class="site-nav__link" href={localizePath(locale, "/search")}>
+              {t(locale, "nav.search")}
             </a>
             <a class="site-nav__link" href={localizePath(locale, "/cart")}>
               {t(locale, "nav.cart")}
             </a>
             <a class="site-nav__link" href={localizePath(locale, "/account")}>
-              {t(locale, "account.login")}
+              {t(locale, "nav.account")}
             </a>
             <div class="locale-switch">
               <a class={`locale-switch__btn ${locale === "en" ? "is-active" : ""}`} href="/en/">EN</a>
@@ -105,8 +116,15 @@ const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
       </main>
       <footer class="site-footer">
         <div class="container site-footer__inner">
-          <span>{storeName}</span>
-          <a href={localizePath(locale, "/pages/privacy")}>{t(locale, "footer.privacy")}</a>
+          <span class="site-footer__brand">{storeName}</span>
+          <div class="site-footer__links">
+            <a href={localizePath(locale, "/pages/about")}>{t(locale, "footer.about")}</a>
+            <a href={localizePath(locale, "/pages/shipping")}>{t(locale, "footer.shipping")}</a>
+            <a href={localizePath(locale, "/pages/returns")}>{t(locale, "footer.returns")}</a>
+            <a href={localizePath(locale, "/pages/privacy")}>{t(locale, "footer.privacy")}</a>
+            <a href={localizePath(locale, "/pages/terms")}>{t(locale, "footer.terms")}</a>
+            <a href={localizePath(locale, "/pages/contact")}>{t(locale, "footer.contact")}</a>
+          </div>
         </div>
       </footer>
     </div>

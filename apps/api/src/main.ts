@@ -22,11 +22,28 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalFilters(new ZodExceptionFilter());
 
-  const origins = (process.env.CORS_ORIGINS ?? "http://localhost:4321")
-    .split(",")
-    .map((o) => o.trim());
+  const allowedOrigins = new Set(
+    (process.env.CORS_ORIGINS ?? "http://localhost:4321")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
+  );
+  const isDev = process.env.NODE_ENV !== "production";
+  const localhostOrigin =
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
   app.enableCors({
-    origin: origins,
+    origin: (origin, callback) => {
+      // Non-browser / same-origin requests omit Origin.
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (allowedOrigins.has(origin) || (isDev && localhostOrigin.test(origin))) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
   });
 

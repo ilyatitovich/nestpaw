@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { locales, t, type Locale } from "../../i18n/ui";
+import { API_URL } from "../../lib/api";
+import SearchClient from "../../components/SearchClient";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+---
+
+<BaseLayout
+  locale={locale}
+  title={t(locale, "search.title")}
+  description={t(locale, "search.placeholder")}
+  canonicalPath="/search"
+>
+  <section class="section">
+    <div class="container">
+      <h1 class="section__title">{t(locale, "search.title")}</h1>
+      <SearchClient
+        client:load
+        apiUrl={API_URL}
+        locale={locale}
+        labels={{
+          placeholder: t(locale, "search.placeholder"),
+          submit: t(locale, "search.submit"),
+          empty: t(locale, "search.empty"),
+          from: t(locale, "product.from"),
+        }}
+      />
+    </div>
+  </section>
+</BaseLayout>

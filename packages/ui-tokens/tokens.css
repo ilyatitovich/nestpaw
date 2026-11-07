@@ -1,16 +1,17 @@
 :root {
-  --color-bg: #f7f4ef;
-  --color-bg-elevated: #fffdf9;
-  --color-ink: #1a1a1a;
-  --color-ink-muted: #5c5c5c;
-  --color-brand: #0f4c3a;
-  --color-brand-hover: #0a3428;
-  --color-accent: #c45c26;
-  --color-border: #e2ddd4;
+  --color-bg: #eef2f4;
+  --color-bg-elevated: #ffffff;
+  --color-ink: #0b1f1c;
+  --color-ink-muted: #4a5c58;
+  --color-brand: #12352f;
+  --color-brand-hover: #0c2420;
+  --color-accent: #f0a202;
+  --color-accent-ink: #1a1400;
+  --color-border: #d5dee0;
   --color-danger: #b42318;
   --color-success: #067647;
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+  --font-display: "Outfit", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -19,7 +20,8 @@
   --space-6: 2rem;
   --space-8: 3rem;
   --radius-sm: 4px;
-  --radius-md: 8px;
+  --radius-md: 10px;
   --max-width: 72rem;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 6%);
+  --shadow-sm: 0 1px 2px rgb(11 31 28 / 6%);
+  --free-ship-threshold: 4900;
 }

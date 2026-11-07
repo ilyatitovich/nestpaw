@@ -1,36 +1,93 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { t, localizePath, type Locale } from "../../../i18n/ui";
+import { locales, t, localizePath, type Locale } from "../../../i18n/ui";
 import { apiGet } from "../../../lib/api";
+import ProductFilters from "../../../components/ProductFilters";
 
-export function getStaticPaths() {
-  return [
-    { params: { locale: "en", slug: "home" } },
-    { params: { locale: "de", slug: "zuhause" } },
-    { params: { locale: "de", slug: "home" } },
-  ];
+export async function getStaticPaths() {
+  const seen = new Set<string>();
+  const paths: { params: { locale: string; slug: string } }[] = [];
+  const push = (locale: string, slug: string) => {
+    const key = `${locale}:${slug}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    paths.push({ params: { locale, slug } });
+  };
+  for (const locale of locales) {
+    try {
+      const collections = await apiGet<
+        {
+          translations: { locale: string; slug: string }[];
+          children?: { translations: { locale: string; slug: string }[] }[];
+        }[]
+      >(`/collections?locale=${locale}`);
+      for (const c of collections) {
+        const tr = c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+        if (tr?.slug) push(locale, tr.slug);
+        for (const child of c.children ?? []) {
+          const ctr =
+            child.translations.find((x) => x.locale === locale) ??
+            child.translations[0];
+          if (ctr?.slug) push(locale, ctr.slug);
+        }
+      }
+    } catch {
+      // API offline during build
+    }
+  }
+  if (!paths.length) {
+    for (const locale of locales) {
+      for (const slug of ["dogs", "cats", "small-pets", "hunde", "katzen", "kleintiere"]) {
+        push(locale, slug);
+      }
+    }
+  }
+  return paths;
 }
 
 const locale = Astro.params.locale as Locale;
 const slug = Astro.params.slug!;
 
-type ProductList = {
-  items: {
-    translations: { locale: string; title: string; slug: string }[];
-    media: { url: string; alt: string }[];
-    variants: { price: number }[];
+type Collection = {
+  id: string;
+  translations: { locale: string; title: string; slug: string; description: string }[];
+  children?: {
+    id: string;
+    translations: { locale: string; title: string; slug: string; description: string }[];
+  }[];
+  products?: {
+    product: {
+      id: string;
+      translations: { locale: string; title: string; slug: string }[];
+      media: { url: string; alt: string }[];
+      variants: { price: number }[];
+      metafields?: { namespace: string; key: string; value: unknown }[];
+    };
   }[];
 };
 
-let products: ProductList["items"] = [];
+let collection: Collection | null = null;
 try {
-  const data = await apiGet<ProductList>(
-    `/products?locale=${locale}&collection=${slug}&take=24`,
-  );
-  products = data.items;
+  collection = await apiGet<Collection>(`/collections/${locale}/${slug}`);
 } catch {
+  collection = null;
+}
+
+const tr =
+  collection?.translations.find((x) => x.locale === locale) ??
+  collection?.translations[0];
+
+const children = collection?.children ?? [];
+const isHub = children.length > 0;
+
+let products =
+  collection?.products?.map((cp) => cp.product).filter(Boolean) ?? [];
+
+if (!products.length) {
   try {
-    const data = await apiGet<ProductList>(`/products?locale=${locale}&take=24`);
+    const data = await apiGet<{
+      items: typeof products;
+    }>(`/products?locale=${locale}&collection=${slug}&take=48`);
     products = data.items;
   } catch {
     products = [];
@@ -38,29 +95,71 @@ try {
 }
 ---
 
-<BaseLayout locale={locale} title={slug} canonicalPath={`/collections/${slug}`}>
+<BaseLayout
+  locale={locale}
+  title={tr?.title ?? slug}
+  description={tr?.description || t(locale, "home.lead")}
+  canonicalPath={`/collections/${slug}`}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `/${locale}/` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: tr?.title ?? slug,
+        item: `/${locale}/collections/${slug}`,
+      },
+    ],
+  }}
+>
   <section class="section">
     <div class="container">
-      <h1 class="section__title">{t(locale, "nav.shop")}</h1>
-      <div class="product-grid">
-        {
-          products.map((p) => {
-            const tr =
-              p.translations.find((x) => x.locale === locale) ?? p.translations[0];
-            const price = p.variants[0]?.price ?? 0;
-            const img = p.media[0];
-            return (
-              <a class="product-card" href={localizePath(locale, `/products/${tr?.slug}`)}>
-                <div class="product-card__media">
-                  {img ? <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" /> : null}
-                </div>
-                <h2 class="product-card__title">{tr?.title}</h2>
-                <p class="product-card__price">€{(price / 100).toFixed(2)}</p>
-              </a>
-            );
-          })
-        }
-      </div>
+      <h1 class="section__title">{tr?.title ?? slug}</h1>
+      {tr?.description ? <p class="section__lead">{tr.description}</p> : null}
+
+      {
+        isHub ? (
+          <>
+            <h2 class="section__title" style="font-size:1.35rem">
+              {t(locale, "collection.children")}
+            </h2>
+            <div class="collection-children">
+              {children.map((child) => {
+                const ctr =
+                  child.translations.find((x) => x.locale === locale) ??
+                  child.translations[0];
+                return (
+                  <a
+                    class="collection-child"
+                    href={localizePath(locale, `/collections/${ctr?.slug}`)}
+                  >
+                    <p class="collection-child__title">{ctr?.title}</p>
+                    <p class="collection-child__desc">{ctr?.description}</p>
+                  </a>
+                );
+              })}
+            </div>
+            <h2 class="section__title" style="font-size:1.35rem">
+              {t(locale, "collection.shop")}
+            </h2>
+          </>
+        ) : null
+      }
+
+      <ProductFilters
+        client:load
+        locale={locale}
+        products={products}
+        labels={{
+          sort: t(locale, "shop.sort"),
+          filterLife: t(locale, "shop.filterLife"),
+          filterType: t(locale, "shop.filterType"),
+          all: t(locale, "shop.all"),
+          from: t(locale, "product.from"),
+        }}
+      />
     </div>
   </section>
 </BaseLayout>

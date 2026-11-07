@@ -2,7 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { locales, t, type Locale } from "../../i18n/ui";
 import { API_URL } from "../../lib/api";
-import CartClient from "@components/CartClient";
+import CartClient from "../../components/CartClient";
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -25,6 +25,8 @@ const locale = Astro.params.locale as Locale;
         apply: t(locale, "cart.apply"),
         shipping: t(locale, "cart.shipping"),
         remove: t(locale, "cart.remove"),
+        freeShipProgress: t(locale, "cart.freeShipProgress"),
+        freeShipUnlocked: t(locale, "cart.freeShipUnlocked"),
       }}
       storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
     />

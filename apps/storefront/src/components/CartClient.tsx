@@ -42,8 +42,12 @@ type Props = {
     apply: string;
     shipping: string;
     remove: string;
+    freeShipProgress: string;
+    freeShipUnlocked: string;
   };
 };
+
+const FREE_SHIP_THRESHOLD = 4900;
 
 const emptyShipping = (): ShippingForm => ({
   firstName: "",
@@ -187,8 +191,18 @@ export default function CartClient({
   if (!cart) return <p>{error ?? "…"}</p>;
   if (!cart.lines.length) return <p>{labels.empty}</p>;
 
+  const remaining = Math.max(0, FREE_SHIP_THRESHOLD - cart.totals.subtotal);
+  const freeShipMsg =
+    remaining === 0
+      ? labels.freeShipUnlocked
+      : labels.freeShipProgress.replace(
+          "{amount}",
+          (remaining / 100).toFixed(2),
+        );
+
   return (
     <div>
+      <p className="cart__freeship">{freeShipMsg}</p>
       {cart.lines.map((line) => {
         const title =
           line.variant.product.translations.find((t) => t.locale === locale)

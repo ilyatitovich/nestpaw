@@ -43,6 +43,12 @@ export const ProductTranslationSchema = z.object({
   seoDescription: z.string().max(500).optional(),
 });
 
+export const ProductMediaInputSchema = z.object({
+  url: z.string().url().max(2000),
+  alt: z.string().max(200).default(""),
+  position: z.number().int().nonnegative().default(0),
+});
+
 export const CreateProductSchema = z.object({
   status: z.enum(["draft", "active", "archived"]).default("draft"),
   option1Name: z.string().max(50).optional(),
@@ -75,6 +81,8 @@ export const CreateProductSchema = z.object({
       }),
     )
     .optional(),
+  collectionIds: z.array(z.string().cuid()).optional(),
+  media: z.array(ProductMediaInputSchema).optional(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 
@@ -135,19 +143,32 @@ export const CreateDiscountSchema = z.object({
   active: z.boolean().default(true),
 });
 
+export const CollectionTranslationInputSchema = z.object({
+  locale: LocaleSchema,
+  title: z.string().min(1).max(200),
+  description: z.string().max(5000).default(""),
+  slug: z.string().min(1).max(200),
+});
+
 export const CreateCollectionSchema = z.object({
-  translations: z
-    .array(
-      z.object({
-        locale: LocaleSchema,
-        title: z.string().min(1).max(200),
-        description: z.string().max(5000).default(""),
-        slug: z.string().min(1).max(200),
-      }),
-    )
-    .min(1),
+  parentId: z.string().cuid().nullable().optional(),
+  translations: z.array(CollectionTranslationInputSchema).min(1),
   productIds: z.array(z.string().cuid()).default([]),
 });
+export type CreateCollectionInput = z.infer<typeof CreateCollectionSchema>;
+
+export const UpdateCollectionSchema = z.object({
+  parentId: z.string().cuid().nullable().optional(),
+  translations: z.array(CollectionTranslationInputSchema).min(1).optional(),
+});
+export type UpdateCollectionInput = z.infer<typeof UpdateCollectionSchema>;
+
+export const SetCollectionProductsSchema = z.object({
+  productIds: z.array(z.string().cuid()),
+});
+export type SetCollectionProductsInput = z.infer<
+  typeof SetCollectionProductsSchema
+>;
 
 export const CreatePageSchema = z.object({
   status: z.enum(["draft", "published"]).default("draft"),

@@ -1,12 +1,26 @@
-# Online Store
+# Nestpaw — Online Pet Store
 
-Commerce monorepo for a small/medium single-brand store (Astro storefront, NestJS API, React admin).
+Commerce monorepo for **Nestpaw**, a DACH specialty shop for dogs, cats, and small pets (Astro storefront, NestJS API, React admin).
 
 | App | Stack | Deploy |
 |---|---|---|
 | `apps/storefront` | Astro, TypeScript, BEM CSS, i18n (`en`/`de`), SEO | CDN (Cloudflare Pages) |
 | `apps/api` | NestJS, Prisma, PostgreSQL, Redis, Stripe, BullMQ | Docker |
 | `apps/admin` | React 19, TanStack Query, Vite | Docker (nginx) |
+
+## Demo credentials
+
+- **Admin:** http://localhost:5173 — `admin@example.com` / `ChangeMe123!`
+- **Storefront:** http://localhost:4321/en/
+- **API docs:** http://localhost:3001/docs
+- **Discount:** `WELCOME10` (10%)
+- **Free shipping UX:** progress messaging from €49 (shipping rates still charged unless a free-shipping discount applies)
+
+Seed loads ~26 pet products across Dogs / Cats / Small pets with nested categories, Unsplash demo images, CMS pages (about, shipping, returns, privacy, terms, contact), and sample reviews.
+
+### Image attribution
+
+Product and hero photos are hotlinked from [Unsplash](https://unsplash.com/license) for demonstration. Replace with owned or properly licensed assets before production.
 
 ## Status
 
@@ -20,13 +34,13 @@ Commerce monorepo for a small/medium single-brand store (Astro storefront, NestJ
 - Inventory decrements atomically on pay; restock on cancel/refund of paid orders
 - Production boot refuses default/weak `JWT_ACCESS_SECRET`
 - Wishlist requires a customer JWT (no body `customerId`)
+- Admin Categories CRUD with nesting + product assignment
 
 ### Still thin / verify before real traffic
 
-- Admin CRUD depth (shipping/CMS/settings mostly list or JSON)
-- Customer account UX beyond login + `/customers/me`
+- Shipping/CMS/settings admin editors remain list-oriented
 - Observability (Sentry init only; no deep tracing)
-- Playwright critical path is opt-in in CI (`E2E_API=1`)
+- Playwright critical path is opt-in (`E2E_API=1`, `E2E_STOREFRONT=1`)
 
 ## Quick start
 
@@ -37,22 +51,25 @@ pnpm docker:up
 # Postgres :5434 · Redis :6381 (see .env.example)
 pnpm --filter @online-store/shared-types build
 pnpm --filter @online-store/api-client build
-pnpm --filter @online-store/api exec prisma migrate dev --name init
+pnpm --filter @online-store/api exec prisma migrate deploy
 pnpm db:seed
 pnpm --filter @online-store/api dev
 pnpm --filter @online-store/admin dev
 pnpm --filter @online-store/storefront dev
 ```
 
-- Storefront: http://localhost:4321
-- Admin: http://localhost:5173 (`admin@example.com` / `ChangeMe123!`)
-- API docs: http://localhost:3001/docs
-- Optional full stack: `docker compose -f docker/docker-compose.yml --profile full up -d`
+Re-seed (wipes catalog/CMS demo data, keeps admin user):
+
+```bash
+pnpm db:seed
+```
+
+Optional full stack: `docker compose -f docker/docker-compose.yml --profile full up -d`
 
 ## Scripts
 
 - `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test`
-- `pnpm test:e2e` — Playwright (set `E2E_API=1` with API up for money-path test)
+- `pnpm test:e2e` — Playwright (`E2E_API=1` money path + category publish; `E2E_STOREFRONT=1` Nestpaw browse)
 - `pnpm docker:up` / `pnpm docker:down`
 - `BACKUP_ENV=prod COMPOSE_FILE=docker/docker-compose.prod.yml scripts/backup-db.sh`
 
@@ -65,4 +82,4 @@ pnpm --filter @online-store/storefront dev
 
 ## Modules
 
-Catalog (variants + metafields), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (JWT), multi-currency rates (stored; checkout still EUR-primary).
+Catalog (variants + metafields + nested collections), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (JWT), multi-currency rates (stored; checkout still EUR-primary).

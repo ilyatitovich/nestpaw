@@ -15,11 +15,76 @@ test.describe("commerce smoke", () => {
       expect(res.ok()).toBeTruthy();
     });
 
-    test("public products list", async ({ request }) => {
+    test("public products list has Nestpaw catalog", async ({ request }) => {
       const res = await request.get(`${API}/products`);
       expect(res.ok()).toBeTruthy();
       const body = await res.json();
       expect(Array.isArray(body.items)).toBeTruthy();
+      expect(body.items.length).toBeGreaterThanOrEqual(10);
+    });
+
+    test("dogs collection hub returns children", async ({ request }) => {
+      const res = await request.get(`${API}/collections/en/dogs`);
+      expect(res.ok()).toBeTruthy();
+      const body = await res.json();
+      expect(body.children?.length).toBeGreaterThan(0);
+    });
+
+    test("admin can create category and assign product", async ({
+      request,
+    }) => {
+      const login = await request.post(`${API}/auth/login`, {
+        data: {
+          email: process.env.ADMIN_EMAIL ?? "admin@example.com",
+          password: process.env.ADMIN_PASSWORD ?? "ChangeMe123!",
+        },
+      });
+      expect(login.ok()).toBeTruthy();
+      const { accessToken } = await login.json();
+
+      const products = await request.get(`${API}/admin/products?take=1`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      expect(products.ok()).toBeTruthy();
+      const catalog = await products.json();
+      const productId = catalog.items?.[0]?.id as string | undefined;
+      expect(productId).toBeTruthy();
+
+      const slug = `e2e-cat-${Date.now()}`;
+      const created = await request.post(`${API}/admin/collections`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        data: {
+          translations: [
+            {
+              locale: "en",
+              title: "E2E Category",
+              slug,
+              description: "Playwright category",
+            },
+            {
+              locale: "de",
+              title: "E2E Kategorie",
+              slug: `${slug}-de`,
+              description: "Playwright Kategorie",
+            },
+          ],
+          productIds: [productId],
+        },
+      });
+      expect(created.ok()).toBeTruthy();
+      const collection = await created.json();
+      expect(collection.id).toBeTruthy();
+
+      const publicList = await request.get(
+        `${API}/products?collection=${slug}&locale=en`,
+      );
+      expect(publicList.ok()).toBeTruthy();
+      const listed = await publicList.json();
+      expect(listed.items.some((p: { id: string }) => p.id === productId)).toBeTruthy();
+
+      await request.delete(`${API}/admin/collections/${collection.id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
     });
 
     test("cart → checkout → mock pay marks order paid", async ({
@@ -100,11 +165,23 @@ test.describe("commerce smoke", () => {
       "Set E2E_STOREFRONT=1 with storefront running",
     );
 
-    test("storefront home responds when running", async ({ page }) => {
+    test("Nestpaw home and dogs browse", async ({ page }) => {
       await page.goto(`${STORE}/en/`);
-      await expect(page.locator(".site-header__brand")).toContainText(
-        "Online Store",
-      );
+      await expect(page.locator(".site-header__brand")).toContainText("Nestpaw");
+      await expect(page.locator(".hero__brand")).toContainText("Nestpaw");
+      await page.goto(`${STORE}/en/collections/dogs`);
+      await expect(page.locator(".section__title").first()).toContainText("Dogs");
+      await expect(page.locator(".product-card").first()).toBeVisible();
+    });
+
+    test("PDP add to cart path", async ({ page }) => {
+      await page.goto(`${STORE}/en/shop`);
+      const first = page.locator(".product-card").first();
+      await expect(first).toBeVisible();
+      await first.click();
+      await expect(page.locator(".pdp__title")).toBeVisible();
+      await page.getByRole("button", { name: /add to cart/i }).click();
+      await expect(page).toHaveURL(/\/en\/cart/);
     });
   });
 });

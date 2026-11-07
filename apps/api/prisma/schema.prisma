@@ -207,10 +207,15 @@ model Metafield {
 
 model Collection {
   id           String                  @id @default(cuid())
+  parentId     String?
+  parent       Collection?             @relation("CollectionTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Collection[]            @relation("CollectionTree")
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
   translations CollectionTranslation[]
   products     CollectionProduct[]
+
+  @@index([parentId])
 }
 
 model CollectionTranslation {
