@@ -1433,12 +1433,13 @@ button.site-header__menu-toggle {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   gap: var(--space-8);
+  align-items: start;
   padding: var(--space-8) 0;
 }
 
 .pdp__media {
   background: #dfe7e8;
-  min-height: 28rem;
+  aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -1447,6 +1448,7 @@ button.site-header__menu-toggle {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .pdp__title {
