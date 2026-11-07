@@ -364,7 +364,17 @@ const mobileNavId = "site-mobile-nav";
       });
     }
 
+    let megaCloseTimer: number | undefined;
+
+    function clearMegaCloseTimer() {
+      if (megaCloseTimer !== undefined) {
+        window.clearTimeout(megaCloseTimer);
+        megaCloseTimer = undefined;
+      }
+    }
+
     function closeAllMega(except?: Element | null) {
+      clearMegaCloseTimer();
       header
         ?.querySelectorAll("[data-mega-item].is-open")
         .forEach((item) => {
@@ -382,6 +392,8 @@ const mobileNavId = "site-mobile-nav";
     }
 
     function openMega(item: Element) {
+      clearMegaCloseTimer();
+      closeAllMega(item);
       const trigger = item.querySelector("[data-mega-trigger]");
       const panel = item.querySelector("[data-mega-panel]");
       item.classList.add("is-open");
@@ -391,6 +403,17 @@ const mobileNavId = "site-mobile-nav";
       if (panel instanceof HTMLElement) {
         panel.hidden = false;
       }
+    }
+
+    function scheduleCloseMega() {
+      clearMegaCloseTimer();
+      megaCloseTimer = window.setTimeout(() => {
+        closeAllMega();
+      }, 120);
+    }
+
+    function finePointerHover() {
+      return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     }
 
     header.querySelectorAll("[data-mega-item]").forEach((item) => {
@@ -405,23 +428,15 @@ const mobileNavId = "site-mobile-nav";
       });
 
       item.addEventListener("mouseenter", () => {
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-          closeAllMega();
-          openMega(item);
-        }
+        if (finePointerHover()) openMega(item);
       });
 
       item.addEventListener("mouseleave", () => {
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-          closeAllMega();
-        }
+        if (finePointerHover()) scheduleCloseMega();
       });
 
       item.addEventListener("focusin", () => {
-        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-          closeAllMega();
-          openMega(item);
-        }
+        if (finePointerHover()) openMega(item);
       });
     });
 
