@@ -1501,9 +1501,8 @@ button.site-header__menu-toggle {
 .pdp__media img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
-  padding: var(--space-6);
   display: block;
 }
 
@@ -1972,10 +1971,6 @@ button.site-header__menu-toggle {
   .pdp {
     grid-template-columns: 1fr;
     gap: var(--space-5);
-  }
-
-  .pdp__media img {
-    padding: var(--space-4);
   }
 
   .pdp-buy__actions {
