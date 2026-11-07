@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Headers,
   Post,
   Req,
@@ -8,6 +9,7 @@ import {
 import type { RawBodyRequest } from "@nestjs/common";
 import type { Request } from "express";
 import { Public } from "../../common/decorators/public.decorator";
+import { allowMockPayments } from "./mock-payments";
 import { PaymentsService } from "./payments.service";
 
 @Controller("payments")
@@ -27,6 +29,9 @@ export class PaymentsController {
   @Public()
   @Post("mock-complete")
   mockComplete(@Body() body: { sessionId?: string }) {
+    if (!allowMockPayments()) {
+      throw new ForbiddenException("Mock payments are disabled");
+    }
     return this.payments.completeMockSession(body.sessionId ?? "");
   }
 }

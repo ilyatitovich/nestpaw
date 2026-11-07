@@ -1,7 +1,15 @@
-import { Inject, Injectable, Logger, forwardRef } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from "@nestjs/common";
 import Stripe from "stripe";
 import { PrismaService } from "../../prisma/prisma.service";
 import { OrdersService } from "../orders/orders.service";
+import { buildStripeLineItems } from "./build-stripe-line-items";
+import { allowMockPayments } from "./mock-payments";
 
 @Injectable()
 export class PaymentsService {
@@ -23,7 +31,11 @@ export class PaymentsService {
 
   private client() {
     if (!this.stripe) {
-      // Mock mode for local/dev without Stripe keys
+      if (!allowMockPayments()) {
+        throw new ForbiddenException(
+          "Stripe is not configured and mock payments are disabled",
+        );
+      }
       return null;
     }
     return this.stripe;
@@ -41,47 +53,35 @@ export class PaymentsService {
     taxAmount: number;
     discountAmount: number;
   }) {
+    const priced = buildStripeLineItems({
+      lineItems: params.lineItems,
+      shippingAmount: params.shippingAmount,
+      taxAmount: params.taxAmount,
+      discountAmount: params.discountAmount,
+      expectedTotal: params.amount,
+    });
+
     const stripe = this.client();
     if (!stripe) {
       const mockId = `cs_test_mock_${params.orderId}`;
       return {
         id: mockId,
         url: `${params.successUrl}${params.successUrl.includes("?") ? "&" : "?"}session_id=${mockId}&mock=1`,
+        amount_total: params.amount,
       };
     }
 
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
-      params.lineItems.map((li) => ({
+      priced.map((li) => ({
         quantity: li.quantity,
         price_data: {
           currency: params.currency.toLowerCase(),
-          unit_amount: li.amount,
+          unit_amount: li.unitAmount,
           product_data: { name: li.name },
         },
       }));
 
-    if (params.shippingAmount > 0) {
-      line_items.push({
-        quantity: 1,
-        price_data: {
-          currency: params.currency.toLowerCase(),
-          unit_amount: params.shippingAmount,
-          product_data: { name: "Shipping" },
-        },
-      });
-    }
-    if (params.taxAmount > 0) {
-      line_items.push({
-        quantity: 1,
-        price_data: {
-          currency: params.currency.toLowerCase(),
-          unit_amount: params.taxAmount,
-          product_data: { name: "Tax" },
-        },
-      });
-    }
-
-    return stripe.checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: params.email,
       success_url: params.successUrl,
@@ -92,22 +92,41 @@ export class PaymentsService {
         metadata: { orderId: params.orderId },
       },
     });
+
+    if (
+      session.amount_total != null &&
+      session.amount_total !== params.amount
+    ) {
+      this.logger.error(
+        `Stripe amount_total ${session.amount_total} !== order total ${params.amount} for ${params.orderId}`,
+      );
+      throw new ForbiddenException("Payment amount mismatch");
+    }
+
+    return session;
   }
 
   async retrieveSession(sessionId: string) {
     const stripe = this.client();
     if (!stripe || sessionId.startsWith("cs_test_mock_")) {
-      return { id: sessionId, url: null as string | null, payment_status: "paid" };
+      if (sessionId.startsWith("cs_test_mock_") && !allowMockPayments()) {
+        throw new ForbiddenException("Mock payments are disabled");
+      }
+      return {
+        id: sessionId,
+        url: null as string | null,
+        payment_status: "paid" as const,
+      };
     }
     return stripe.checkout.sessions.retrieve(sessionId);
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {
-    const stripe = this.client();
-    if (!stripe) {
+    if (!this.stripe) {
       this.logger.warn("Stripe not configured; ignoring webhook");
       return { received: true };
     }
+    const stripe = this.stripe;
 
     const event = stripe.webhooks.constructEvent(
       rawBody,
@@ -149,13 +168,14 @@ export class PaymentsService {
   }
 
   async refund(orderId: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
     if (!order?.stripePaymentIntentId) {
       return this.orders.markRefunded(orderId);
     }
-    const stripe = this.client();
-    if (stripe) {
-      await stripe.refunds.create({
+    if (this.stripe) {
+      await this.stripe.refunds.create({
         payment_intent: order.stripePaymentIntentId,
       });
     }
@@ -164,6 +184,9 @@ export class PaymentsService {
 
   /** Dev-only helper when Stripe keys are not configured. */
   async completeMockSession(sessionId: string) {
+    if (!allowMockPayments()) {
+      throw new ForbiddenException("Mock payments are disabled");
+    }
     if (!sessionId.startsWith("cs_test_mock_")) {
       return { ok: false };
     }

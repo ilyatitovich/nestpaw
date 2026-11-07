@@ -23,6 +23,8 @@ const locale = Astro.params.locale as Locale;
         checkout: t(locale, "cart.checkout"),
         discount: t(locale, "cart.discount"),
         apply: t(locale, "cart.apply"),
+        shipping: t(locale, "cart.shipping"),
+        remove: t(locale, "cart.remove"),
       }}
       storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
     />

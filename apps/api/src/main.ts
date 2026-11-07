@@ -5,8 +5,11 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { ZodExceptionFilter } from "./common/filters/zod-exception.filter";
+import { assertProductionSecrets } from "./modules/payments/mock-payments";
 
 async function bootstrap() {
+  assertProductionSecrets();
+
   if (process.env.SENTRY_DSN) {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,

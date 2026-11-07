@@ -1,6 +1,19 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
+import {
+  CurrentCustomer,
+  type AuthCustomer,
+} from "../../common/decorators/current-customer.decorator";
 import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
+import { CustomerJwtGuard } from "../../common/guards/customer-jwt.guard";
 import { CustomersService } from "./customers.service";
 
 @Controller()
@@ -17,6 +30,13 @@ export class CustomersController {
   @Post("customers/login")
   login(@Body() body: unknown) {
     return this.customers.login(body);
+  }
+
+  @Public()
+  @UseGuards(CustomerJwtGuard)
+  @Get("customers/me")
+  me(@CurrentCustomer() customer: AuthCustomer) {
+    return this.customers.me(customer.id);
   }
 
   @Roles("owner", "staff")
@@ -38,8 +58,12 @@ export class CustomersController {
   }
 
   @Public()
+  @UseGuards(CustomerJwtGuard)
   @Post("customers/wishlist")
-  wishlist(@Body() body: { customerId: string; productId: string }) {
-    return this.customers.addWishlist(body.customerId, body.productId);
+  wishlist(
+    @CurrentCustomer() customer: AuthCustomer,
+    @Body() body: { productId: string },
+  ) {
+    return this.customers.addWishlist(customer.id, body.productId);
   }
 }

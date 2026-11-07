@@ -1,18 +1,32 @@
 # Backup & restore
 
-## Nightly backup (VPS cron)
+## Script
+
+[`scripts/backup-db.sh`](../../scripts/backup-db.sh) dumps Postgres via Docker Compose.
+
+**Local / dev (default):**
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-STAMP=$(date +%Y%m%d-%H%M%S)
-FILE="/var/backups/online-store-$STAMP.sql.gz"
-docker compose -f docker/docker-compose.prod.yml exec -T postgres \
-  pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > "$FILE"
-# optional: upload "$FILE" to R2/S3
+./scripts/backup-db.sh
+# uses docker/docker-compose.yml, user `store`, db `online_store`
 ```
 
-Install as root cron: `0 2 * * * /opt/online-store/scripts/backup-db.sh`
+**Production VPS:**
+
+```bash
+export BACKUP_ENV=prod
+export BACKUP_DIR=/var/backups/online-store
+export POSTGRES_USER=store
+export POSTGRES_DB=online_store
+# optional: COMPOSE_FILE=/opt/online-store/docker/docker-compose.prod.yml
+./scripts/backup-db.sh
+```
+
+Cron example:
+
+```cron
+0 2 * * * BACKUP_ENV=prod BACKUP_DIR=/var/backups/online-store /opt/online-store/scripts/backup-db.sh
+```
 
 ## Restore
 
@@ -23,3 +37,5 @@ gunzip -c online-store-YYYYMMDD.sql.gz | \
 ```
 
 Verify: `GET /health/ready` returns `{ "status": "ready" }`.
+
+Optional: sync object storage (R2/MinIO) separately from SQL dumps.

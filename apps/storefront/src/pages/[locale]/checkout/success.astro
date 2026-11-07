@@ -19,17 +19,37 @@ const locale = Astro.params.locale as Locale;
   <script is:inline define:vars={{ API_URL, locale }}>
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
-    if (sessionId && params.get("mock") === "1") {
-      fetch(`${API_URL}/payments/mock-complete`, {
+    const cartToken = localStorage.getItem("cart_token");
+
+    async function clearCart() {
+      if (!cartToken) return;
+      try {
+        await fetch(`${API_URL}/cart`, {
+          method: "DELETE",
+          headers: { "X-Cart-Token": cartToken },
+        });
+      } catch (_) {}
+    }
+
+    async function completeMock() {
+      if (!sessionId || params.get("mock") !== "1") return;
+      try {
+        await fetch(`${API_URL}/payments/mock-complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+      } catch (_) {}
+    }
+
+    (async () => {
+      await completeMock();
+      await clearCart();
+      fetch(`${API_URL}/analytics/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ name: "purchase", payload: { sessionId }, locale }),
       }).catch(() => {});
-    }
-    fetch(`${API_URL}/analytics/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "purchase", payload: { sessionId }, locale }),
-    }).catch(() => {});
+    })();
   </script>
 </BaseLayout>

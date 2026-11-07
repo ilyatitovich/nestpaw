@@ -9,7 +9,7 @@
     "start:worker": "node dist/worker.js",
     "lint": "biome check src",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --import tsx --test src/modules/discounts/compute-amount.spec.ts",
+    "test": "node --import tsx --test 'src/**/*.spec.ts'",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },

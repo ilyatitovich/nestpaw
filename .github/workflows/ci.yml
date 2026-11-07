@@ -51,6 +51,7 @@ jobs:
         run: |
           pnpm exec prisma generate
           pnpm exec prisma migrate deploy
+          pnpm exec prisma db seed
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -62,6 +63,36 @@ jobs:
         env:
           PUBLIC_API_URL: http://localhost:3001
           PUBLIC_STORE_URL: http://localhost:4321
-      - name: API unit tests
-        run: pnpm --filter @online-store/api test
-      - run: pnpm audit --prod || true
+      - name: Start API for e2e
+        env:
+          DATABASE_URL: postgresql://store:store@localhost:5432/online_store?schema=public
+          REDIS_URL: redis://localhost:6379
+          API_PORT: 3001
+          JWT_ACCESS_SECRET: ci-test-access-secret-min-32-chars!!
+          ALLOW_MOCK_PAYMENTS: "true"
+          NODE_ENV: test
+          CORS_ORIGINS: http://localhost:4321
+        run: |
+          pnpm --filter @online-store/api start &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health/live >/dev/null; then
+              echo "API up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API failed to start"
+          exit 1
+      - name: Playwright API critical path
+        env:
+          PUBLIC_API_URL: http://localhost:3001
+          PUBLIC_STORE_URL: http://localhost:4321
+          E2E_API: "1"
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm exec playwright test
+      - name: Dependency audit (critical)
+        run: pnpm audit --prod --audit-level=critical
+      - name: Dependency audit (high+)
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level=high

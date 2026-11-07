@@ -27,7 +27,11 @@ import { RedisModule } from "./redis/redis.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      // Monorepo: nest may start from apps/api; env lives at repo root.
+      envFilePath: [".env", "../../.env"],
+    }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     BullModule.forRoot({
       connection: { url: process.env.REDIS_URL ?? "redis://localhost:6379" },

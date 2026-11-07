@@ -1,3 +1,13 @@
+# Production stack. Before `up`, set in `.env` (or override):
+#   POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+#   DATABASE_URL=postgresql://USER:PASS@postgres:5432/DB?schema=public
+#   REDIS_URL=redis://redis:6379
+#   API_PORT=3000
+#   JWT_ACCESS_SECRET=<strong secret, min 32 chars>
+#   ALLOW_MOCK_PAYMENTS=false
+#   NODE_ENV=production
+#   COOKIE_SECURE=true
+#   CORS_ORIGINS=https://store.example.com,https://admin.example.com
 services:
   postgres:
     image: postgres:16-alpine
@@ -29,6 +39,12 @@ services:
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     env_file: ../.env
+    environment:
+      NODE_ENV: production
+      API_PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ALLOW_MOCK_PAYMENTS: "false"
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,6 +52,18 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   worker:
     build:
@@ -44,6 +72,11 @@ services:
     command: ["node", "dist/worker.js"]
     restart: unless-stopped
     env_file: ../.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ALLOW_MOCK_PAYMENTS: "false"
     depends_on:
       postgres:
         condition: service_healthy

@@ -9,10 +9,12 @@ Single-brand commerce monorepo:
 
 ## Money path
 
-1. Storefront cart uses `X-Cart-Token`
-2. `POST /checkout` creates `Order` (`pending_payment`) + Stripe Checkout Session
-3. Stripe webhook marks order `paid`, decrements inventory, queues email
-4. Admin fulfills / refunds / cancels
+1. Storefront cart uses `X-Cart-Token`; guest enters shipping on cart checkout form
+2. `POST /checkout` creates `Order` (`pending_payment`) + Stripe Checkout Session whose `amount_total` matches `Order.total` (discounts applied to line items)
+3. Stripe webhook (or gated mock-complete in non-prod) marks order `paid`, decrements inventory atomically, queues email; success page clears the cart
+4. Admin fulfills / refunds / cancels (paid cancel & refund restock inventory)
+
+Mock payments require `ALLOW_MOCK_PAYMENTS` and are disabled when `NODE_ENV=production`.
 
 ## Customization
 

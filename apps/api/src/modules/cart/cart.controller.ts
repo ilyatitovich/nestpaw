@@ -64,4 +64,10 @@ export class CartController {
   clearDiscount(@Headers("x-cart-token") token: string) {
     return this.cart.clearDiscount(token);
   }
+
+  @Public()
+  @Delete()
+  clear(@Headers("x-cart-token") token: string) {
+    return this.cart.clear(token);
+  }
 }

@@ -1,12 +1,32 @@
 # Online Store
 
-Production-oriented commerce monorepo for a small/medium single-brand store.
+Commerce monorepo for a small/medium single-brand store (Astro storefront, NestJS API, React admin).
 
 | App | Stack | Deploy |
 |---|---|---|
-| `apps/storefront` | Astro, TypeScript, BEM CSS, i18n (`en`/`de`), SEO, analytics | CDN (Cloudflare Pages) |
+| `apps/storefront` | Astro, TypeScript, BEM CSS, i18n (`en`/`de`), SEO | CDN (Cloudflare Pages) |
 | `apps/api` | NestJS, Prisma, PostgreSQL, Redis, Stripe, BullMQ | Docker |
 | `apps/admin` | React 19, TanStack Query, Vite | Docker (nginx) |
+
+## Status
+
+**Demo-complete locally** (catalog → cart → checkout → mock/Stripe pay → admin fulfill). Not a turnkey production deploy until you finish the checklist below.
+
+### Production blockers addressed in codebase
+
+- Stripe line items match order totals (including discounts)
+- Mock payments gated (`ALLOW_MOCK_PAYMENTS`, forced off when `NODE_ENV=production`)
+- Guest checkout collects a real shipping address
+- Inventory decrements atomically on pay; restock on cancel/refund of paid orders
+- Production boot refuses default/weak `JWT_ACCESS_SECRET`
+- Wishlist requires a customer JWT (no body `customerId`)
+
+### Still thin / verify before real traffic
+
+- Admin CRUD depth (shipping/CMS/settings mostly list or JSON)
+- Customer account UX beyond login + `/customers/me`
+- Observability (Sentry init only; no deep tracing)
+- Playwright critical path is opt-in in CI (`E2E_API=1`)
 
 ## Quick start
 
@@ -32,8 +52,9 @@ pnpm --filter @online-store/storefront dev
 ## Scripts
 
 - `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test`
+- `pnpm test:e2e` — Playwright (set `E2E_API=1` with API up for money-path test)
 - `pnpm docker:up` / `pnpm docker:down`
-- `scripts/backup-db.sh` — Postgres dump
+- `BACKUP_ENV=prod COMPOSE_FILE=docker/docker-compose.prod.yml scripts/backup-db.sh`
 
 ## Docs
 
@@ -44,4 +65,4 @@ pnpm --filter @online-store/storefront dev
 
 ## Modules
 
-Catalog (variants + metafields), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts, multi-currency rates.
+Catalog (variants + metafields), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (JWT), multi-currency rates (stored; checkout still EUR-primary).

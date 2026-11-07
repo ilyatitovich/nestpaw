@@ -117,6 +117,16 @@ export class CartService {
     return this.getOrCreate(token);
   }
 
+  async clear(token: string) {
+    const cart = await this.requireCart(token);
+    await this.prisma.cartLine.deleteMany({ where: { cartId: cart.id } });
+    await this.prisma.cart.update({
+      where: { id: cart.id },
+      data: { discountCode: null },
+    });
+    return this.getOrCreate(token);
+  }
+
   async requireCart(token: string) {
     const cart = await this.prisma.cart.findUnique({
       where: { token },

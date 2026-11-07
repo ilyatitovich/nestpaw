@@ -10,22 +10,64 @@ type Cart = {
       product: { translations: { locale: string; title: string }[] };
     };
   }[];
-  totals: { subtotal: number; discountTotal: number; total: number; currency: string };
+  totals: {
+    subtotal: number;
+    discountTotal: number;
+    total: number;
+    currency: string;
+  };
   discountCode?: string | null;
+};
+
+type ShippingForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  line1: string;
+  line2: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string;
 };
 
 type Props = {
   apiUrl: string;
   locale: string;
   storeUrl: string;
-  labels: { empty: string; checkout: string; discount: string; apply: string };
+  labels: {
+    empty: string;
+    checkout: string;
+    discount: string;
+    apply: string;
+    shipping: string;
+    remove: string;
+  };
 };
 
-export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) {
+const emptyShipping = (): ShippingForm => ({
+  firstName: "",
+  lastName: "",
+  email: "",
+  line1: "",
+  line2: "",
+  city: "",
+  postalCode: "",
+  country: "DE",
+  phone: "",
+});
+
+export default function CartClient({
+  apiUrl,
+  locale,
+  storeUrl,
+  labels,
+}: Props) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
 
   async function load() {
     const token = localStorage.getItem("cart_token");
@@ -42,6 +84,13 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
   useEffect(() => {
     load().catch(() => setError("Could not load cart"));
   }, []);
+
+  function updateField<K extends keyof ShippingForm>(
+    key: K,
+    value: ShippingForm[K],
+  ) {
+    setShipping((s) => ({ ...s, [key]: value }));
+  }
 
   async function applyDiscount() {
     if (!cart) return;
@@ -64,7 +113,30 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
     }
   }
 
-  async function checkout() {
+  async function setLineQuantity(lineId: string, quantity: number) {
+    if (!cart) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${apiUrl}/cart/items/${lineId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Cart-Token": cart.token,
+        },
+        body: JSON.stringify({ quantity }),
+      });
+      if (!res.ok) throw new Error("Could not update cart");
+      setCart((await res.json()) as Cart);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function checkout(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
     if (!cart) return;
     setBusy(true);
     setError(null);
@@ -84,13 +156,15 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
         },
         body: JSON.stringify({
           shippingAddress: {
-            firstName: "Guest",
-            lastName: "Customer",
-            email: "guest@example.com",
-            line1: "Musterstraße 1",
-            city: "Berlin",
-            postalCode: "10115",
-            country: "DE",
+            firstName: shipping.firstName.trim(),
+            lastName: shipping.lastName.trim(),
+            email: shipping.email.trim(),
+            line1: shipping.line1.trim(),
+            line2: shipping.line2.trim() || undefined,
+            city: shipping.city.trim(),
+            postalCode: shipping.postalCode.trim(),
+            country: shipping.country.trim().toUpperCase(),
+            phone: shipping.phone.trim() || undefined,
           },
           locale,
           currency: "EUR",
@@ -104,8 +178,8 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
       }
       const data = (await res.json()) as { checkoutUrl: string };
       window.location.href = data.checkoutUrl;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Checkout failed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Checkout failed");
       setBusy(false);
     }
   }
@@ -125,16 +199,48 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
           <div className="cart__line" key={line.id}>
             <div>
               <strong>{title}</strong>
-              <div>× {line.quantity}</div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "center",
+                  marginTop: "0.35rem",
+                }}
+              >
+                <label>
+                  Qty{" "}
+                  <input
+                    type="number"
+                    min={1}
+                    value={line.quantity}
+                    disabled={busy}
+                    style={{ width: "4rem" }}
+                    onChange={(ev) => {
+                      const qty = Number(ev.target.value);
+                      if (Number.isFinite(qty) && qty >= 1) {
+                        void setLineQuantity(line.id, qty);
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={busy}
+                  onClick={() => void setLineQuantity(line.id, 0)}
+                >
+                  {labels.remove}
+                </button>
+              </div>
             </div>
-            <div>€{((line.variant.price * line.quantity) / 100).toFixed(2)}</div>
+            <div>
+              €{((line.variant.price * line.quantity) / 100).toFixed(2)}
+            </div>
           </div>
         );
       })}
       <div className="cart__totals">
-        <div>
-          Subtotal: €{(cart.totals.subtotal / 100).toFixed(2)}
-        </div>
+        <div>Subtotal: €{(cart.totals.subtotal / 100).toFixed(2)}</div>
         {cart.totals.discountTotal > 0 ? (
           <div>Discount: −€{(cart.totals.discountTotal / 100).toFixed(2)}</div>
         ) : null}
@@ -148,15 +254,96 @@ export default function CartClient({ apiUrl, locale, storeUrl, labels }: Props) 
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
-        <button type="button" className="btn btn--ghost" onClick={applyDiscount} disabled={busy}>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={applyDiscount}
+          disabled={busy}
+        >
           {labels.apply}
         </button>
       </div>
-      <div style={{ marginTop: "1.5rem" }}>
-        <button type="button" className="btn btn--primary" onClick={checkout} disabled={busy}>
+
+      <form
+        onSubmit={checkout}
+        style={{
+          display: "grid",
+          gap: "0.75rem",
+          marginTop: "2rem",
+          maxWidth: "28rem",
+        }}
+      >
+        <h2 className="section__title" style={{ fontSize: "1.25rem" }}>
+          {labels.shipping}
+        </h2>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          <input
+            required
+            placeholder="First name"
+            value={shipping.firstName}
+            onChange={(e) => updateField("firstName", e.target.value)}
+          />
+          <input
+            required
+            placeholder="Last name"
+            value={shipping.lastName}
+            onChange={(e) => updateField("lastName", e.target.value)}
+          />
+        </div>
+        <input
+          required
+          type="email"
+          placeholder="Email"
+          value={shipping.email}
+          onChange={(e) => updateField("email", e.target.value)}
+        />
+        <input
+          required
+          placeholder="Address"
+          value={shipping.line1}
+          onChange={(e) => updateField("line1", e.target.value)}
+        />
+        <input
+          placeholder="Address line 2"
+          value={shipping.line2}
+          onChange={(e) => updateField("line2", e.target.value)}
+        />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          <input
+            required
+            placeholder="City"
+            value={shipping.city}
+            onChange={(e) => updateField("city", e.target.value)}
+          />
+          <input
+            required
+            placeholder="Postal code"
+            value={shipping.postalCode}
+            onChange={(e) => updateField("postalCode", e.target.value)}
+          />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          <input
+            required
+            placeholder="Country (ISO)"
+            maxLength={2}
+            value={shipping.country}
+            onChange={(e) => updateField("country", e.target.value)}
+          />
+          <input
+            placeholder="Phone"
+            value={shipping.phone}
+            onChange={(e) => updateField("phone", e.target.value)}
+          />
+        </div>
+        <button
+          type="submit"
+          className="btn btn--primary"
+          disabled={busy}
+        >
           {labels.checkout}
         </button>
-      </div>
+      </form>
       {error ? <p style={{ color: "#b42318" }}>{error}</p> : null}
     </div>
   );

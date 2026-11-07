@@ -8,6 +8,10 @@ import type { OrderStatus } from "@prisma/client";
 import type { Queue } from "bullmq";
 import { PrismaService } from "../../prisma/prisma.service";
 import { DiscountsService } from "../discounts/discounts.service";
+import {
+  decrementInventoryForLine,
+  restockInventoryForLines,
+} from "./inventory-ops";
 
 @Injectable()
 export class OrdersService {
@@ -45,63 +49,56 @@ export class OrdersService {
     const order = await this.get(orderId);
     if (order.status !== "pending_payment") return order;
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      for (const line of order.lines) {
-        if (!line.variantId) continue;
-        const inv = await tx.inventoryItem.findUnique({
-          where: { variantId: line.variantId },
-        });
-        if (inv?.policy === "deny") {
-          await tx.inventoryItem.update({
-            where: { variantId: line.variantId },
-            data: { quantity: { decrement: line.quantity } },
-          });
-        } else if (inv) {
-          await tx.inventoryItem.update({
-            where: { variantId: line.variantId },
-            data: { quantity: { decrement: line.quantity } },
-          });
+    try {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        for (const line of order.lines) {
+          await decrementInventoryForLine(tx, line);
         }
-      }
 
-      if (order.discountCode) {
-        await this.discounts.incrementUsage(order.discountCode);
-      }
+        if (order.discountCode) {
+          await this.discounts.incrementUsage(order.discountCode);
+        }
 
-      return tx.order.update({
-        where: { id: orderId },
-        data: {
-          status: "paid",
-          stripeSessionId: meta.stripeSessionId ?? order.stripeSessionId,
-          stripePaymentIntentId:
-            meta.stripePaymentIntentId ?? order.stripePaymentIntentId,
-          transitions: {
-            create: {
-              fromStatus: "pending_payment",
-              toStatus: "paid",
-              actorType: "system",
-              note: "Stripe payment completed",
+        return tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: "paid",
+            stripeSessionId: meta.stripeSessionId ?? order.stripeSessionId,
+            stripePaymentIntentId:
+              meta.stripePaymentIntentId ?? order.stripePaymentIntentId,
+            transitions: {
+              create: {
+                fromStatus: "pending_payment",
+                toStatus: "paid",
+                actorType: "system",
+                note: "Stripe payment completed",
+              },
+            },
+            auditLogs: {
+              create: {
+                action: "order.paid",
+                entity: "Order",
+                entityId: orderId,
+                actorType: "system",
+              },
             },
           },
-          auditLogs: {
-            create: {
-              action: "order.paid",
-              entity: "Order",
-              entityId: orderId,
-              actorType: "system",
-            },
-          },
-        },
-        include: { lines: true },
+          include: { lines: true },
+        });
       });
-    });
 
-    await this.notifications.add("order-paid", {
-      orderId,
-      email: order.email,
-    });
+      await this.notifications.add("order-paid", {
+        orderId,
+        email: order.email,
+      });
 
-    return updated;
+      return updated;
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("Insufficient stock")) {
+        throw new BadRequestException(e.message);
+      }
+      throw e;
+    }
   }
 
   async fulfill(orderId: string, actorId: string) {
@@ -140,29 +137,36 @@ export class OrdersService {
     if (!["pending_payment", "paid"].includes(order.status)) {
       throw new BadRequestException("Cannot cancel this order");
     }
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "cancelled",
-        transitions: {
-          create: {
-            fromStatus: order.status,
-            toStatus: "cancelled",
-            actorType: "admin",
-            actorId,
+    const wasPaid = order.status === "paid";
+
+    return this.prisma.$transaction(async (tx) => {
+      if (wasPaid) {
+        await restockInventoryForLines(tx, order.lines);
+      }
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: "cancelled",
+          transitions: {
+            create: {
+              fromStatus: order.status,
+              toStatus: "cancelled",
+              actorType: "admin",
+              actorId,
+            },
+          },
+          auditLogs: {
+            create: {
+              action: "order.cancelled",
+              entity: "Order",
+              entityId: orderId,
+              actorType: "admin",
+              actorId,
+              userId: actorId,
+            },
           },
         },
-        auditLogs: {
-          create: {
-            action: "order.cancelled",
-            entity: "Order",
-            entityId: orderId,
-            actorType: "admin",
-            actorId,
-            userId: actorId,
-          },
-        },
-      },
+      });
     });
   }
 
@@ -171,26 +175,29 @@ export class OrdersService {
     if (!["paid", "fulfilled"].includes(order.status)) {
       throw new BadRequestException("Cannot refund this order");
     }
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: "refunded",
-        transitions: {
-          create: {
-            fromStatus: order.status,
-            toStatus: "refunded",
-            actorType: "admin",
+    return this.prisma.$transaction(async (tx) => {
+      await restockInventoryForLines(tx, order.lines);
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: "refunded",
+          transitions: {
+            create: {
+              fromStatus: order.status,
+              toStatus: "refunded",
+              actorType: "admin",
+            },
+          },
+          auditLogs: {
+            create: {
+              action: "order.refunded",
+              entity: "Order",
+              entityId: orderId,
+              actorType: "admin",
+            },
           },
         },
-        auditLogs: {
-          create: {
-            action: "order.refunded",
-            entity: "Order",
-            entityId: orderId,
-            actorType: "admin",
-          },
-        },
-      },
+      });
     });
   }
 }
