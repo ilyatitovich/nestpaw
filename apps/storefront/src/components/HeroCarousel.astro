@@ -175,71 +175,27 @@ const slides = [
     </div>
   </div>
 
-  <div class="hero__controls container">
-    <div class="hero__dots" data-hero-dots>
-      {
-        slides.map((_, index) => (
-          <button
-            type="button"
-            class:list={["hero__dot", index === 0 && "is-active"]}
-            aria-label={t(locale, "home.carouselGoto").replace(
-              "{n}",
-              String(index + 1),
-            )}
-            aria-current={index === 0 ? "true" : undefined}
-            data-hero-dot={index}
-          />
-        ))
-      }
-    </div>
-    <div class="hero__actions">
-      <button
-        type="button"
-        class="hero__nav"
-        data-hero-prev
-        aria-label={t(locale, "home.carouselPrev")}
-      >
-        <span aria-hidden="true">‹</span>
-      </button>
-      <button
-        type="button"
-        class="hero__toggle"
-        data-hero-toggle
-        aria-pressed="false"
-        data-pause-label={t(locale, "home.carouselPause")}
-        data-play-label={t(locale, "home.carouselPlay")}
-        aria-label={t(locale, "home.carouselPause")}
-      >
-        <span data-hero-toggle-icon aria-hidden="true">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <rect x="2" y="2" width="3.5" height="10" rx="0.5"></rect>
-            <rect x="8.5" y="2" width="3.5" height="10" rx="0.5"></rect>
-          </svg>
-        </span>
-      </button>
-      <button
-        type="button"
-        class="hero__nav"
-        data-hero-next
-        aria-label={t(locale, "home.carouselNext")}
-      >
-        <span aria-hidden="true">›</span>
-      </button>
-    </div>
+  <div class="hero__dots" data-hero-dots>
+    {
+      slides.map((_, index) => (
+        <button
+          type="button"
+          class:list={["hero__dot", index === 0 && "is-active"]}
+          aria-label={t(locale, "home.carouselGoto").replace(
+            "{n}",
+            String(index + 1),
+          )}
+          aria-current={index === 0 ? "true" : undefined}
+          data-hero-dot={index}
+        />
+      ))
+    }
   </div>
 </section>
 
 <script>
   import EmblaCarousel from "embla-carousel";
   import Autoplay from "embla-carousel-autoplay";
-
-  function pauseIcon() {
-    return `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="2" width="3.5" height="10" rx="0.5"></rect><rect x="8.5" y="2" width="3.5" height="10" rx="0.5"></rect></svg>`;
-  }
-
-  function playIcon() {
-    return `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3.5 2.2v9.6L12 7 3.5 2.2z"></path></svg>`;
-  }
 
   function initHeroCarousel(root: HTMLElement) {
     if (root.dataset.heroReady === "true") return;
@@ -260,23 +216,6 @@ const slides = [
     const dots = [
       ...root.querySelectorAll<HTMLButtonElement>("[data-hero-dot]"),
     ];
-    const prevBtn = root.querySelector("[data-hero-prev]");
-    const nextBtn = root.querySelector("[data-hero-next]");
-    const toggleBtn = root.querySelector("[data-hero-toggle]");
-    const toggleIcon = root.querySelector("[data-hero-toggle-icon]");
-
-    let userPaused = prefersReducedMotion;
-
-    function setToggleUi(paused: boolean) {
-      if (!(toggleBtn instanceof HTMLButtonElement)) return;
-      const pauseLabel = toggleBtn.dataset.pauseLabel ?? "Pause slideshow";
-      const playLabel = toggleBtn.dataset.playLabel ?? "Play slideshow";
-      toggleBtn.setAttribute("aria-pressed", String(paused));
-      toggleBtn.setAttribute("aria-label", paused ? playLabel : pauseLabel);
-      if (toggleIcon) {
-        toggleIcon.innerHTML = paused ? playIcon() : pauseIcon();
-      }
-    }
 
     function syncDots() {
       const selected = emblaApi.selectedScrollSnap();
@@ -293,25 +232,6 @@ const slides = [
         const index = Number(dot.dataset.heroDot);
         if (Number.isFinite(index)) emblaApi.scrollTo(index);
       });
-    }
-
-    if (prevBtn instanceof HTMLButtonElement) {
-      prevBtn.addEventListener("click", () => emblaApi.scrollPrev());
-    }
-    if (nextBtn instanceof HTMLButtonElement) {
-      nextBtn.addEventListener("click", () => emblaApi.scrollNext());
-    }
-
-    if (toggleBtn instanceof HTMLButtonElement) {
-      toggleBtn.addEventListener("click", () => {
-        const plugin = emblaApi.plugins().autoplay;
-        if (!plugin) return;
-        userPaused = !userPaused;
-        if (userPaused) plugin.stop();
-        else plugin.play();
-        setToggleUi(userPaused);
-      });
-      setToggleUi(userPaused);
     }
 
     emblaApi.on("select", syncDots);
