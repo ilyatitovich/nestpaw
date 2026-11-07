@@ -1,3 +1,4 @@
+import { TipTapDocSchema } from "@online-store/rich-text";
 import { z } from "zod";
 
 export const LocaleSchema = z.enum(["en", "de"]);
@@ -38,6 +39,7 @@ export const ProductTranslationSchema = z.object({
   locale: LocaleSchema,
   title: z.string().min(1).max(200),
   description: z.string().max(10000).default(""),
+  body: TipTapDocSchema.nullable().optional(),
   slug: z.string().min(1).max(200),
   seoTitle: z.string().max(200).optional(),
   seoDescription: z.string().max(500).optional(),

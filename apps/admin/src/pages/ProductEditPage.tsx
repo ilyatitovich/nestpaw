@@ -1,13 +1,20 @@
+import {
+  emptyDoc,
+  parseTipTapDoc,
+  type TipTapDoc,
+} from "@online-store/rich-text";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import { ProductBodyEditor } from "../components/ProductBodyEditor";
 
 type Translation = {
   locale: string;
   title: string;
   slug: string;
   description: string;
+  body?: TipTapDoc | null;
 };
 type Collection = {
   id: string;
@@ -68,6 +75,9 @@ export function ProductEditPage() {
   const [slugEn, setSlugEn] = useState("");
   const [slugDe, setSlugDe] = useState("");
   const [description, setDescription] = useState("");
+  const [bodyEn, setBodyEn] = useState<TipTapDoc>(emptyDoc);
+  const [bodyDe, setBodyDe] = useState<TipTapDoc>(emptyDoc);
+  const [bodyLocale, setBodyLocale] = useState<"en" | "de">("en");
   const [sku, setSku] = useState("");
   const [price, setPrice] = useState("19.99");
   const [stock, setStock] = useState("10");
@@ -90,6 +100,8 @@ export function ProductEditPage() {
     setSlugEn(en?.slug ?? "");
     setSlugDe(de?.slug ?? "");
     setDescription(en?.description ?? "");
+    setBodyEn(parseTipTapDoc(en?.body) ?? emptyDoc);
+    setBodyDe(parseTipTapDoc(de?.body) ?? emptyDoc);
     setStatus(p.status);
     const v = p.variants[0];
     if (v) {
@@ -119,6 +131,7 @@ export function ProductEditPage() {
             title: titleEn,
             slug: slugEn || titleEn.toLowerCase().replace(/\s+/g, "-"),
             description,
+            body: bodyEn,
           },
           {
             locale: "de",
@@ -126,6 +139,7 @@ export function ProductEditPage() {
             slug:
               slugDe || slugEn || titleEn.toLowerCase().replace(/\s+/g, "-"),
             description,
+            body: bodyDe,
           },
         ],
         variants: [
@@ -223,13 +237,39 @@ export function ProductEditPage() {
           <input value={slugDe} onChange={(e) => setSlugDe(e.target.value)} />
         </label>
         <label>
-          Description
+          Short description
           <textarea
-            rows={4}
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        <div className="admin-body-field">
+          <div className="admin-body-field__header">
+            <span>Product body</span>
+            <div className="admin-body-field__locales" role="group" aria-label="Body locale">
+              <button
+                type="button"
+                className={bodyLocale === "en" ? "is-active" : ""}
+                onClick={() => setBodyLocale("en")}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                className={bodyLocale === "de" ? "is-active" : ""}
+                onClick={() => setBodyLocale("de")}
+              >
+                DE
+              </button>
+            </div>
+          </div>
+          {bodyLocale === "en" ? (
+            <ProductBodyEditor value={bodyEn} onChange={setBodyEn} />
+          ) : (
+            <ProductBodyEditor value={bodyDe} onChange={setBodyDe} />
+          )}
+        </div>
         <label>
           SKU
           <input

@@ -50,7 +50,6 @@ export const ui = {
     "product.detailsTabs": "Product details",
     "product.descriptionTab": "Product description",
     "product.specsTab": "Specifications",
-    "product.benefits": "Key benefits",
     "product.characteristics": "Product characteristics",
     "product.noSpecs": "No specifications available.",
     "product.share": "Share",
@@ -59,8 +58,6 @@ export const ui = {
     "product.shareEmail": "Share by email",
     "product.shareCopy": "Copy link",
     "product.linkCopied": "Link copied",
-    "product.benefitsLead":
-      "Formulated for everyday wellbeing with carefully chosen ingredients that support energy, digestion, and a healthy coat.",
     "product.variantSizes": "Available sizes",
     "cart.title": "Your cart",
     "cart.checkout": "Checkout",
@@ -175,7 +172,6 @@ export const ui = {
     "product.detailsTabs": "Produktdetails",
     "product.descriptionTab": "Produktbeschreibung",
     "product.specsTab": "Spezifikationen",
-    "product.benefits": "Wichtigste Vorteile",
     "product.characteristics": "Produkteigenschaften",
     "product.noSpecs": "Keine Spezifikationen verfügbar.",
     "product.share": "Teilen",
@@ -184,8 +180,6 @@ export const ui = {
     "product.shareEmail": "Per E-Mail teilen",
     "product.shareCopy": "Link kopieren",
     "product.linkCopied": "Link kopiert",
-    "product.benefitsLead":
-      "Für das tägliche Wohlbefinden formuliert — mit ausgewählten Zutaten für Energie, Verdauung und ein gesundes Fell.",
     "product.variantSizes": "Verfügbare Größen",
     "cart.title": "Warenkorb",
     "cart.checkout": "Zur Kasse",

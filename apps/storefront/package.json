@@ -15,6 +15,7 @@
     "@astrojs/react": "^7.1.4",
     "@astrojs/sitemap": "^3.7.4",
     "@online-store/api-client": "workspace:*",
+    "@online-store/rich-text": "workspace:*",
     "@online-store/shared-types": "workspace:*",
     "@online-store/ui-tokens": "workspace:*",
     "astro": "^7.4.7",

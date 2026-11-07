@@ -1,4 +1,5 @@
 ---
+import type { TipTapDoc } from "@online-store/rich-text";
 import AddToCart from "../../../components/AddToCart";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import HeartIcon from "../../../components/icons/HeartIcon.astro";
@@ -47,6 +48,7 @@ type Product = {
     locale: string;
     title: string;
     description: string;
+    body?: TipTapDoc | null;
     slug: string;
     seoTitle?: string;
     seoDescription?: string;
@@ -295,9 +297,9 @@ if (product) {
           productId={product.id}
           title={tr.title}
           description={tr.description}
+          body={tr.body}
           shareUrl={shareUrl}
           specs={specs}
-          benefits={t(locale, "product.benefitsLead")}
           reviews={product.reviews}
         />
       </div>

@@ -159,6 +159,7 @@ model ProductTranslation {
   locale         String
   title          String
   description    String  @default("")
+  body           Json?
   slug           String
   seoTitle       String?
   seoDescription String?

@@ -1,3 +1,4 @@
+import { plainTextToDoc } from "@online-store/rich-text";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import * as argon2 from "argon2";
@@ -1172,6 +1173,10 @@ async function main() {
               locale: "en",
               title: p.translations.en.title,
               description: p.translations.en.description,
+              body: plainTextToDoc(
+                p.translations.en.description,
+                p.translations.en.title,
+              ),
               slug: p.translations.en.slug,
               seoTitle: `${p.translations.en.title} | Nestpaw`,
               seoDescription: p.translations.en.description.slice(0, 150),
@@ -1180,6 +1185,10 @@ async function main() {
               locale: "de",
               title: p.translations.de.title,
               description: p.translations.de.description,
+              body: plainTextToDoc(
+                p.translations.de.description,
+                p.translations.de.title,
+              ),
               slug: p.translations.de.slug,
               seoTitle: `${p.translations.de.title} | Nestpaw`,
               seoDescription: p.translations.de.description.slice(0, 150),

@@ -139,7 +139,20 @@ export class CatalogService {
           option1Name: data.option1Name,
           option2Name: data.option2Name,
           option3Name: data.option3Name,
-          translations: { create: data.translations },
+          translations: {
+            create: data.translations.map((t) => ({
+              locale: t.locale,
+              title: t.title,
+              description: t.description,
+              slug: t.slug,
+              seoTitle: t.seoTitle,
+              seoDescription: t.seoDescription,
+              body:
+                t.body === undefined || t.body === null
+                  ? undefined
+                  : (t.body as Prisma.InputJsonValue),
+            })),
+          },
           variants: {
             create: data.variants.map((v) => ({
               sku: v.sku,
@@ -209,12 +222,27 @@ export class CatalogService {
     return this.prisma.$transaction(async (tx) => {
       if (data.translations) {
         for (const t of data.translations) {
+          const bodyValue =
+            t.body === undefined
+              ? undefined
+              : t.body === null
+                ? Prisma.DbNull
+                : (t.body as Prisma.InputJsonValue);
+          const translationData = {
+            locale: t.locale,
+            title: t.title,
+            description: t.description,
+            slug: t.slug,
+            seoTitle: t.seoTitle,
+            seoDescription: t.seoDescription,
+            ...(bodyValue !== undefined ? { body: bodyValue } : {}),
+          };
           await tx.productTranslation.upsert({
             where: {
               productId_locale: { productId: id, locale: t.locale },
             },
-            create: { productId: id, ...t },
-            update: t,
+            create: { productId: id, ...translationData },
+            update: translationData,
           });
         }
       }

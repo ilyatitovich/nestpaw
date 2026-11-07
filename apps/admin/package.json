@@ -13,8 +13,13 @@
   },
   "dependencies": {
     "@online-store/api-client": "workspace:*",
+    "@online-store/rich-text": "workspace:*",
     "@online-store/shared-types": "workspace:*",
     "@tanstack/react-query": "^5.107.1",
+    "@tiptap/extension-link": "^3.20.0",
+    "@tiptap/pm": "^3.20.0",
+    "@tiptap/react": "^3.20.0",
+    "@tiptap/starter-kit": "^3.20.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5"

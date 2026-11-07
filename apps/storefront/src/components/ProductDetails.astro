@@ -1,5 +1,11 @@
 ---
+import {
+  isEmptyDoc,
+  parseTipTapDoc,
+  type TipTapDoc,
+} from "@online-store/rich-text";
 import ReviewForm from "./ReviewForm";
+import RichText from "./RichText";
 import { type Locale, t } from "../i18n/ui";
 
 type Review = {
@@ -20,9 +26,9 @@ interface Props {
   productId: string;
   title: string;
   description: string;
+  body?: TipTapDoc | null;
   shareUrl: string;
   specs: Spec[];
-  benefits?: string | null;
   reviews?: Review[];
 }
 
@@ -32,11 +38,14 @@ const {
   productId,
   title,
   description,
+  body,
   shareUrl,
   specs,
-  benefits,
   reviews = [],
 } = Astro.props;
+
+const richBody = parseTipTapDoc(body);
+const hasRichBody = richBody && !isEmptyDoc(richBody);
 
 const ids = {
   desc: `pdp-tab-desc-${productId}`,
@@ -161,15 +170,15 @@ const emailHref = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
     tabindex="0"
   >
     <div class="pdp-details__content">
-      <h2 class="pdp-details__heading">{title}</h2>
-      <p class="pdp-details__text">{description}</p>
       {
-        benefits ? (
+        hasRichBody && richBody ? (
+          <RichText doc={richBody} />
+        ) : (
           <>
-            <h3 class="pdp-details__subheading">{t(locale, "product.benefits")}</h3>
-            <p class="pdp-details__text">{benefits}</p>
+            <h2 class="pdp-details__heading">{title}</h2>
+            <p class="pdp-details__text">{description}</p>
           </>
-        ) : null
+        )
       }
     </div>
   </div>
