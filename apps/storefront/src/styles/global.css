@@ -139,11 +139,20 @@ a {
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
+  list-style: none;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 }
 
+.locale-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.locale-menu__trigger::marker {
+  content: "";
+}
+
 .locale-menu__trigger:hover,
-.locale-menu__trigger[aria-expanded="true"] {
+.locale-menu[open] .locale-menu__trigger {
   border-color: var(--color-brand);
   color: var(--color-brand);
   background: rgb(18 53 47 / 4%);
@@ -166,7 +175,7 @@ a {
   transition: transform 0.15s ease;
 }
 
-.locale-menu__trigger[aria-expanded="true"] .locale-menu__chevron {
+.locale-menu[open] .locale-menu__chevron {
   transform: rotate(180deg);
 }
 
@@ -184,10 +193,6 @@ a {
   border-radius: var(--radius-sm);
   background: white;
   box-shadow: 0 10px 28px rgb(11 31 28 / 12%);
-}
-
-.locale-menu__panel[hidden] {
-  display: none;
 }
 
 .locale-menu__item {

@@ -116,13 +116,9 @@ const localeMenuId = "site-locale-menu";
           </svg>
         </a>
 
-        <div class="locale-menu" data-locale-menu>
-          <button
-            id="locale-menu-trigger"
+        <details class="locale-menu" data-locale-menu>
+          <summary
             class="locale-menu__trigger"
-            type="button"
-            aria-expanded="false"
-            aria-controls={localeMenuId}
             aria-label={`Language: ${currentLocale.label}`}
           >
             <span class="locale-menu__flag" aria-hidden="true"
@@ -142,13 +138,8 @@ const localeMenuId = "site-locale-menu";
             >
               <path d="M2.5 4.5 6 8l3.5-3.5"></path>
             </svg>
-          </button>
-          <div
-            id={localeMenuId}
-            class="locale-menu__panel"
-            hidden
-            aria-labelledby="locale-menu-trigger"
-          >
+          </summary>
+          <div class="locale-menu__panel" id={localeMenuId}>
             {
               localeOptions.map((option) => (
                 <a
@@ -172,47 +163,27 @@ const localeMenuId = "site-locale-menu";
               ))
             }
           </div>
-        </div>
+        </details>
       </div>
     </nav>
   </div>
 </header>
 
 <script>
-  function initLocaleMenu(root: Element) {
-    const trigger = root.querySelector<HTMLButtonElement>(".locale-menu__trigger");
-    const panel = root.querySelector<HTMLElement>(".locale-menu__panel");
-    if (!trigger || !panel) return;
-
-    const close = () => {
-      panel.hidden = true;
-      trigger.setAttribute("aria-expanded", "false");
-    };
-
-    const open = () => {
-      panel.hidden = false;
-      trigger.setAttribute("aria-expanded", "true");
-    };
-
-    trigger.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (panel.hidden) open();
-      else close();
-    });
+  document.querySelectorAll("[data-locale-menu]").forEach((menu) => {
+    if (!(menu instanceof HTMLDetailsElement)) return;
 
     document.addEventListener("click", (event) => {
       const target = event.target;
-      if (!(target instanceof Node) || root.contains(target)) return;
-      close();
+      if (!(target instanceof Node) || menu.contains(target)) return;
+      menu.open = false;
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !panel.hidden) {
-        close();
-        trigger.focus();
+      if (event.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary")?.focus();
       }
     });
-  }
-
-  document.querySelectorAll("[data-locale-menu]").forEach(initLocaleMenu);
+  });
 </script>
