@@ -1,5 +1,7 @@
 ---
 import AddToCart from "../../../components/AddToCart";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import HeartIcon from "../../../components/icons/HeartIcon.astro";
 import ReviewForm from "../../../components/ReviewForm";
 import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
@@ -32,6 +34,12 @@ export async function getStaticPaths() {
 const locale = Astro.params.locale as Locale;
 const slug = Astro.params.slug!;
 
+type CollectionNode = {
+  id: string;
+  parentId: string | null;
+  translations: { locale: string; title: string; slug: string }[];
+};
+
 type Product = {
   id: string;
   option1Name?: string | null;
@@ -47,10 +55,12 @@ type Product = {
   variants: {
     id: string;
     price: number;
+    compareAtPrice?: number | null;
     option1?: string | null;
     inventory?: { quantity: number } | null;
   }[];
   metafields?: { namespace: string; key: string; value: unknown }[];
+  collections?: { collection: CollectionNode }[];
   reviews?: {
     rating: number;
     title?: string;
@@ -78,6 +88,52 @@ function petMeta(key: string) {
   );
   return typeof m?.value === "string" ? m.value : null;
 }
+
+function brandMeta() {
+  const m = product?.metafields?.find(
+    (x) =>
+      (x.namespace === "product" || x.namespace === "pet") && x.key === "brand",
+  );
+  return typeof m?.value === "string" ? m.value : null;
+}
+
+const brand = brandMeta();
+
+const saleVariant =
+  product?.variants.find(
+    (v) => v.compareAtPrice != null && v.compareAtPrice > v.price,
+  ) ?? null;
+const salePercent = saleVariant?.compareAtPrice
+  ? Math.round(
+      ((saleVariant.compareAtPrice - saleVariant.price) /
+        saleVariant.compareAtPrice) *
+        100,
+    )
+  : null;
+
+const collectionTrail = (product?.collections ?? [])
+  .map((c) => c.collection)
+  .sort((a, b) => {
+    if (!a.parentId && b.parentId) return -1;
+    if (a.parentId && !b.parentId) return 1;
+    return 0;
+  })
+  .map((c) => {
+    const ctr =
+      c.translations.find((x) => x.locale === locale) ?? c.translations[0];
+    return ctr
+      ? {
+          label: ctr.title,
+          href: localizePath(locale, `/collections/${ctr.slug}`),
+        }
+      : null;
+  })
+  .filter((x): x is { label: string; href: string } => Boolean(x));
+
+const breadcrumbs = [
+  ...collectionTrail,
+  ...(tr ? [{ label: tr.title }] : []),
+];
 
 let related: {
   id: string;
@@ -113,6 +169,7 @@ if (product) {
           name: tr.title,
           description: tr.description,
           image: img?.url,
+          brand: brand ? { "@type": "Brand", name: brand } : undefined,
           offers: {
             "@type": "Offer",
             priceCurrency: "EUR",
@@ -123,83 +180,134 @@ if (product) {
         {
           "@context": "https://schema.org",
           "@type": "BreadcrumbList",
-          itemListElement: [
-            { "@type": "ListItem", position: 1, name: "Home", item: `/${locale}/` },
-            {
-              "@type": "ListItem",
-              position: 2,
-              name: tr.title,
-              item: `/${locale}/products/${slug}`,
-            },
-          ],
+          itemListElement: breadcrumbs.map((item, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: item.label,
+            item:
+              "href" in item && item.href
+                ? new URL(item.href, Astro.site ?? "http://localhost:4321").href
+                : new URL(
+                    `/${locale}/products/${slug}`,
+                    Astro.site ?? "http://localhost:4321",
+                  ).href,
+          })),
         },
       ]}
     >
-      <div class="container pdp">
-        <div class="pdp__media">
-          {img ? <img src={img.url} alt={img.alt || tr.title} /> : null}
-        </div>
-        <div>
-          <h1 class="pdp__title">{tr.title}</h1>
-          <p class="pdp__desc">{tr.description}</p>
-          <div class="pdp__meta">
-            {petMeta("species") ? (
-              <div>
-                <strong>{t(locale, "product.species")}:</strong> {petMeta("species")}
-              </div>
-            ) : null}
-            {petMeta("life_stage") ? (
-              <div>
-                <strong>{t(locale, "product.lifeStage")}:</strong> {petMeta("life_stage")}
-              </div>
-            ) : null}
-            {petMeta("product_type") ? (
-              <div>
-                <strong>{t(locale, "product.type")}:</strong> {petMeta("product_type")}
-              </div>
-            ) : null}
-            {petMeta("size_class") && petMeta("size_class") !== "na" ? (
-              <div>
-                <strong>{t(locale, "product.size")}:</strong> {petMeta("size_class")}
-              </div>
-            ) : null}
+      <div class="container pdp-page">
+        <Breadcrumbs items={breadcrumbs} label={t(locale, "product.breadcrumb")} />
+
+        <div class="pdp">
+          <div class="pdp__gallery">
+            <div class="pdp__media">
+              {salePercent ? (
+                <div class="pdp__badges">
+                  <span class="pdp__badge">{t(locale, "product.sale")}</span>
+                  <span class="pdp__badge">{salePercent}%</span>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                class="pdp__wishlist"
+                data-wishlist-toggle
+                data-product-id={product.id}
+                data-label-add={t(locale, "product.wishlist")}
+                data-label-remove={t(locale, "product.wishlistAdded")}
+                aria-pressed="false"
+                aria-label={t(locale, "product.wishlist")}
+              >
+                <HeartIcon class="pdp__wishlist-icon" />
+              </button>
+              {img ? (
+                <img
+                  src={img.url}
+                  alt={img.alt || tr.title}
+                  width="800"
+                  height="800"
+                  fetchpriority="high"
+                />
+              ) : null}
+            </div>
           </div>
-          <AddToCart
-            client:load
-            apiUrl={API_URL}
-            variants={product.variants}
-            option1Name={product.option1Name}
-            label={t(locale, "product.add")}
-            locale={locale}
-          />
-          <section class="section" style="padding-bottom:0">
-            <h2 class="section__title" style="font-size:1.4rem">
-              {t(locale, "product.reviews")}
-            </h2>
-            {product.reviews?.length ? (
-              <div class="review-list">
-                {product.reviews.map((r) => (
-                  <div class="review-item">
-                    <strong>
-                      {r.authorName} · {r.rating}/5
-                    </strong>
-                    {r.title ? <div>{r.title}</div> : null}
-                    <p style="margin:0.35rem 0 0">{r.body}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p class="section__lead">No reviews yet.</p>
-            )}
-            <ReviewForm
+
+          <div class="pdp__info">
+            {brand ? <p class="pdp__brand">{brand}</p> : null}
+            <h1 class="pdp__title">{tr.title}</h1>
+
+            <AddToCart
               client:load
               apiUrl={API_URL}
-              productId={product.id}
-              label={t(locale, "product.writeReview")}
+              variants={product.variants}
+              option1Name={product.option1Name}
+              description={tr.description}
+              label={t(locale, "product.add")}
+              locale={locale}
+              qtyLabel={t(locale, "product.qty")}
+              decreaseLabel={t(locale, "product.decreaseQty")}
+              increaseLabel={t(locale, "product.increaseQty")}
+              inStockLabel={t(locale, "product.inStock")}
+              outOfStockLabel={t(locale, "product.outOfStock")}
+              errorLabel={t(locale, "product.addError")}
             />
-          </section>
+
+            <div class="pdp__meta">
+              {petMeta("species") ? (
+                <div>
+                  <strong>{t(locale, "product.species")}:</strong>{" "}
+                  {petMeta("species")}
+                </div>
+              ) : null}
+              {petMeta("life_stage") ? (
+                <div>
+                  <strong>{t(locale, "product.lifeStage")}:</strong>{" "}
+                  {petMeta("life_stage")}
+                </div>
+              ) : null}
+              {petMeta("product_type") ? (
+                <div>
+                  <strong>{t(locale, "product.type")}:</strong>{" "}
+                  {petMeta("product_type")}
+                </div>
+              ) : null}
+              {petMeta("size_class") && petMeta("size_class") !== "na" ? (
+                <div>
+                  <strong>{t(locale, "product.size")}:</strong>{" "}
+                  {petMeta("size_class")}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
+
+        <section class="pdp-reviews">
+          <h2 class="section__title" style="font-size:1.4rem">
+            {t(locale, "product.reviews")}
+          </h2>
+          {product.reviews?.length ? (
+            <div class="review-list">
+              {product.reviews.map((r) => (
+                <div class="review-item">
+                  <strong>
+                    {r.authorName} · {r.rating}/5
+                  </strong>
+                  {r.title ? <div>{r.title}</div> : null}
+                  <p style="margin:0.35rem 0 0">{r.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p class="section__lead">{t(locale, "product.noReviews")}</p>
+          )}
+          <ReviewForm
+            client:load
+            apiUrl={API_URL}
+            productId={product.id}
+            label={t(locale, "product.writeReview")}
+          />
+        </section>
       </div>
+
       {related.length ? (
         <section class="section">
           <div class="container">
@@ -207,7 +315,8 @@ if (product) {
             <div class="product-grid">
               {related.map((p) => {
                 const rtr =
-                  p.translations.find((x) => x.locale === locale) ?? p.translations[0];
+                  p.translations.find((x) => x.locale === locale) ??
+                  p.translations[0];
                 const price = p.variants[0]?.price ?? 0;
                 const rimg = p.media[0];
                 return (
@@ -217,7 +326,11 @@ if (product) {
                   >
                     <div class="product-card__media">
                       {rimg ? (
-                        <img src={rimg.url} alt={rimg.alt || rtr?.title || ""} loading="lazy" />
+                        <img
+                          src={rimg.url}
+                          alt={rimg.alt || rtr?.title || ""}
+                          loading="lazy"
+                        />
                       ) : null}
                     </div>
                     <h3 class="product-card__title">{rtr?.title}</h3>
@@ -231,6 +344,51 @@ if (product) {
           </div>
         </section>
       ) : null}
+
+      <script>
+        const KEY = "nestpaw-wishlist";
+
+        function readIds(): string[] {
+          try {
+            const raw = localStorage.getItem(KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+          } catch {
+            return [];
+          }
+        }
+
+        function writeIds(ids: string[]) {
+          localStorage.setItem(KEY, JSON.stringify(ids));
+        }
+
+        function syncButton(btn: HTMLButtonElement) {
+          const id = btn.dataset.productId;
+          if (!id) return;
+          const saved = readIds().includes(id);
+          btn.setAttribute("aria-pressed", saved ? "true" : "false");
+          btn.setAttribute(
+            "aria-label",
+            saved
+              ? btn.dataset.labelRemove || "Remove from wishlist"
+              : btn.dataset.labelAdd || "Add to wishlist",
+          );
+        }
+
+        document.querySelectorAll<HTMLButtonElement>("[data-wishlist-toggle]").forEach((btn) => {
+          syncButton(btn);
+          btn.addEventListener("click", () => {
+            const id = btn.dataset.productId;
+            if (!id) return;
+            const ids = readIds();
+            const next = ids.includes(id)
+              ? ids.filter((x) => x !== id)
+              : [...ids, id];
+            writeIds(next);
+            syncButton(btn);
+          });
+        });
+      </script>
     </BaseLayout>
   ) : (
     <BaseLayout locale={locale} title="Not found" canonicalPath={`/products/${slug}`}>
