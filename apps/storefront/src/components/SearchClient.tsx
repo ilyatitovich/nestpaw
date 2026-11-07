@@ -1,10 +1,16 @@
 import { type CSSProperties, useEffect, useId, useMemo, useState } from "react";
+import ProductCard from "./ProductCard";
 
 type Product = {
   id: string;
   translations: { locale: string; title: string; slug: string }[];
   media: { url: string; alt: string }[];
-  variants: { price: number; compareAtPrice?: number | null }[];
+  variants: {
+    id: string;
+    price: number;
+    compareAtPrice?: number | null;
+    option1?: string | null;
+  }[];
   metafields?: { namespace: string; key: string; value: unknown }[];
 };
 
@@ -41,6 +47,10 @@ type Props = {
     size: string;
     sale: string;
     loading: string;
+    add: string;
+    wishlist: string;
+    wishlistAdded: string;
+    addError: string;
   };
   initialQuery?: string;
 };
@@ -637,44 +647,22 @@ export default function SearchClient({
               const tr =
                 p.translations.find((x) => x.locale === locale) ??
                 p.translations[0];
-              const price = cheapestPrice(p);
-              const saleVariant = p.variants.find(
-                (v) =>
-                  v.compareAtPrice != null &&
-                  v.compareAtPrice > 0 &&
-                  v.compareAtPrice > v.price,
-              );
-              const img = p.media[0];
               return (
-                <a
-                  className="product-card"
+                <ProductCard
                   key={p.id}
+                  product={p}
+                  locale={locale}
+                  apiUrl={apiUrl}
                   href={`/${locale}/products/${tr?.slug}`}
-                >
-                  <div className="product-card__media">
-                    {saleVariant ? (
-                      <span className="product-card__badge">{labels.sale}</span>
-                    ) : null}
-                    {img ? (
-                      <img
-                        src={img.url}
-                        alt={img.alt || tr?.title || ""}
-                        loading="lazy"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="product-card__body">
-                    <h2 className="product-card__title">{tr?.title}</h2>
-                    <p className="product-card__price">
-                      {labels.from} {formatEuro(price)}
-                      {saleVariant?.compareAtPrice ? (
-                        <s className="product-card__compare">
-                          {formatEuro(saleVariant.compareAtPrice)}
-                        </s>
-                      ) : null}
-                    </p>
-                  </div>
-                </a>
+                  labels={{
+                    from: labels.from,
+                    sale: labels.sale,
+                    add: labels.add,
+                    wishlist: labels.wishlist,
+                    wishlistAdded: labels.wishlistAdded,
+                    addError: labels.addError,
+                  }}
+                />
               );
             })}
           </div>

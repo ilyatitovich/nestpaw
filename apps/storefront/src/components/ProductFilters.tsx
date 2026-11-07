@@ -1,15 +1,13 @@
 import { useMemo, useState } from "react";
+import ProductCard, { type ProductCardProduct } from "./ProductCard";
 
-export type FilterProduct = {
-  id: string;
-  translations: { locale: string; title: string; slug: string }[];
-  media: { url: string; alt: string }[];
-  variants: { price: number }[];
+export type FilterProduct = ProductCardProduct & {
   metafields?: { namespace: string; key: string; value: unknown }[];
 };
 
 type Props = {
   locale: string;
+  apiUrl: string;
   products: FilterProduct[];
   labels: {
     sort: string;
@@ -17,6 +15,11 @@ type Props = {
     filterType: string;
     all: string;
     from: string;
+    sale: string;
+    add: string;
+    wishlist: string;
+    wishlistAdded: string;
+    addError: string;
   };
 };
 
@@ -25,7 +28,12 @@ function meta(p: FilterProduct, key: string) {
   return typeof m?.value === "string" ? m.value : "";
 }
 
-export default function ProductFilters({ locale, products, labels }: Props) {
+export default function ProductFilters({
+  locale,
+  apiUrl,
+  products,
+  labels,
+}: Props) {
   const [life, setLife] = useState("all");
   const [type, setType] = useState("all");
   const [sort, setSort] = useState("featured");
@@ -112,28 +120,22 @@ export default function ProductFilters({ locale, products, labels }: Props) {
           const tr =
             p.translations.find((x) => x.locale === locale) ??
             p.translations[0];
-          const price = p.variants[0]?.price ?? 0;
-          const img = p.media[0];
           return (
-            <a
-              className="product-card"
+            <ProductCard
               key={p.id}
+              product={p}
+              locale={locale}
+              apiUrl={apiUrl}
               href={`/${locale}/products/${tr?.slug}`}
-            >
-              <div className="product-card__media">
-                {img ? (
-                  <img
-                    src={img.url}
-                    alt={img.alt || tr?.title || ""}
-                    loading="lazy"
-                  />
-                ) : null}
-              </div>
-              <h2 className="product-card__title">{tr?.title}</h2>
-              <p className="product-card__price">
-                {labels.from} €{(price / 100).toFixed(2)}
-              </p>
-            </a>
+              labels={{
+                from: labels.from,
+                sale: labels.sale,
+                add: labels.add,
+                wishlist: labels.wishlist,
+                wishlistAdded: labels.wishlistAdded,
+                addError: labels.addError,
+              }}
+            />
           );
         })}
       </div>

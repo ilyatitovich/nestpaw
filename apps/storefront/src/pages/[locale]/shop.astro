@@ -3,7 +3,7 @@ import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import ProductFilters from "../../components/ProductFilters";
 import { type Locale, locales, localizePath, t } from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { apiGet } from "../../lib/api";
+import { API_URL, apiGet } from "../../lib/api";
 
 export function getStaticPaths() {
   return locales.map((locale) => ({ params: { locale } }));
@@ -16,7 +16,12 @@ type ProductList = {
     id: string;
     translations: { locale: string; title: string; slug: string }[];
     media: { url: string; alt: string }[];
-    variants: { price: number }[];
+    variants: {
+      id: string;
+      price: number;
+      compareAtPrice?: number | null;
+      option1?: string | null;
+    }[];
     metafields?: { namespace: string; key: string; value: unknown }[];
   }[];
 };
@@ -50,6 +55,7 @@ const breadcrumbs = [
     <ProductFilters
       client:load
       locale={locale}
+      apiUrl={API_URL}
       products={products}
       labels={{
         sort: t(locale, "shop.sort"),
@@ -57,6 +63,11 @@ const breadcrumbs = [
         filterType: t(locale, "shop.filterType"),
         all: t(locale, "shop.all"),
         from: t(locale, "product.from"),
+        sale: t(locale, "product.sale"),
+        add: t(locale, "product.add"),
+        wishlist: t(locale, "product.wishlist"),
+        wishlistAdded: t(locale, "product.wishlistAdded"),
+        addError: t(locale, "product.addError"),
       }}
     />
   </div>

@@ -3,6 +3,7 @@ import type { TipTapDoc } from "@online-store/rich-text";
 import AddToCart from "../../../components/AddToCart";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import HeartIcon from "../../../components/icons/HeartIcon.astro";
+import ProductCard from "../../../components/ProductCard";
 import ProductDetails from "../../../components/ProductDetails.astro";
 import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
@@ -178,7 +179,12 @@ let related: {
   id: string;
   translations: { locale: string; title: string; slug: string }[];
   media: { url: string; alt: string }[];
-  variants: { price: number }[];
+  variants: {
+    id: string;
+    price: number;
+    compareAtPrice?: number | null;
+    option1?: string | null;
+  }[];
 }[] = [];
 
 if (product) {
@@ -314,27 +320,23 @@ if (product) {
                 const rtr =
                   p.translations.find((x) => x.locale === locale) ??
                   p.translations[0];
-                const price = p.variants[0]?.price ?? 0;
-                const rimg = p.media[0];
                 return (
-                  <a
-                    class="product-card"
+                  <ProductCard
+                    client:visible
+                    product={p}
+                    locale={locale}
+                    apiUrl={API_URL}
                     href={localizePath(locale, `/products/${rtr?.slug}`)}
-                  >
-                    <div class="product-card__media">
-                      {rimg ? (
-                        <img
-                          src={rimg.url}
-                          alt={rimg.alt || rtr?.title || ""}
-                          loading="lazy"
-                        />
-                      ) : null}
-                    </div>
-                    <h3 class="product-card__title">{rtr?.title}</h3>
-                    <p class="product-card__price">
-                      {t(locale, "product.from")} €{(price / 100).toFixed(2)}
-                    </p>
-                  </a>
+                    heading="h3"
+                    labels={{
+                      from: t(locale, "product.from"),
+                      sale: t(locale, "product.sale"),
+                      add: t(locale, "product.add"),
+                      wishlist: t(locale, "product.wishlist"),
+                      wishlistAdded: t(locale, "product.wishlistAdded"),
+                      addError: t(locale, "product.addError"),
+                    }}
+                  />
                 );
               })}
             </div>
