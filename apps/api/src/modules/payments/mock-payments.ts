@@ -23,4 +23,21 @@ export function assertProductionSecrets(): void {
       "JWT_ACCESS_SECRET must be set to a strong secret (min 32 chars) in production",
     );
   }
+
+  const customer = process.env.JWT_CUSTOMER_SECRET;
+  if (
+    customer &&
+    (DEFAULT_DEV_SECRETS.has(customer) || customer.length < 32)
+  ) {
+    throw new Error(
+      "JWT_CUSTOMER_SECRET must be a strong secret (min 32 chars) when set in production",
+    );
+  }
+
+  const pepper = process.env.CUSTOMER_OTP_PEPPER;
+  if (pepper && (DEFAULT_DEV_SECRETS.has(pepper) || pepper.length < 16)) {
+    throw new Error(
+      "CUSTOMER_OTP_PEPPER must be a strong secret (min 16 chars) when set in production",
+    );
+  }
 }

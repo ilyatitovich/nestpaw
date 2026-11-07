@@ -9,6 +9,7 @@ import { CartModule } from "./modules/cart/cart.module.js";
 import { CatalogModule } from "./modules/catalog/catalog.module.js";
 import { CheckoutModule } from "./modules/checkout/checkout.module.js";
 import { CmsModule } from "./modules/cms/cms.module.js";
+import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module.js";
 import { CustomersModule } from "./modules/customers/customers.module.js";
 import { DiscountsModule } from "./modules/discounts/discounts.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
@@ -48,6 +49,7 @@ import { RedisModule } from "./redis/redis.module.js";
     CheckoutModule,
     OrdersModule,
     CustomersModule,
+    CustomerAuthModule,
     DiscountsModule,
     ShippingModule,
     TaxModule,

@@ -10,6 +10,8 @@ export function getStaticPaths() {
 }
 
 const locale = Astro.params.locale as Locale;
+const turnstileSiteKey =
+  import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 
 const breadcrumbs = [
   { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
@@ -27,10 +29,29 @@ const breadcrumbs = [
     <AccountClient
       client:load
       apiUrl={API_URL}
+      locale={locale}
+      turnstileSiteKey={turnstileSiteKey}
       labels={{
         orders: t(locale, "account.orders"),
         logout: t(locale, "account.logout"),
         noOrders: t(locale, "account.noOrders"),
+        email: t(locale, "account.email"),
+        continue: t(locale, "account.continue"),
+        code: t(locale, "account.code"),
+        verify: t(locale, "account.verify"),
+        resend: t(locale, "account.resend"),
+        resendIn: t(locale, "account.resendIn"),
+        google: t(locale, "account.google"),
+        apple: t(locale, "account.apple"),
+        or: t(locale, "account.or"),
+        signedInAs: t(locale, "account.signedInAs"),
+        sendCode: t(locale, "account.sendCode"),
+        codeSent: t(locale, "account.codeSent"),
+        nameFirst: t(locale, "account.nameFirst"),
+        nameLast: t(locale, "account.nameLast"),
+        saveProfile: t(locale, "account.saveProfile"),
+        errorGeneric: t(locale, "account.errorGeneric"),
+        oauthDenied: t(locale, "account.oauthDenied"),
       }}
     />
   </div>

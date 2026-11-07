@@ -39,7 +39,7 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.refreshToken as string | undefined;
     await this.auth.logout(token);
-    res.clearCookie("refreshToken");
+    res.clearCookie("refreshToken", { path: "/auth" });
     return { ok: true };
   }
 

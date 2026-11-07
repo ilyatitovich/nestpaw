@@ -34,6 +34,7 @@ Product and hero photos are hotlinked from [Unsplash](https://unsplash.com/licen
 - Inventory decrements atomically on pay; restock on cancel/refund of paid orders
 - Production boot refuses default/weak `JWT_ACCESS_SECRET`
 - Wishlist requires a customer JWT (no body `customerId`)
+- Customer accounts use email OTP or Google/Apple OAuth (see `docs/runbooks/customer-auth.md`)
 - Admin Categories CRUD with nesting + product assignment
 
 ### Still thin / verify before real traffic
@@ -82,4 +83,4 @@ Optional full stack: `docker compose -f docker/docker-compose.yml --profile full
 
 ## Modules
 
-Catalog (variants + metafields + nested collections), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (JWT), multi-currency rates (stored; checkout still EUR-primary).
+Catalog (variants + metafields + nested collections), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (email OTP + Google/Apple OAuth), multi-currency rates (stored; checkout still EUR-primary).

@@ -62,6 +62,32 @@ export class NotificationsService {
     }
   }
 
+  async sendCustomerOtp(params: {
+    email: string;
+    code: string;
+    locale: string;
+  }) {
+    const isDe = params.locale === "de";
+    const subject = isDe
+      ? `${this.storeName()} — Ihr Anmeldecode`
+      : `${this.storeName()} — Your sign-in code`;
+    const text = isDe
+      ? `Ihr Anmeldecode lautet: ${params.code}\n\nDer Code ist 10 Minuten gültig. Wenn Sie diesen Code nicht angefordert haben, ignorieren Sie diese E-Mail.`
+      : `Your sign-in code is: ${params.code}\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.`;
+
+    try {
+      await this.transporter.sendMail({
+        from: this.from(),
+        to: params.email,
+        subject,
+        text,
+      });
+    } catch (e) {
+      this.logger.error(`Failed to send customer OTP to ${params.email}`, e);
+      throw e;
+    }
+  }
+
   async sendNewsletterConfirm(params: {
     subscriberId: string;
     confirmUrl: string;

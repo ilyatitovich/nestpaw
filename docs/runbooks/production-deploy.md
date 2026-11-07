@@ -8,8 +8,11 @@ Copy `.env.example` → `.env` and set production values. Critical:
 | --------------------------------- | -------------------------------------------------------------------------------------- |
 | `NODE_ENV`                        | `production`                                                                           |
 | `JWT_ACCESS_SECRET`               | strong secret, **≥ 32 chars** (boot fails otherwise)                                   |
+| `JWT_CUSTOMER_SECRET`             | strong secret for customer JWTs (recommended; falls back to access secret)             |
+| `CUSTOMER_OTP_PEPPER`             | HMAC pepper for email OTP codes                                                        |
 | `ALLOW_MOCK_PAYMENTS`             | `false` (also forced in Compose)                                                       |
 | `COOKIE_SECURE`                   | `true`                                                                                 |
+| Google / Apple OAuth              | optional; see `docs/runbooks/customer-auth.md`                                         |
 | `DATABASE_URL`                    | `postgresql://USER:PASS@postgres:5432/DB?schema=public` (Compose DNS, not `localhost`) |
 | `REDIS_URL`                       | `redis://redis:6379`                                                                   |
 | `API_PORT`                        | Container listens on **3000** (Compose overrides this)                                 |

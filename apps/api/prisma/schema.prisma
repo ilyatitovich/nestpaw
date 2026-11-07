@@ -100,18 +100,69 @@ model RefreshToken {
   @@index([userId])
 }
 
+enum CustomerIdentityProvider {
+  google
+  apple
+  email
+}
+
 model Customer {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String?
-  firstName    String
-  lastName     String
-  phone        String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  addresses    CustomerAddress[]
-  orders       Order[]
-  wishlists    WishlistItem[]
+  id              String                 @id @default(cuid())
+  email           String                 @unique
+  emailNormalized String                 @unique
+  emailVerifiedAt DateTime?
+  firstName       String?
+  lastName        String?
+  phone           String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  addresses       CustomerAddress[]
+  orders          Order[]
+  wishlists       WishlistItem[]
+  identities      CustomerIdentity[]
+  refreshTokens   CustomerRefreshToken[]
+}
+
+model CustomerIdentity {
+  id              String                    @id @default(cuid())
+  provider        CustomerIdentityProvider
+  providerSubject String
+  customerId      String
+  customer        Customer                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@unique([provider, providerSubject])
+  @@index([customerId])
+}
+
+model CustomerOtpChallenge {
+  id              String    @id @default(cuid())
+  emailNormalized String
+  purpose         String    @default("sign_in")
+  codeHash        String
+  expiresAt       DateTime
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(5)
+  consumedAt      DateTime?
+  requestIp       String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+
+  @@index([emailNormalized, purpose])
+}
+
+model CustomerRefreshToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  familyId   String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@index([familyId])
 }
 
 model CustomerAddress {

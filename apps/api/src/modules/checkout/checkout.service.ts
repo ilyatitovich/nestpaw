@@ -22,6 +22,7 @@ export class CheckoutService {
     token: string | undefined,
     input: unknown,
     idempotencyKey?: string,
+    customerId?: string,
   ) {
     const data = CreateCheckoutSchema.parse(input);
     if (!token) throw new BadRequestException("Cart token required");
@@ -79,6 +80,7 @@ export class CheckoutService {
         currency: data.currency,
         locale: data.locale,
         email: data.shippingAddress.email,
+        customerId: customerId || undefined,
         subtotal,
         discountTotal,
         shippingTotal,

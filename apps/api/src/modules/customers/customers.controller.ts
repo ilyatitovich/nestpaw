@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -21,22 +22,17 @@ export class CustomersController {
   constructor(private customers: CustomersService) {}
 
   @Public()
-  @Post("customers/register")
-  register(@Body() body: unknown) {
-    return this.customers.register(body);
-  }
-
-  @Public()
-  @Post("customers/login")
-  login(@Body() body: unknown) {
-    return this.customers.login(body);
-  }
-
-  @Public()
   @UseGuards(CustomerJwtGuard)
   @Get("customers/me")
   me(@CurrentCustomer() customer: AuthCustomer) {
     return this.customers.me(customer.id);
+  }
+
+  @Public()
+  @UseGuards(CustomerJwtGuard)
+  @Patch("customers/me")
+  updateMe(@CurrentCustomer() customer: AuthCustomer, @Body() body: unknown) {
+    return this.customers.updateProfile(customer.id, body);
   }
 
   @Roles("owner", "staff")

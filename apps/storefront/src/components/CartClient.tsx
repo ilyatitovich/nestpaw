@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import {
+  getCustomerAccessToken,
+  setCustomerAccessToken,
+} from "../lib/customer-auth";
 
 type Cart = {
   token: string;
@@ -85,9 +89,19 @@ export default function CartClient({
     setCart(data);
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only cart load
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only cart load + session restore
   useEffect(() => {
     load().catch(() => setError("Could not load cart"));
+    void fetch(`${apiUrl}/customers/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json()) as { accessToken?: string };
+        if (data.accessToken) setCustomerAccessToken(data.accessToken);
+      })
+      .catch(() => undefined);
   }, []);
 
   function updateField<K extends keyof ShippingForm>(
@@ -152,12 +166,17 @@ export default function CartClient({
         body: JSON.stringify({ name: "begin_checkout", payload: {}, locale }),
       }).catch(() => undefined);
 
+      const customerToken = getCustomerAccessToken();
       const res = await fetch(`${apiUrl}/checkout`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-Cart-Token": cart.token,
           "Idempotency-Key": crypto.randomUUID(),
+          ...(customerToken
+            ? { Authorization: `Bearer ${customerToken}` }
+            : {}),
         },
         body: JSON.stringify({
           shippingAddress: {

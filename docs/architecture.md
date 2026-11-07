@@ -7,9 +7,13 @@ Single-brand commerce monorepo:
 - `apps/api` — NestJS API + BullMQ worker (Docker)
 - `packages/*` — shared types, API client, tokens, tsconfig
 
+## Customer auth
+
+Storefront account sign-in is passwordless (email OTP and optional Google/Apple OAuth) with short-lived access JWTs plus HttpOnly refresh cookies. Admin remains email/password. Details: `docs/runbooks/customer-auth.md`, ADR `docs/adr/0006-customer-passwordless-auth.md`.
+
 ## Money path
 
-1. Storefront cart uses `X-Cart-Token`; guest enters shipping on cart checkout form
+1. Storefront cart uses `X-Cart-Token`; guest enters shipping on cart checkout form (signed-in customers send Bearer so `Order.customerId` is set)
 2. `POST /checkout` creates `Order` (`pending_payment`) + Stripe Checkout Session whose `amount_total` matches `Order.total` (discounts applied to line items)
 3. Stripe webhook (or gated mock-complete in non-prod) marks order `paid`, decrements inventory atomically, queues email; success page clears the cart
 4. Admin fulfills / refunds / cancels (paid cancel & refund restock inventory)

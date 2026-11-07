@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { type Request } from "express";
+import { customerJwtSecret } from "../../modules/customer-auth/customer-auth.util.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { type AuthCustomer } from "../decorators/current-customer.decorator.js";
 
@@ -30,16 +31,18 @@ export class CustomerJwtGuard implements CanActivate {
         sub: string;
         email: string;
         role?: string;
+        aud?: string;
       }>(token, {
-        secret: process.env.JWT_ACCESS_SECRET ?? "dev-access-secret",
+        secret: customerJwtSecret(),
       });
       if (payload.role !== "customer") {
         throw new UnauthorizedException("Customer token required");
       }
       const customer = await this.prisma.customer.findUnique({
         where: { id: payload.sub },
+        select: { id: true, email: true },
       });
-      if (!customer?.passwordHash) {
+      if (!customer) {
         throw new UnauthorizedException("Invalid customer");
       }
       request.customer = {

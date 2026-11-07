@@ -1,83 +1,69 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import {
-  CustomerRegisterSchema,
-  LoginSchema,
-} from "@online-store/shared-types";
-import * as argon2 from "argon2";
+import { Injectable } from "@nestjs/common";
+import { CustomerProfileUpdateSchema } from "@online-store/shared-types";
 import { PrismaService } from "../../prisma/prisma.service.js";
+
+const customerPublicSelect = {
+  id: true,
+  email: true,
+  emailNormalized: true,
+  emailVerifiedAt: true,
+  firstName: true,
+  lastName: true,
+  phone: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 @Injectable()
 export class CustomersService {
-  constructor(
-    private prisma: PrismaService,
-    private jwt: JwtService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   list() {
     return this.prisma.customer.findMany({
+      select: customerPublicSelect,
       orderBy: { createdAt: "desc" },
       take: 100,
     });
   }
 
-  async register(input: unknown) {
-    if (process.env.ENABLE_CUSTOMER_ACCOUNTS === "false") {
-      throw new UnauthorizedException("Customer accounts disabled");
-    }
-    const data = CustomerRegisterSchema.parse(input);
-    const existing = await this.prisma.customer.findUnique({
-      where: { email: data.email },
-    });
-    if (existing?.passwordHash) {
-      throw new ConflictException("Email already registered");
-    }
-    const passwordHash = await argon2.hash(data.password);
-    const customer = existing
-      ? await this.prisma.customer.update({
-          where: { id: existing.id },
-          data: {
-            passwordHash,
-            firstName: data.firstName,
-            lastName: data.lastName,
-          },
-        })
-      : await this.prisma.customer.create({
-          data: {
-            email: data.email,
-            passwordHash,
-            firstName: data.firstName,
-            lastName: data.lastName,
-          },
-        });
-    return this.issueCustomerToken(customer.id, customer.email);
-  }
-
-  async login(input: unknown) {
-    const { email, password } = LoginSchema.parse(input);
-    const customer = await this.prisma.customer.findUnique({
-      where: { email },
-    });
-    if (!customer?.passwordHash) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-    const ok = await argon2.verify(customer.passwordHash, password);
-    if (!ok) throw new UnauthorizedException("Invalid credentials");
-    return this.issueCustomerToken(customer.id, customer.email);
-  }
-
   async me(customerId: string) {
     return this.prisma.customer.findUnique({
       where: { id: customerId },
-      include: {
+      select: {
+        ...customerPublicSelect,
         addresses: true,
-        wishlists: true,
-        orders: { take: 20, orderBy: { createdAt: "desc" } },
+        wishlists: {
+          select: {
+            id: true,
+            productId: true,
+            createdAt: true,
+          },
+        },
+        orders: {
+          take: 20,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            total: true,
+            currency: true,
+            createdAt: true,
+          },
+        },
       },
+    });
+  }
+
+  async updateProfile(customerId: string, input: unknown) {
+    const data = CustomerProfileUpdateSchema.parse(input);
+    return this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+      },
+      select: customerPublicSelect,
     });
   }
 
@@ -88,13 +74,32 @@ export class CustomersService {
       },
       create: { customerId, productId },
       update: {},
+      select: {
+        id: true,
+        productId: true,
+        createdAt: true,
+      },
     });
   }
 
   async exportByEmail(email: string) {
     return this.prisma.customer.findUnique({
       where: { email },
-      include: { addresses: true, orders: { include: { lines: true } } },
+      select: {
+        ...customerPublicSelect,
+        addresses: true,
+        orders: {
+          include: { lines: true },
+        },
+        identities: {
+          select: {
+            id: true,
+            provider: true,
+            providerSubject: true,
+            createdAt: true,
+          },
+        },
+      },
     });
   }
 
@@ -105,16 +110,5 @@ export class CustomersService {
     if (!customer) return { ok: true };
     await this.prisma.customer.delete({ where: { id: customer.id } });
     return { ok: true };
-  }
-
-  private async issueCustomerToken(id: string, email: string) {
-    const accessToken = await this.jwt.signAsync(
-      { sub: id, email, role: "customer" },
-      {
-        secret: process.env.JWT_ACCESS_SECRET ?? "dev-access-secret",
-        expiresIn: "7d",
-      },
-    );
-    return { accessToken, customer: { id, email } };
   }
 }

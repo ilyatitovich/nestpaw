@@ -218,12 +218,26 @@ export type CreateNewsletterCampaignInput = z.infer<
   typeof CreateNewsletterCampaignSchema
 >;
 
-export const CustomerRegisterSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
+export const CustomerOtpRequestSchema = z.object({
+  email: z.string().email().max(320),
+  turnstileToken: z.string().min(1).max(2048),
+  locale: LocaleSchema.default("en"),
 });
+export type CustomerOtpRequestInput = z.infer<typeof CustomerOtpRequestSchema>;
+
+export const CustomerOtpVerifySchema = z.object({
+  email: z.string().email().max(320),
+  code: z.string().regex(/^\d{6}$/),
+});
+export type CustomerOtpVerifyInput = z.infer<typeof CustomerOtpVerifySchema>;
+
+export const CustomerProfileUpdateSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+});
+export type CustomerProfileUpdateInput = z.infer<
+  typeof CustomerProfileUpdateSchema
+>;
 
 export const AnalyticsEventSchema = z.object({
   name: z.enum([
