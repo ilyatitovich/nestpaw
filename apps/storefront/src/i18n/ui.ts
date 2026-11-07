@@ -92,6 +92,20 @@ export const ui = {
     "footer.returns": "Returns",
     "footer.contact": "Contact",
     "footer.about": "About",
+    "footer.tagline":
+      "Your trusted partner in pet care since 2020. Everyday essentials for dogs, cats, and small pets — curated for DACH homes.",
+    "footer.locations": "Locations",
+    "footer.service": "Customer service",
+    "footer.contactHeading": "Contact",
+    "footer.contactName": "Nestpaw pet essentials",
+    "footer.hoursDays": "Mon–Fri",
+    "footer.hoursTime": "08:00–16:00",
+    "footer.disclaimer":
+      "Payments are processed securely. Nestpaw does not store full card details on our servers.",
+    "footer.payments": "Accepted payment methods",
+    "footer.copyright": "© {year} Nestpaw — All rights reserved",
+    "footer.socialFacebook": "Nestpaw on Facebook",
+    "footer.socialInstagram": "Nestpaw on Instagram",
     "cookies.title": "Cookies & analytics",
     "cookies.body":
       "We use optional analytics to understand how the shop is used. Essential store features work without them.",
@@ -214,6 +228,20 @@ export const ui = {
     "footer.returns": "Rückgabe",
     "footer.contact": "Kontakt",
     "footer.about": "Über uns",
+    "footer.tagline":
+      "Ihr zuverlässiger Partner für die Pflege von Haustieren seit 2020. Alltagsessentials für Hunde, Katzen und Kleintiere — kuratiert für Zuhause in DE, AT & CH.",
+    "footer.locations": "Standorte",
+    "footer.service": "Kundenservice",
+    "footer.contactHeading": "Kontakt",
+    "footer.contactName": "Nestpaw Haustieressentials",
+    "footer.hoursDays": "Mo–Fr",
+    "footer.hoursTime": "08:00–16:00",
+    "footer.disclaimer":
+      "Zahlungen werden sicher abgewickelt. Nestpaw speichert keine vollständigen Kartendaten auf den eigenen Servern.",
+    "footer.payments": "Akzeptierte Zahlungsmethoden",
+    "footer.copyright": "© {year} Nestpaw — Alle Rechte vorbehalten",
+    "footer.socialFacebook": "Nestpaw auf Facebook",
+    "footer.socialInstagram": "Nestpaw auf Instagram",
     "cookies.title": "Cookies & Analyse",
     "cookies.body":
       "Wir nutzen optionale Analyse-Tools, um die Nutzung des Shops zu verstehen. Essenzielle Funktionen arbeiten auch ohne sie.",

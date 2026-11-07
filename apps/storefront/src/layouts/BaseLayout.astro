@@ -2,9 +2,10 @@
 import CookieConsent from "../components/CookieConsent.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
 import PromoBanner from "../components/PromoBanner.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import "../styles/global.css";
-import { type Locale, localizePath, storeName, t } from "../i18n/ui";
+import { type Locale, localizePath } from "../i18n/ui";
 import {
   COOKIE_CONSENT_ACCEPTED,
   COOKIE_CONSENT_KEY,
@@ -153,20 +154,7 @@ const hasAnalytics =
         <slot />
       </main>
       <NewsletterSignup locale={locale} />
-      <footer class="site-footer">
-        <div class="container site-footer__inner">
-          <span class="site-footer__brand">{storeName}</span>
-          <div class="site-footer__links">
-            <a href={localizePath(locale, "/pages/about")}>{t(locale, "footer.about")}</a>
-            <a href={localizePath(locale, "/pages/shipping")}>{t(locale, "footer.shipping")}</a>
-            <a href={localizePath(locale, "/pages/returns")}>{t(locale, "footer.returns")}</a>
-            <a href={localizePath(locale, "/pages/privacy")}>{t(locale, "footer.privacy")}</a>
-            <a href={localizePath(locale, "/pages/cookies")}>{t(locale, "footer.cookies")}</a>
-            <a href={localizePath(locale, "/pages/terms")}>{t(locale, "footer.terms")}</a>
-            <a href={localizePath(locale, "/pages/contact")}>{t(locale, "footer.contact")}</a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter locale={locale} />
     </div>
     <CookieConsent locale={locale} />
   </body>
