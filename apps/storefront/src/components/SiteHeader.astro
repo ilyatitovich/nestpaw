@@ -1,0 +1,218 @@
+---
+import { type Locale, locales, localizePath, storeName, t } from "../i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+}
+
+const { locale } = Astro.props;
+
+const activeLocale = (
+  locales.includes(locale as Locale) ? locale : "en"
+) as Locale;
+
+const dogsSlug = activeLocale === "de" ? "hunde" : "dogs";
+const catsSlug = activeLocale === "de" ? "katzen" : "cats";
+const smallSlug = activeLocale === "de" ? "kleintiere" : "small-pets";
+
+const localeOptions = [
+  { code: "en" as const, flag: "🇬🇧", href: "/en/", label: "English" },
+  { code: "de" as const, flag: "🇩🇪", href: "/de/", label: "Deutsch" },
+];
+
+const currentLocale =
+  localeOptions.find((option) => option.code === activeLocale) ??
+  localeOptions[0];
+
+const localeMenuId = "site-locale-menu";
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="site-header__brand" href={localizePath(activeLocale, "/")}>
+      {storeName}
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a
+        class="site-nav__link"
+        href={localizePath(activeLocale, `/collections/${dogsSlug}`)}
+      >
+        {t(activeLocale, "nav.dogs")}
+      </a>
+      <a
+        class="site-nav__link"
+        href={localizePath(activeLocale, `/collections/${catsSlug}`)}
+      >
+        {t(activeLocale, "nav.cats")}
+      </a>
+      <a
+        class="site-nav__link"
+        href={localizePath(activeLocale, `/collections/${smallSlug}`)}
+      >
+        {t(activeLocale, "nav.smallPets")}
+      </a>
+      <a class="site-nav__link" href={localizePath(activeLocale, "/shop")}>
+        {t(activeLocale, "nav.shop")}
+      </a>
+
+      <div class="site-nav__actions">
+        <a
+          class="site-nav__icon-link"
+          href={localizePath(activeLocale, "/search")}
+          aria-label={t(activeLocale, "nav.search")}
+        >
+          <svg
+            class="site-nav__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+        </a>
+        <a
+          class="site-nav__icon-link"
+          href={localizePath(activeLocale, "/cart")}
+          aria-label={t(activeLocale, "nav.cart")}
+        >
+          <svg
+            class="site-nav__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L20 8H7"
+            ></path>
+            <circle cx="10" cy="20" r="1.2"></circle>
+            <circle cx="17" cy="20" r="1.2"></circle>
+          </svg>
+        </a>
+        <a
+          class="site-nav__icon-link"
+          href={localizePath(activeLocale, "/account")}
+          aria-label={t(activeLocale, "nav.account")}
+        >
+          <svg
+            class="site-nav__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="3.5"></circle>
+            <path d="M5.5 19a6.5 6.5 0 0 1 13 0"></path>
+          </svg>
+        </a>
+
+        <div class="locale-menu" data-locale-menu>
+          <button
+            id="locale-menu-trigger"
+            class="locale-menu__trigger"
+            type="button"
+            aria-expanded="false"
+            aria-controls={localeMenuId}
+            aria-label={`Language: ${currentLocale.label}`}
+          >
+            <span class="locale-menu__flag" aria-hidden="true"
+              >{currentLocale.flag}</span
+            >
+            <span class="locale-menu__code">{currentLocale.code.toUpperCase()}</span
+            >
+            <svg
+              class="locale-menu__chevron"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M2.5 4.5 6 8l3.5-3.5"></path>
+            </svg>
+          </button>
+          <div
+            id={localeMenuId}
+            class="locale-menu__panel"
+            hidden
+            aria-labelledby="locale-menu-trigger"
+          >
+            {
+              localeOptions.map((option) => (
+                <a
+                  class:list={[
+                    "locale-menu__item",
+                    { "is-active": option.code === activeLocale },
+                  ]}
+                  href={option.href}
+                  aria-current={
+                    option.code === activeLocale ? "true" : undefined
+                  }
+                  lang={option.code}
+                >
+                  <span class="locale-menu__flag" aria-hidden="true">
+                    {option.flag}
+                  </span>
+                  <span class="locale-menu__code">
+                    {option.code.toUpperCase()}
+                  </span>
+                </a>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+  function initLocaleMenu(root: Element) {
+    const trigger = root.querySelector<HTMLButtonElement>(".locale-menu__trigger");
+    const panel = root.querySelector<HTMLElement>(".locale-menu__panel");
+    if (!trigger || !panel) return;
+
+    const close = () => {
+      panel.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    };
+
+    const open = () => {
+      panel.hidden = false;
+      trigger.setAttribute("aria-expanded", "true");
+    };
+
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (panel.hidden) open();
+      else close();
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Node) || root.contains(target)) return;
+      close();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !panel.hidden) {
+        close();
+        trigger.focus();
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-locale-menu]").forEach(initLocaleMenu);
+</script>
