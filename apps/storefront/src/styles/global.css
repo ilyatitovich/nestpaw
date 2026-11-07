@@ -58,13 +58,52 @@ a {
   margin-inline: auto;
 }
 
-.site-header {
+.site-chrome {
   position: sticky;
   top: 0;
   z-index: 20;
+}
+
+.site-header {
   backdrop-filter: blur(10px);
   background: rgb(245 248 249 / 88%);
   border-bottom: 1px solid var(--color-border);
+}
+
+.promo-banner {
+  overflow: hidden;
+  max-height: 3rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  background: rgb(18 53 47 / 94%);
+  color: #f4f7f6;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition:
+    max-height 220ms ease,
+    padding 220ms ease,
+    opacity 180ms ease,
+    border-color 220ms ease;
+}
+
+.promo-banner__inner {
+  line-height: 1.3;
+}
+
+.site-chrome.is-scrolled .promo-banner {
+  max-height: 0;
+  padding-block: 0;
+  opacity: 0;
+  border-bottom-width: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-banner {
+    transition: none;
+  }
 }
 
 .visually-hidden {
@@ -763,7 +802,11 @@ button.site-header__menu-toggle {
   margin-top: var(--space-8);
   padding: var(--space-8) 0;
   background:
-    radial-gradient(ellipse 80% 120% at 50% 0%, rgb(240 162 2 / 10%), transparent 55%),
+    radial-gradient(
+      ellipse 80% 120% at 50% 0%,
+      rgb(240 162 2 / 10%),
+      transparent 55%
+    ),
     linear-gradient(
       90deg,
       rgb(18 53 47 / 6%) 0%,
@@ -1041,23 +1084,23 @@ button.site-header__menu-toggle {
   background: rgb(255 255 255 / 8%);
 }
 
-.promo-banner {
+.hero {
   position: relative;
   overflow: hidden;
   color: #f4f7f6;
   background: #0b1f1c;
 }
 
-.promo-banner__viewport {
+.hero__viewport {
   overflow: hidden;
 }
 
-.promo-banner__container {
+.hero__container {
   display: flex;
   touch-action: pan-y pinch-zoom;
 }
 
-.promo-banner__slide {
+.hero__slide {
   position: relative;
   flex: 0 0 100%;
   min-width: 0;
@@ -1066,7 +1109,7 @@ button.site-header__menu-toggle {
   align-items: end;
 }
 
-.promo-banner__media {
+.hero__media {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1076,7 +1119,7 @@ button.site-header__menu-toggle {
   object-position: center;
 }
 
-.promo-banner__scrim {
+.hero__scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -1088,15 +1131,15 @@ button.site-header__menu-toggle {
   pointer-events: none;
 }
 
-.promo-banner__content {
+.hero__content {
   position: relative;
   z-index: 1;
-  padding: var(--space-6) 0 calc(var(--space-6) + 2.25rem);
+  padding: var(--space-8) 0 calc(var(--space-8) + 2.5rem);
   max-width: 34rem;
   animation: hero-rise 0.95s ease both;
 }
 
-.promo-banner__dots {
+.hero__dots {
   position: absolute;
   inset-inline: 0;
   bottom: var(--space-4);
@@ -1107,7 +1150,7 @@ button.site-header__menu-toggle {
   gap: 0.45rem;
 }
 
-.promo-banner__dot {
+.hero__dot {
   width: 0.55rem;
   height: 0.55rem;
   padding: 0;
@@ -1120,35 +1163,35 @@ button.site-header__menu-toggle {
     width 0.2s ease;
 }
 
-.promo-banner__dot.is-active {
+.hero__dot.is-active {
   width: 1.35rem;
   background: #f4f7f6;
 }
 
-.promo-banner__dot:focus-visible {
+.hero__dot:focus-visible {
   outline: 2px solid #f4f7f6;
   outline-offset: 3px;
 }
 
-.promo-banner__brand {
+.hero__brand {
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-size: clamp(3rem, 8vw, 5.5rem);
   margin: 0 0 var(--space-3);
   letter-spacing: -0.04em;
   line-height: 0.95;
   font-weight: 700;
 }
 
-.promo-banner__headline {
+.hero__headline {
   font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
   font-weight: 500;
   margin: 0 0 var(--space-3);
   letter-spacing: -0.01em;
 }
 
-.promo-banner__lead {
-  font-size: 1rem;
+.hero__lead {
+  font-size: 1.05rem;
   margin: 0 0 var(--space-5);
   opacity: 0.92;
   line-height: 1.55;
@@ -1614,8 +1657,8 @@ button.site-header__menu-toggle {
     grid-template-columns: 1fr;
   }
 
-  .promo-banner__slide {
-    min-height: 32vh;
+  .hero__slide {
+    min-height: 60vh;
   }
 }
 

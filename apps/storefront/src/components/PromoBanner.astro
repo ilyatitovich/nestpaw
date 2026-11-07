@@ -1,5 +1,5 @@
 ---
-import { type Locale, localizePath, storeName, t } from "../i18n/ui";
+import { type Locale, locales, t } from "../i18n/ui";
 
 interface Props {
   locale: Locale | string;
@@ -7,231 +7,41 @@ interface Props {
 
 const { locale } = Astro.props;
 
-const slides = [
-  {
-    title:
-      locale === "de"
-        ? "Weiche Nächte, frohe Morgen"
-        : "Soft nights, happy mornings",
-    subtitle:
-      locale === "de"
-        ? "Orthopädischer Komfort für Hunde, die das ganze Sofa beanspruchen."
-        : "Orthopedic comfort for dogs who claim the whole couch.",
-    cta:
-      locale === "de" ? "Nest Ortho Bett entdecken" : "Shop the Nest Ortho bed",
-    href: localizePath(
-      locale,
-      locale === "de"
-        ? "/products/nest-ortho-hundebett"
-        : "/products/nest-ortho-dog-bed",
-    ),
-    image:
-      "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1800&q=80",
-    alt:
-      locale === "de"
-        ? "Hund ruht auf einem weichen Bett"
-        : "Dog resting on a soft bed",
-  },
-  {
-    title: locale === "de" ? "Apportieren ohne Ende" : "Fetch that never quits",
-    subtitle:
-      locale === "de"
-        ? "Ein Ball mit Biss — für Spaziergänge, die spannend bleiben."
-        : "A bounce that keeps every walk interesting.",
-    cta: locale === "de" ? "Bounce Ball holen" : "Get the Bounce ball",
-    href: localizePath(
-      locale,
-      locale === "de"
-        ? "/products/bounce-apportierball"
-        : "/products/bounce-fetch-ball",
-    ),
-    image:
-      "https://images.unsplash.com/photo-1552053831-71594a27632d?w=1800&q=80",
-    alt:
-      locale === "de"
-        ? "Hund mit Ball im Gras"
-        : "Dog holding a ball in the grass",
-  },
-  {
-    title:
-      locale === "de"
-        ? "Wohnungskatzen, volle Energie"
-        : "Indoor cats, full energy",
-    subtitle:
-      locale === "de"
-        ? "Ausgewogene Schüsseln für neugierige Stubentiger."
-        : "Balanced bowls for curious apartment cats.",
-    cta: locale === "de" ? "Whisk Indoor entdecken" : "Shop Whisk Indoor",
-    href: localizePath(
-      locale,
-      locale === "de"
-        ? "/products/whisk-adult-indoor-trocken"
-        : "/products/whisk-adult-indoor-dry",
-    ),
-    image:
-      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1800&q=80",
-    alt:
-      locale === "de"
-        ? "Katze am sonnigen Fenster"
-        : "Cat sitting by a sunny window",
-  },
-  {
-    title:
-      locale === "de"
-        ? "Spiel, das Neugier weckt"
-        : "Play that sparks curiosity",
-    subtitle:
-      locale === "de"
-        ? "Federzauber für Zoomies am Abend."
-        : "Feather-flick fun for zoomies at dusk.",
-    cta: locale === "de" ? "Feather Flick holen" : "Shop the Feather Flick",
-    href: localizePath(
-      locale,
-      locale === "de"
-        ? "/products/feather-flick-angel"
-        : "/products/feather-flick-wand",
-    ),
-    image:
-      "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=1800&q=80",
-    alt:
-      locale === "de"
-        ? "Katze schaut neugierig in die Kamera"
-        : "Curious cat looking toward the camera",
-  },
-  {
-    title:
-      locale === "de" ? "Badetag, sanfter gemacht" : "Bath day, made gentler",
-    subtitle:
-      locale === "de"
-        ? "Haferberuhigung für empfindliche Felle."
-        : "Oatmeal calm for sensitive coats.",
-    cta: locale === "de" ? "Soft Paw Shampoo holen" : "Shop Soft Paw shampoo",
-    href: localizePath(
-      locale,
-      locale === "de"
-        ? "/products/soft-paw-hafer-shampoo"
-        : "/products/soft-paw-oatmeal-shampoo",
-    ),
-    image:
-      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1800&q=80",
-    alt:
-      locale === "de"
-        ? "Zwei Hunde mit glänzendem Fell im Freien"
-        : "Two dogs with shiny coats outdoors",
-  },
-] as const;
+const activeLocale = (
+  locales.includes(locale as Locale) ? locale : "en"
+) as Locale;
 ---
 
-<section
+<div
   class="promo-banner"
-  role="region"
-  aria-roledescription="carousel"
-  aria-label={t(locale, "home.carouselLabel")}
   data-promo-banner
+  role="region"
+  aria-label={t(activeLocale, "home.freeShip")}
 >
-  <div class="promo-banner__viewport" data-promo-viewport>
-    <div class="promo-banner__container">
-      {
-        slides.map((slide, index) => (
-          <div
-            class="promo-banner__slide"
-            role="group"
-            aria-roledescription="slide"
-            aria-label={`${index + 1} / ${slides.length}`}
-          >
-            <img
-              class="promo-banner__media"
-              src={slide.image}
-              alt={slide.alt}
-              width="1800"
-              height="1200"
-              fetchpriority={index === 0 ? "high" : "low"}
-              loading={index === 0 ? "eager" : "lazy"}
-              decoding={index === 0 ? "sync" : "async"}
-            />
-            <div class="promo-banner__scrim" aria-hidden="true" />
-            <div class="container promo-banner__content">
-              <p class="promo-banner__brand">{storeName}</p>
-              <p class="promo-banner__headline">{slide.title}</p>
-              <p class="promo-banner__lead">{slide.subtitle}</p>
-              <a class="btn btn--primary" href={slide.href}>
-                {slide.cta}
-              </a>
-            </div>
-          </div>
-        ))
-      }
-    </div>
+  <div class="container promo-banner__inner">
+    {t(activeLocale, "home.freeShip")}
   </div>
-
-  <div class="promo-banner__dots" data-promo-dots>
-    {
-      slides.map((_, index) => (
-        <button
-          type="button"
-          class:list={["promo-banner__dot", index === 0 && "is-active"]}
-          aria-label={t(locale, "home.carouselGoto").replace(
-            "{n}",
-            String(index + 1),
-          )}
-          aria-current={index === 0 ? "true" : undefined}
-          data-promo-dot={index}
-        />
-      ))
-    }
-  </div>
-</section>
+</div>
 
 <script>
-  import EmblaCarousel from "embla-carousel";
-  import Autoplay from "embla-carousel-autoplay";
+  const chrome = document.querySelector("[data-site-chrome]");
+  if (chrome instanceof HTMLElement) {
+    const root = chrome;
+    const threshold = 12;
+    let ticking = false;
 
-  function initPromoBanner(root: HTMLElement) {
-    if (root.dataset.promoReady === "true") return;
-    const viewport = root.querySelector("[data-promo-viewport]");
-    if (!(viewport instanceof HTMLElement)) return;
-    root.dataset.promoReady = "true";
-
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    const emblaApi = EmblaCarousel(
-      viewport,
-      { loop: true, duration: 28, align: "start" },
-      prefersReducedMotion ? [] : [Autoplay({ delay: 8000 })],
-    );
-
-    const dots = [
-      ...root.querySelectorAll<HTMLButtonElement>("[data-promo-dot]"),
-    ];
-
-    function syncDots() {
-      const selected = emblaApi.selectedScrollSnap();
-      for (const [index, dot] of dots.entries()) {
-        const active = index === selected;
-        dot.classList.toggle("is-active", active);
-        if (active) dot.setAttribute("aria-current", "true");
-        else dot.removeAttribute("aria-current");
-      }
+    function syncScrolled() {
+      ticking = false;
+      root.classList.toggle("is-scrolled", window.scrollY > threshold);
     }
 
-    for (const dot of dots) {
-      dot.addEventListener("click", () => {
-        const index = Number(dot.dataset.promoDot);
-        if (Number.isFinite(index)) emblaApi.scrollTo(index);
-      });
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(syncScrolled);
     }
 
-    emblaApi.on("select", syncDots);
-    syncDots();
-
-    if (!prefersReducedMotion) {
-      emblaApi.plugins().autoplay?.play();
-    }
+    syncScrolled();
+    window.addEventListener("scroll", onScroll, { passive: true });
   }
-
-  document
-    .querySelectorAll<HTMLElement>("[data-promo-banner]")
-    .forEach(initPromoBanner);
 </script>

@@ -145,8 +145,10 @@ const hasAnalytics =
   </head>
   <body>
     <div class="page">
-      <SiteHeader locale={locale} />
-      <PromoBanner locale={locale} />
+      <div class="site-chrome" data-site-chrome>
+        <PromoBanner locale={locale} />
+        <SiteHeader locale={locale} />
+      </div>
       <main class="page__main">
         <slot />
       </main>
