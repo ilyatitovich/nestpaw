@@ -3,6 +3,7 @@
 
 interface ImportMetaEnv {
   readonly PUBLIC_API_URL: string;
+  readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
   readonly PUBLIC_STORE_URL: string;
   readonly PUBLIC_PLAUSIBLE_DOMAIN?: string;
   readonly PUBLIC_GA4_MEASUREMENT_ID?: string;
@@ -11,4 +12,7 @@ interface ImportMetaEnv {
 
 interface Window {
   __activateAnalyticsConsent?: () => void;
+  turnstile?: {
+    reset: (el?: HTMLElement | string) => void;
+  };
 }

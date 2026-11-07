@@ -31,6 +31,18 @@ a {
   color: inherit;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .page {
   min-height: 100vh;
   display: flex;
@@ -46,52 +58,25 @@ a {
   margin-inline: auto;
 }
 
-.site-chrome {
+.site-header {
   position: sticky;
   top: 0;
   z-index: 20;
-}
-
-.site-header {
   backdrop-filter: blur(10px);
   background: rgb(245 248 249 / 88%);
   border-bottom: 1px solid var(--color-border);
 }
 
-.promo-banner {
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
   overflow: hidden;
-  max-height: 3rem;
-  padding: 0.55rem 0;
-  border-bottom: 1px solid rgb(255 255 255 / 12%);
-  background: rgb(18 53 47 / 94%);
-  color: #f4f7f6;
-  text-align: center;
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  transition:
-    max-height 220ms ease,
-    padding 220ms ease,
-    opacity 180ms ease,
-    border-color 220ms ease;
-}
-
-.promo-banner__inner {
-  line-height: 1.3;
-}
-
-.site-chrome.is-scrolled .promo-banner {
-  max-height: 0;
-  padding-block: 0;
-  opacity: 0;
-  border-bottom-width: 0;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .promo-banner {
-    transition: none;
-  }
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .site-header__shell {
@@ -212,7 +197,9 @@ button.site-header__menu-toggle {
   border: 0;
   background: transparent;
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .site-nav__icon-link:hover {
@@ -241,7 +228,9 @@ button.site-header__menu-toggle {
   font-weight: 600;
   cursor: pointer;
   position: relative;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .site-header__cart-btn:hover {
@@ -687,7 +676,10 @@ button.site-header__menu-toggle {
   letter-spacing: 0.02em;
   cursor: pointer;
   list-style: none;
-  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .locale-menu__trigger::-webkit-details-marker {
@@ -767,10 +759,163 @@ button.site-header__menu-toggle {
   color: var(--color-brand);
 }
 
+.newsletter {
+  margin-top: var(--space-8);
+  padding: var(--space-8) 0;
+  background:
+    radial-gradient(ellipse 80% 120% at 50% 0%, rgb(240 162 2 / 10%), transparent 55%),
+    linear-gradient(
+      90deg,
+      rgb(18 53 47 / 6%) 0%,
+      rgb(238 242 244 / 90%) 40%,
+      rgb(238 242 244 / 90%) 60%,
+      rgb(18 53 47 / 6%) 100%
+    );
+  border-top: 1px solid var(--color-border);
+}
+
+.newsletter__inner {
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 860px) {
+  .newsletter__inner {
+    grid-template-columns: 1.1fr 1fr;
+    gap: var(--space-8);
+  }
+}
+
+.newsletter__eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.newsletter__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.4vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-brand);
+}
+
+.newsletter__accent {
+  color: var(--color-accent);
+}
+
+.newsletter__lead {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--color-ink-muted);
+  line-height: 1.55;
+}
+
+.newsletter__form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.newsletter__hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.newsletter__row {
+  display: flex;
+  align-items: stretch;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.newsletter__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  color: var(--color-ink);
+}
+
+.newsletter__input:focus {
+  outline: none;
+}
+
+.newsletter__row:focus-within {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgb(18 53 47 / 12%);
+}
+
+.newsletter__submit {
+  border: 0;
+  background: var(--color-brand);
+  color: #f7faf9;
+  font: inherit;
+  font-weight: 650;
+  padding: 0.85rem 1.15rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.newsletter__submit:hover {
+  background: var(--color-brand-hover);
+}
+
+.newsletter__legal {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+  line-height: 1.45;
+}
+
+.newsletter__legal a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.newsletter__status {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.newsletter__status[data-state="success"] {
+  color: var(--color-success);
+}
+
+.newsletter__status[data-state="error"] {
+  color: var(--color-danger);
+}
+
+.newsletter__status[data-state="pending"] {
+  color: var(--color-ink-muted);
+}
+
+.newsletter-result {
+  padding-block: var(--space-8);
+}
+
+.newsletter .cf-turnstile {
+  min-height: 1px;
+}
+
 .site-footer {
   border-top: 1px solid var(--color-border);
   padding: var(--space-6) 0;
-  margin-top: var(--space-8);
+  margin-top: 0;
   color: var(--color-ink-muted);
   background: rgb(255 255 255 / 55%);
 }
@@ -896,23 +1041,23 @@ button.site-header__menu-toggle {
   background: rgb(255 255 255 / 8%);
 }
 
-.hero {
+.promo-banner {
   position: relative;
   overflow: hidden;
   color: #f4f7f6;
   background: #0b1f1c;
 }
 
-.hero__viewport {
+.promo-banner__viewport {
   overflow: hidden;
 }
 
-.hero__container {
+.promo-banner__container {
   display: flex;
   touch-action: pan-y pinch-zoom;
 }
 
-.hero__slide {
+.promo-banner__slide {
   position: relative;
   flex: 0 0 100%;
   min-width: 0;
@@ -921,7 +1066,7 @@ button.site-header__menu-toggle {
   align-items: end;
 }
 
-.hero__media {
+.promo-banner__media {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -931,7 +1076,7 @@ button.site-header__menu-toggle {
   object-position: center;
 }
 
-.hero__scrim {
+.promo-banner__scrim {
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -943,15 +1088,15 @@ button.site-header__menu-toggle {
   pointer-events: none;
 }
 
-.hero__content {
+.promo-banner__content {
   position: relative;
   z-index: 1;
-  padding: var(--space-8) 0 calc(var(--space-8) + 2.5rem);
+  padding: var(--space-6) 0 calc(var(--space-6) + 2.25rem);
   max-width: 34rem;
   animation: hero-rise 0.95s ease both;
 }
 
-.hero__dots {
+.promo-banner__dots {
   position: absolute;
   inset-inline: 0;
   bottom: var(--space-4);
@@ -962,7 +1107,7 @@ button.site-header__menu-toggle {
   gap: 0.45rem;
 }
 
-.hero__dot {
+.promo-banner__dot {
   width: 0.55rem;
   height: 0.55rem;
   padding: 0;
@@ -975,35 +1120,35 @@ button.site-header__menu-toggle {
     width 0.2s ease;
 }
 
-.hero__dot.is-active {
+.promo-banner__dot.is-active {
   width: 1.35rem;
   background: #f4f7f6;
 }
 
-.hero__dot:focus-visible {
+.promo-banner__dot:focus-visible {
   outline: 2px solid #f4f7f6;
   outline-offset: 3px;
 }
 
-.hero__brand {
+.promo-banner__brand {
   font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(2.25rem, 6vw, 4rem);
   margin: 0 0 var(--space-3);
   letter-spacing: -0.04em;
   line-height: 0.95;
   font-weight: 700;
 }
 
-.hero__headline {
+.promo-banner__headline {
   font-family: var(--font-display);
-  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
   font-weight: 500;
   margin: 0 0 var(--space-3);
   letter-spacing: -0.01em;
 }
 
-.hero__lead {
-  font-size: 1.05rem;
+.promo-banner__lead {
+  font-size: 1rem;
   margin: 0 0 var(--space-5);
   opacity: 0.92;
   line-height: 1.55;
@@ -1469,7 +1614,7 @@ button.site-header__menu-toggle {
     grid-template-columns: 1fr;
   }
 
-  .hero__slide {
+  .promo-banner__slide {
     min-height: 32vh;
   }
 }

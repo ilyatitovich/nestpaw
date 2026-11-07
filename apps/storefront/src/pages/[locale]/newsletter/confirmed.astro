@@ -1,0 +1,31 @@
+---
+import {
+  type Locale,
+  locales,
+  localizePath,
+  storeName,
+  t,
+} from "../../../i18n/ui";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+---
+
+<BaseLayout
+  title={`${t(locale, "newsletter.confirmedTitle")} — ${storeName}`}
+  description={t(locale, "newsletter.confirmedLead")}
+  locale={locale}
+  canonicalPath="/newsletter/confirmed"
+>
+  <section class="container section newsletter-result">
+    <h1>{t(locale, "newsletter.confirmedTitle")}</h1>
+    <p class="section__lead">{t(locale, "newsletter.confirmedLead")}</p>
+    <p>
+      <a class="btn" href={localizePath(locale, "/")}>{t(locale, "404.cta")}</a>
+    </p>
+  </section>
+</BaseLayout>

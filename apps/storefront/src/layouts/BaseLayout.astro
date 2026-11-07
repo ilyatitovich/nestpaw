@@ -1,5 +1,6 @@
 ---
 import CookieConsent from "../components/CookieConsent.astro";
+import NewsletterSignup from "../components/NewsletterSignup.astro";
 import PromoBanner from "../components/PromoBanner.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import "../styles/global.css";
@@ -144,13 +145,12 @@ const hasAnalytics =
   </head>
   <body>
     <div class="page">
-      <div class="site-chrome" data-site-chrome>
-        <PromoBanner locale={locale} />
-        <SiteHeader locale={locale} />
-      </div>
+      <SiteHeader locale={locale} />
+      <PromoBanner locale={locale} />
       <main class="page__main">
         <slot />
       </main>
+      <NewsletterSignup locale={locale} />
       <footer class="site-footer">
         <div class="container site-footer__inner">
           <span class="site-footer__brand">{storeName}</span>

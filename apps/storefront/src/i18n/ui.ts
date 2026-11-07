@@ -84,6 +84,25 @@ export const ui = {
     "404.cta": "Back to Nestpaw",
     "collection.shop": "Shop this category",
     "collection.children": "Browse",
+    "newsletter.eyebrow": "Stay in the loop",
+    "newsletter.titleBefore": "Subscribe to the ",
+    "newsletter.accent": "newsletter",
+    "newsletter.lead":
+      "Be first to hear about new products, offers, and practical pet-care tips. No spam — only what matters.",
+    "newsletter.placeholder": "Your email address",
+    "newsletter.cta": "Subscribe",
+    "newsletter.legalBefore": "By signing up you accept our ",
+    "newsletter.privacy": "privacy policy",
+    "newsletter.legalAfter": ". Unsubscribe anytime.",
+    "newsletter.success": "Check your inbox to confirm your subscription.",
+    "newsletter.error": "Something went wrong. Please try again.",
+    "newsletter.verifying": "Submitting…",
+    "newsletter.confirmedTitle": "You're subscribed",
+    "newsletter.confirmedLead":
+      "Thanks for confirming — we'll keep you posted with the good stuff.",
+    "newsletter.unsubscribedTitle": "You're unsubscribed",
+    "newsletter.unsubscribedLead":
+      "You've been removed from the newsletter. You can resubscribe anytime.",
   },
   de: {
     "nav.shop": "Shop",
@@ -164,6 +183,26 @@ export const ui = {
     "404.cta": "Zurück zu Nestpaw",
     "collection.shop": "Kategorie entdecken",
     "collection.children": "Entdecken",
+    "newsletter.eyebrow": "Bleiben Sie auf dem Laufenden",
+    "newsletter.titleBefore": "Melden Sie sich für den ",
+    "newsletter.accent": "Newsletter",
+    "newsletter.lead":
+      "Erfahren Sie zuerst von neuen Produkten, Aktionen und Tipps zur Tierpflege. Kein Spam — nur das Wichtige.",
+    "newsletter.placeholder": "Ihre E-Mail-Adresse",
+    "newsletter.cta": "Anmelden",
+    "newsletter.legalBefore": "Mit der Anmeldung akzeptieren Sie unsere ",
+    "newsletter.privacy": "Datenschutzerklärung",
+    "newsletter.legalAfter": ". Jederzeit abmeldbar.",
+    "newsletter.success":
+      "Bitte prüfen Sie Ihr Postfach und bestätigen Sie die Anmeldung.",
+    "newsletter.error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "newsletter.verifying": "Wird gesendet…",
+    "newsletter.confirmedTitle": "Anmeldung bestätigt",
+    "newsletter.confirmedLead":
+      "Danke für die Bestätigung — wir halten Sie auf dem Laufenden.",
+    "newsletter.unsubscribedTitle": "Abmeldung erfolgreich",
+    "newsletter.unsubscribedLead":
+      "Sie wurden vom Newsletter entfernt. Eine erneute Anmeldung ist jederzeit möglich.",
   },
 } as const;
 

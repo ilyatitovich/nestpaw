@@ -1,0 +1,133 @@
+---
+import { type Locale, localizePath, t } from "../i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+}
+
+const { locale } = Astro.props;
+const apiUrl = import.meta.env.PUBLIC_API_URL ?? "http://localhost:3001";
+const turnstileSiteKey =
+  import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
+const privacyHref = localizePath(locale, "/pages/privacy");
+const messages = {
+  success: t(locale, "newsletter.success"),
+  error: t(locale, "newsletter.error"),
+  verifying: t(locale, "newsletter.verifying"),
+};
+---
+
+<section class="newsletter" aria-labelledby="newsletter-heading" data-newsletter>
+  <div class="container newsletter__inner">
+    <div class="newsletter__copy">
+      <p class="newsletter__eyebrow">{t(locale, "newsletter.eyebrow")}</p>
+      <h2 id="newsletter-heading" class="newsletter__title">
+        {t(locale, "newsletter.titleBefore")}
+        <span class="newsletter__accent">{t(locale, "newsletter.accent")}</span>
+      </h2>
+      <p class="newsletter__lead">{t(locale, "newsletter.lead")}</p>
+    </div>
+
+    <div class="newsletter__form-wrap">
+      <form class="newsletter__form" data-newsletter-form novalidate>
+        <input type="hidden" name="locale" value={locale} />
+        <label class="newsletter__hp" aria-hidden="true">
+          <span>Company</span>
+          <input type="text" name="company" tabindex="-1" autocomplete="off" />
+        </label>
+        <div class="newsletter__row">
+          <label class="visually-hidden" for="newsletter-email">
+            {t(locale, "newsletter.placeholder")}
+          </label>
+          <input
+            id="newsletter-email"
+            class="newsletter__input"
+            type="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder={t(locale, "newsletter.placeholder")}
+          />
+          <button class="newsletter__submit" type="submit">
+            {t(locale, "newsletter.cta")}
+          </button>
+        </div>
+        <div
+          class="cf-turnstile"
+          data-sitekey={turnstileSiteKey}
+          data-theme="light"
+          data-size="flexible"
+        >
+        </div>
+        <p class="newsletter__legal">
+          {t(locale, "newsletter.legalBefore")}
+          <a href={privacyHref}>{t(locale, "newsletter.privacy")}</a>
+          {t(locale, "newsletter.legalAfter")}
+        </p>
+        <p class="newsletter__status" data-newsletter-status hidden></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script
+  src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+  async
+  defer
+></script>
+<script define:vars={{ apiUrl, messages }}>
+  const root = document.querySelector("[data-newsletter]");
+  const form = root?.querySelector("[data-newsletter-form]");
+  const statusEl = root?.querySelector("[data-newsletter-status]");
+
+  if (form instanceof HTMLFormElement && statusEl instanceof HTMLElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const fd = new FormData(form);
+      const email = String(fd.get("email") ?? "").trim();
+      const localeValue = String(fd.get("locale") ?? "en");
+      const company = String(fd.get("company") ?? "");
+      const tokenInput = form.querySelector("[name='cf-turnstile-response']");
+      const token =
+        tokenInput instanceof HTMLInputElement ? tokenInput.value : "";
+
+      statusEl.hidden = false;
+      statusEl.dataset.state = "pending";
+      statusEl.textContent = messages.verifying;
+
+      const widget = form.querySelector(".cf-turnstile");
+
+      if (!token) {
+        statusEl.dataset.state = "error";
+        statusEl.textContent = messages.error;
+        return;
+      }
+
+      try {
+        const res = await fetch(`${apiUrl}/newsletter/subscribe`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            locale: localeValue,
+            company,
+            turnstileToken: token,
+          }),
+        });
+        if (!res.ok) throw new Error("subscribe failed");
+        statusEl.dataset.state = "success";
+        statusEl.textContent = messages.success;
+        form.reset();
+        if (widget instanceof HTMLElement) {
+          window.turnstile?.reset(widget);
+        }
+      } catch {
+        statusEl.dataset.state = "error";
+        statusEl.textContent = messages.error;
+        if (widget instanceof HTMLElement) {
+          window.turnstile?.reset(widget);
+        }
+      }
+    });
+  }
+</script>

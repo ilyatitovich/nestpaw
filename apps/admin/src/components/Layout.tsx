@@ -12,6 +12,7 @@ const links = [
   ["/shipping", "Shipping"],
   ["/pages", "Pages"],
   ["/reviews", "Reviews"],
+  ["/newsletter", "Newsletter"],
   ["/settings", "Settings"],
 ] as const;
 

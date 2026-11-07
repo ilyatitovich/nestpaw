@@ -14,6 +14,7 @@ import { DiscountsModule } from "./modules/discounts/discounts.module.js";
 import { HealthModule } from "./modules/health/health.module.js";
 import { InventoryModule } from "./modules/inventory/inventory.module.js";
 import { MediaModule } from "./modules/media/media.module.js";
+import { NewsletterModule } from "./modules/newsletter/newsletter.module.js";
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
 import { OrdersModule } from "./modules/orders/orders.module.js";
 import { PaymentsModule } from "./modules/payments/payments.module.js";
@@ -55,6 +56,7 @@ import { RedisModule } from "./redis/redis.module.js";
     CmsModule,
     SettingsModule,
     NotificationsModule,
+    NewsletterModule,
     AnalyticsModule,
     ReviewsModule,
   ],

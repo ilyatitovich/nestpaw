@@ -196,6 +196,26 @@ export const CreateReviewSchema = z.object({
   authorEmail: z.string().email(),
 });
 
+export const SubscribeNewsletterSchema = z.object({
+  email: z.string().email().max(320),
+  locale: LocaleSchema.default("en"),
+  turnstileToken: z.string().min(1).max(2048),
+  /** Honeypot — must be empty when filled by bots. */
+  company: z.string().max(200).optional().default(""),
+});
+export type SubscribeNewsletterInput = z.infer<
+  typeof SubscribeNewsletterSchema
+>;
+
+export const CreateNewsletterCampaignSchema = z.object({
+  subject: z.string().min(1).max(200),
+  bodyHtml: z.string().min(1).max(100_000),
+  bodyText: z.string().max(100_000).optional(),
+});
+export type CreateNewsletterCampaignInput = z.infer<
+  typeof CreateNewsletterCampaignSchema
+>;
+
 export const CustomerRegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),

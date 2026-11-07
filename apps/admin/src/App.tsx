@@ -13,6 +13,7 @@ import { OrdersPage } from "./pages/OrdersPage";
 import { PagesCmsPage } from "./pages/PagesCmsPage";
 import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
+import { NewsletterPage } from "./pages/NewsletterPage";
 import { ReviewsPage } from "./pages/ReviewsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ShippingPage } from "./pages/ShippingPage";
@@ -49,6 +50,7 @@ export function App() {
                 <Route path="/shipping" element={<ShippingPage />} />
                 <Route path="/pages" element={<PagesCmsPage />} />
                 <Route path="/reviews" element={<ReviewsPage />} />
+                <Route path="/newsletter" element={<NewsletterPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </Layout>

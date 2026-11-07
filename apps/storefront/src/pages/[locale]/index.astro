@@ -6,7 +6,6 @@ import {
   storeName,
   t,
 } from "../../i18n/ui";
-import HeroCarousel from "../../components/HeroCarousel.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { apiGet } from "../../lib/api";
 
@@ -73,7 +72,7 @@ const petTiles = [
     description: t(locale, "home.lead"),
   }}
 >
-  <HeroCarousel locale={locale} />
+  <h1 class="visually-hidden">{storeName}</h1>
 
   <section class="section">
     <div class="container">
