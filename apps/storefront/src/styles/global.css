@@ -182,8 +182,9 @@ a {
 .locale-menu__panel {
   position: absolute;
   top: calc(100% + 0.35rem);
-  right: 0;
-  left: auto;
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
   display: grid;
   gap: 0.15rem;
   min-width: 7.5rem;
