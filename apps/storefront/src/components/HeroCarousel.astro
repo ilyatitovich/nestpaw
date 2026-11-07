@@ -1,10 +1,5 @@
 ---
-import {
-  type Locale,
-  localizePath,
-  storeName,
-  t,
-} from "../i18n/ui";
+import { type Locale, localizePath, storeName, t } from "../i18n/ui";
 
 interface Props {
   locale: Locale | string;
@@ -22,7 +17,8 @@ const slides = [
       locale === "de"
         ? "Orthopädischer Komfort für Hunde, die das ganze Sofa beanspruchen."
         : "Orthopedic comfort for dogs who claim the whole couch.",
-    cta: locale === "de" ? "Nest Ortho Bett entdecken" : "Shop the Nest Ortho bed",
+    cta:
+      locale === "de" ? "Nest Ortho Bett entdecken" : "Shop the Nest Ortho bed",
     href: localizePath(
       locale,
       locale === "de"
@@ -37,8 +33,7 @@ const slides = [
         : "Dog resting on a soft bed",
   },
   {
-    title:
-      locale === "de" ? "Apportieren ohne Ende" : "Fetch that never quits",
+    title: locale === "de" ? "Apportieren ohne Ende" : "Fetch that never quits",
     subtitle:
       locale === "de"
         ? "Ein Ball mit Biss — für Spaziergänge, die spannend bleiben."
@@ -210,7 +205,7 @@ const slides = [
     const emblaApi = EmblaCarousel(
       viewport,
       { loop: true, duration: 28, align: "start" },
-      prefersReducedMotion ? [] : [Autoplay({ delay: 5500 })],
+      prefersReducedMotion ? [] : [Autoplay({ delay: 8000 })],
     );
 
     const dots = [
