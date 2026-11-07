@@ -18,6 +18,8 @@
     "@online-store/shared-types": "workspace:*",
     "@online-store/ui-tokens": "workspace:*",
     "astro": "^7.4.7",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-autoplay": "^8.6.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

@@ -6,6 +6,7 @@ import {
   storeName,
   t,
 } from "../../i18n/ui";
+import HeroCarousel from "../../components/HeroCarousel.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { apiGet } from "../../lib/api";
 
@@ -63,7 +64,7 @@ const petTiles = [
   title={`${storeName} — ${t(locale, "home.headline")}`}
   description={t(locale, "home.lead")}
   canonicalPath="/"
-  ogImage="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&q=80"
+  ogImage="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1200&q=80"
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "PetStore",
@@ -72,16 +73,7 @@ const petTiles = [
     description: t(locale, "home.lead"),
   }}
 >
-  <section class="hero">
-    <div class="container hero__content">
-      <h1 class="hero__brand">{storeName}</h1>
-      <p class="hero__headline">{t(locale, "home.headline")}</p>
-      <p class="hero__lead">{t(locale, "home.lead")}</p>
-      <a class="btn btn--primary" href={localizePath(locale, `/collections/${dogsSlug}`)}>
-        {t(locale, "home.cta")}
-      </a>
-    </div>
-  </section>
+  <HeroCarousel locale={locale} />
 
   <div class="free-ship">
     <div class="container">{t(locale, "home.freeShip")}</div>

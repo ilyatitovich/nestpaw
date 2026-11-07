@@ -1,0 +1,328 @@
+---
+import {
+  type Locale,
+  localizePath,
+  storeName,
+  t,
+} from "../i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+}
+
+const { locale } = Astro.props;
+
+const slides = [
+  {
+    title:
+      locale === "de"
+        ? "Weiche Nächte, frohe Morgen"
+        : "Soft nights, happy mornings",
+    subtitle:
+      locale === "de"
+        ? "Orthopädischer Komfort für Hunde, die das ganze Sofa beanspruchen."
+        : "Orthopedic comfort for dogs who claim the whole couch.",
+    cta: locale === "de" ? "Nest Ortho Bett entdecken" : "Shop the Nest Ortho bed",
+    href: localizePath(
+      locale,
+      locale === "de"
+        ? "/products/nest-ortho-hundebett"
+        : "/products/nest-ortho-dog-bed",
+    ),
+    image:
+      "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1800&q=80",
+    alt:
+      locale === "de"
+        ? "Hund ruht auf einem weichen Bett"
+        : "Dog resting on a soft bed",
+  },
+  {
+    title:
+      locale === "de" ? "Apportieren ohne Ende" : "Fetch that never quits",
+    subtitle:
+      locale === "de"
+        ? "Ein Ball mit Biss — für Spaziergänge, die spannend bleiben."
+        : "A bounce that keeps every walk interesting.",
+    cta: locale === "de" ? "Bounce Ball holen" : "Get the Bounce ball",
+    href: localizePath(
+      locale,
+      locale === "de"
+        ? "/products/bounce-apportierball"
+        : "/products/bounce-fetch-ball",
+    ),
+    image:
+      "https://images.unsplash.com/photo-1552053831-71594a27632d?w=1800&q=80",
+    alt:
+      locale === "de"
+        ? "Hund mit Ball im Gras"
+        : "Dog holding a ball in the grass",
+  },
+  {
+    title:
+      locale === "de"
+        ? "Wohnungskatzen, volle Energie"
+        : "Indoor cats, full energy",
+    subtitle:
+      locale === "de"
+        ? "Ausgewogene Schüsseln für neugierige Stubentiger."
+        : "Balanced bowls for curious apartment cats.",
+    cta: locale === "de" ? "Whisk Indoor entdecken" : "Shop Whisk Indoor",
+    href: localizePath(
+      locale,
+      locale === "de"
+        ? "/products/whisk-adult-indoor-trocken"
+        : "/products/whisk-adult-indoor-dry",
+    ),
+    image:
+      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1800&q=80",
+    alt:
+      locale === "de"
+        ? "Katze am sonnigen Fenster"
+        : "Cat sitting by a sunny window",
+  },
+  {
+    title:
+      locale === "de"
+        ? "Spiel, das Neugier weckt"
+        : "Play that sparks curiosity",
+    subtitle:
+      locale === "de"
+        ? "Federzauber für Zoomies am Abend."
+        : "Feather-flick fun for zoomies at dusk.",
+    cta: locale === "de" ? "Feather Flick holen" : "Shop the Feather Flick",
+    href: localizePath(
+      locale,
+      locale === "de"
+        ? "/products/feather-flick-angel"
+        : "/products/feather-flick-wand",
+    ),
+    image:
+      "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=1800&q=80",
+    alt:
+      locale === "de"
+        ? "Katze schaut neugierig in die Kamera"
+        : "Curious cat looking toward the camera",
+  },
+  {
+    title:
+      locale === "de" ? "Badetag, sanfter gemacht" : "Bath day, made gentler",
+    subtitle:
+      locale === "de"
+        ? "Haferberuhigung für empfindliche Felle."
+        : "Oatmeal calm for sensitive coats.",
+    cta: locale === "de" ? "Soft Paw Shampoo holen" : "Shop Soft Paw shampoo",
+    href: localizePath(
+      locale,
+      locale === "de"
+        ? "/products/soft-paw-hafer-shampoo"
+        : "/products/soft-paw-oatmeal-shampoo",
+    ),
+    image:
+      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1800&q=80",
+    alt:
+      locale === "de"
+        ? "Zwei Hunde mit glänzendem Fell im Freien"
+        : "Two dogs with shiny coats outdoors",
+  },
+] as const;
+---
+
+<section
+  class="hero"
+  role="region"
+  aria-roledescription="carousel"
+  aria-label={t(locale, "home.carouselLabel")}
+  data-hero-carousel
+>
+  <div class="hero__viewport" data-hero-viewport>
+    <div class="hero__container">
+      {
+        slides.map((slide, index) => (
+          <div
+            class="hero__slide"
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${index + 1} / ${slides.length}`}
+          >
+            <img
+              class="hero__media"
+              src={slide.image}
+              alt={slide.alt}
+              width="1800"
+              height="1200"
+              fetchpriority={index === 0 ? "high" : "low"}
+              loading={index === 0 ? "eager" : "lazy"}
+              decoding={index === 0 ? "sync" : "async"}
+            />
+            <div class="hero__scrim" aria-hidden="true" />
+            <div class="container hero__content">
+              {index === 0 ? (
+                <h1 class="hero__brand">{storeName}</h1>
+              ) : (
+                <p class="hero__brand" aria-hidden="true">
+                  {storeName}
+                </p>
+              )}
+              <p class="hero__headline">{slide.title}</p>
+              <p class="hero__lead">{slide.subtitle}</p>
+              <a class="btn btn--primary" href={slide.href}>
+                {slide.cta}
+              </a>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="hero__controls container">
+    <div class="hero__dots" data-hero-dots>
+      {
+        slides.map((_, index) => (
+          <button
+            type="button"
+            class:list={["hero__dot", index === 0 && "is-active"]}
+            aria-label={t(locale, "home.carouselGoto").replace(
+              "{n}",
+              String(index + 1),
+            )}
+            aria-current={index === 0 ? "true" : undefined}
+            data-hero-dot={index}
+          />
+        ))
+      }
+    </div>
+    <div class="hero__actions">
+      <button
+        type="button"
+        class="hero__nav"
+        data-hero-prev
+        aria-label={t(locale, "home.carouselPrev")}
+      >
+        <span aria-hidden="true">‹</span>
+      </button>
+      <button
+        type="button"
+        class="hero__toggle"
+        data-hero-toggle
+        aria-pressed="false"
+        data-pause-label={t(locale, "home.carouselPause")}
+        data-play-label={t(locale, "home.carouselPlay")}
+        aria-label={t(locale, "home.carouselPause")}
+      >
+        <span data-hero-toggle-icon aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+            <rect x="2" y="2" width="3.5" height="10" rx="0.5"></rect>
+            <rect x="8.5" y="2" width="3.5" height="10" rx="0.5"></rect>
+          </svg>
+        </span>
+      </button>
+      <button
+        type="button"
+        class="hero__nav"
+        data-hero-next
+        aria-label={t(locale, "home.carouselNext")}
+      >
+        <span aria-hidden="true">›</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+  import EmblaCarousel from "embla-carousel";
+  import Autoplay from "embla-carousel-autoplay";
+
+  function pauseIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="2" width="3.5" height="10" rx="0.5"></rect><rect x="8.5" y="2" width="3.5" height="10" rx="0.5"></rect></svg>`;
+  }
+
+  function playIcon() {
+    return `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3.5 2.2v9.6L12 7 3.5 2.2z"></path></svg>`;
+  }
+
+  function initHeroCarousel(root: HTMLElement) {
+    if (root.dataset.heroReady === "true") return;
+    const viewport = root.querySelector("[data-hero-viewport]");
+    if (!(viewport instanceof HTMLElement)) return;
+    root.dataset.heroReady = "true";
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    const emblaApi = EmblaCarousel(
+      viewport,
+      { loop: true, duration: 28, align: "start" },
+      prefersReducedMotion ? [] : [Autoplay({ delay: 5500 })],
+    );
+
+    const dots = [
+      ...root.querySelectorAll<HTMLButtonElement>("[data-hero-dot]"),
+    ];
+    const prevBtn = root.querySelector("[data-hero-prev]");
+    const nextBtn = root.querySelector("[data-hero-next]");
+    const toggleBtn = root.querySelector("[data-hero-toggle]");
+    const toggleIcon = root.querySelector("[data-hero-toggle-icon]");
+
+    let userPaused = prefersReducedMotion;
+
+    function setToggleUi(paused: boolean) {
+      if (!(toggleBtn instanceof HTMLButtonElement)) return;
+      const pauseLabel = toggleBtn.dataset.pauseLabel ?? "Pause slideshow";
+      const playLabel = toggleBtn.dataset.playLabel ?? "Play slideshow";
+      toggleBtn.setAttribute("aria-pressed", String(paused));
+      toggleBtn.setAttribute("aria-label", paused ? playLabel : pauseLabel);
+      if (toggleIcon) {
+        toggleIcon.innerHTML = paused ? playIcon() : pauseIcon();
+      }
+    }
+
+    function syncDots() {
+      const selected = emblaApi.selectedScrollSnap();
+      for (const [index, dot] of dots.entries()) {
+        const active = index === selected;
+        dot.classList.toggle("is-active", active);
+        if (active) dot.setAttribute("aria-current", "true");
+        else dot.removeAttribute("aria-current");
+      }
+    }
+
+    for (const dot of dots) {
+      dot.addEventListener("click", () => {
+        const index = Number(dot.dataset.heroDot);
+        if (Number.isFinite(index)) emblaApi.scrollTo(index);
+      });
+    }
+
+    if (prevBtn instanceof HTMLButtonElement) {
+      prevBtn.addEventListener("click", () => emblaApi.scrollPrev());
+    }
+    if (nextBtn instanceof HTMLButtonElement) {
+      nextBtn.addEventListener("click", () => emblaApi.scrollNext());
+    }
+
+    if (toggleBtn instanceof HTMLButtonElement) {
+      toggleBtn.addEventListener("click", () => {
+        const plugin = emblaApi.plugins().autoplay;
+        if (!plugin) return;
+        userPaused = !userPaused;
+        if (userPaused) plugin.stop();
+        else plugin.play();
+        setToggleUi(userPaused);
+      });
+      setToggleUi(userPaused);
+    }
+
+    emblaApi.on("select", syncDots);
+    syncDots();
+
+    if (!prefersReducedMotion) {
+      emblaApi.plugins().autoplay?.play();
+    }
+  }
+
+  document
+    .querySelectorAll<HTMLElement>("[data-hero-carousel]")
+    .forEach(initHeroCarousel);
+</script>
