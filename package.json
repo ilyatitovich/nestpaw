@@ -1,14 +1,9 @@
 {
   "name": "online-store",
   "private": true,
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
     "node": ">=22"
-  },
-  "pnpm": {
-    "overrides": {
-      "multer": "^2.5.0"
-    }
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
