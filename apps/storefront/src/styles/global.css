@@ -451,11 +451,14 @@ button.site-header__menu-toggle {
   z-index: 50;
   pointer-events: none;
   visibility: hidden;
+  /* Keep visible until the panel finishes sliding out */
+  transition: visibility 0s linear 0.22s;
 }
 
 .cart-drawer.is-open {
   pointer-events: auto;
   visibility: visible;
+  transition-delay: 0s;
 }
 
 .cart-drawer__backdrop {
@@ -465,7 +468,7 @@ button.site-header__menu-toggle {
   background: rgb(11 31 28 / 42%);
   opacity: 0;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.22s ease;
 }
 
 .cart-drawer.is-open .cart-drawer__backdrop {
