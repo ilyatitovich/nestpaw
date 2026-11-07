@@ -4,10 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { JwtService } from "@nestjs/jwt";
-import type { Request } from "express";
-import type { PrismaService } from "../../prisma/prisma.service.js";
-import type { AuthCustomer } from "../decorators/current-customer.decorator.js";
+import { JwtService } from "@nestjs/jwt";
+import { type Request } from "express";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { type AuthCustomer } from "../decorators/current-customer.decorator.js";
 
 @Injectable()
 export class CustomerJwtGuard implements CanActivate {

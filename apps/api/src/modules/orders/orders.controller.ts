@@ -4,8 +4,8 @@ import {
   CurrentUser,
 } from "../../common/decorators/current-user.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { PaymentsService } from "../payments/payments.service.js";
-import type { OrdersService } from "./orders.service.js";
+import { PaymentsService } from "../payments/payments.service.js";
+import { OrdersService } from "./orders.service.js";
 
 @Controller("admin/orders")
 export class OrdersController {

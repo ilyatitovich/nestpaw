@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { CreateDiscountSchema } from "@online-store/shared-types";
-import type { DiscountCode } from "@prisma/client";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { type DiscountCode } from "@prisma/client";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { computeDiscountAmount } from "./compute-amount.js";
 
 @Injectable()

@@ -1,4 +1,11 @@
 import { useMemo, useState } from "react";
+import {
+  CART_TOKEN_KEY,
+  type Cart,
+  dispatchCartOpen,
+  dispatchCartUpdated,
+  persistCartToken,
+} from "../lib/cart";
 
 type Variant = {
   id: string;
@@ -36,7 +43,7 @@ export default function AddToCart({
     if (!selected) return;
     setStatus("loading");
     try {
-      const token = localStorage.getItem("cart_token");
+      const token = localStorage.getItem(CART_TOKEN_KEY);
       const res = await fetch(`${apiUrl}/cart/items`, {
         method: "POST",
         headers: {
@@ -46,10 +53,8 @@ export default function AddToCart({
         body: JSON.stringify({ variantId: selected.id, quantity: 1 }),
       });
       if (!res.ok) throw new Error("failed");
-      const cart = (await res.json()) as { token: string };
-      localStorage.setItem("cart_token", cart.token);
-      const headerToken = res.headers.get("X-Cart-Token");
-      if (headerToken) localStorage.setItem("cart_token", headerToken);
+      const cart = (await res.json()) as Cart;
+      persistCartToken(res, cart);
 
       await fetch(`${apiUrl}/analytics/events`, {
         method: "POST",
@@ -62,9 +67,9 @@ export default function AddToCart({
       }).catch(() => undefined);
 
       setStatus("done");
-      window.setTimeout(() => {
-        window.location.href = `/${locale}/cart`;
-      }, 280);
+      dispatchCartUpdated();
+      dispatchCartOpen();
+      window.setTimeout(() => setStatus("idle"), 900);
     } catch {
       setStatus("error");
     }

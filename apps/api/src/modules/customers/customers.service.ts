@@ -3,13 +3,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import type { JwtService } from "@nestjs/jwt";
+import { JwtService } from "@nestjs/jwt";
 import {
   CustomerRegisterSchema,
   LoginSchema,
 } from "@online-store/shared-types";
 import * as argon2 from "argon2";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class CustomersService {

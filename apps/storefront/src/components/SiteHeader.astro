@@ -1,9 +1,30 @@
 ---
 import { type Locale, locales, localizePath, storeName, t } from "../i18n/ui";
+import { API_URL, apiGet } from "../lib/api";
+import CartDrawer from "./CartDrawer";
+import HeaderSearch from "./HeaderSearch";
+import AccountIcon from "./icons/AccountIcon.astro";
+import CategoryIcon from "./icons/CategoryIcon.astro";
+import ChevronDownIcon from "./icons/ChevronDownIcon.astro";
+import CloseIcon from "./icons/CloseIcon.astro";
+import MenuIcon from "./icons/MenuIcon.astro";
 
 interface Props {
   locale: Locale | string;
 }
+
+type NavChild = {
+  id: string;
+  title: string;
+  slug: string;
+};
+
+type NavCategory = {
+  id: string;
+  title: string;
+  slug: string;
+  children: NavChild[];
+};
 
 const { locale } = Astro.props;
 
@@ -15,6 +36,69 @@ const dogsSlug = activeLocale === "de" ? "hunde" : "dogs";
 const catsSlug = activeLocale === "de" ? "katzen" : "cats";
 const smallSlug = activeLocale === "de" ? "kleintiere" : "small-pets";
 
+const fallbackCategories: NavCategory[] = [
+  {
+    id: "dogs",
+    title: t(activeLocale, "nav.dogs"),
+    slug: dogsSlug,
+    children: [],
+  },
+  {
+    id: "cats",
+    title: t(activeLocale, "nav.cats"),
+    slug: catsSlug,
+    children: [],
+  },
+  {
+    id: "small",
+    title: t(activeLocale, "nav.smallPets"),
+    slug: smallSlug,
+    children: [],
+  },
+];
+
+let categories: NavCategory[] = fallbackCategories;
+
+try {
+  const collections = await apiGet<
+    {
+      id: string;
+      parentId: string | null;
+      translations: { locale: string; title: string; slug: string }[];
+      children?: {
+        id: string;
+        translations: { locale: string; title: string; slug: string }[];
+      }[];
+    }[]
+  >(`/collections?locale=${activeLocale}`);
+
+  const tops = collections.filter((c) => c.parentId == null);
+  if (tops.length) {
+    categories = tops.map((c) => {
+      const tr =
+        c.translations.find((x) => x.locale === activeLocale) ??
+        c.translations[0];
+      return {
+        id: c.id,
+        title: tr?.title ?? "Collection",
+        slug: tr?.slug ?? c.id,
+        children: (c.children ?? []).map((child) => {
+          const ctr =
+            child.translations.find((x) => x.locale === activeLocale) ??
+            child.translations[0];
+          return {
+            id: child.id,
+            title: ctr?.title ?? "Collection",
+            slug: ctr?.slug ?? child.id,
+          };
+        }),
+      };
+    });
+  }
+} catch {
+  // API offline during build — keep fallback links
+}
+
 const localeOptions = [
   { code: "en" as const, flag: "🇬🇧", href: "/en/", label: "English" },
   { code: "de" as const, flag: "🇩🇪", href: "/de/", label: "Deutsch" },
@@ -25,96 +109,71 @@ const currentLocale =
   localeOptions[0];
 
 const localeMenuId = "site-locale-menu";
+const mobileNavId = "site-mobile-nav";
 ---
 
-<header class="site-header">
-  <div class="container site-header__inner">
-    <a class="site-header__brand" href={localizePath(activeLocale, "/")}>
-      {storeName}
-    </a>
-    <nav class="site-nav" aria-label="Primary">
-      <a
-        class="site-nav__link"
-        href={localizePath(activeLocale, `/collections/${dogsSlug}`)}
-      >
-        {t(activeLocale, "nav.dogs")}
-      </a>
-      <a
-        class="site-nav__link"
-        href={localizePath(activeLocale, `/collections/${catsSlug}`)}
-      >
-        {t(activeLocale, "nav.cats")}
-      </a>
-      <a
-        class="site-nav__link"
-        href={localizePath(activeLocale, `/collections/${smallSlug}`)}
-      >
-        {t(activeLocale, "nav.smallPets")}
-      </a>
-      <a class="site-nav__link" href={localizePath(activeLocale, "/shop")}>
-        {t(activeLocale, "nav.shop")}
+<header class="site-header" data-site-header>
+  <div class="container site-header__shell">
+    <div class="site-header__top">
+      <a class="site-header__brand" href={localizePath(activeLocale, "/")}>
+        {storeName}
       </a>
 
-      <div class="site-nav__actions">
-        <a
-          class="site-nav__icon-link"
-          href={localizePath(activeLocale, "/search")}
-          aria-label={t(activeLocale, "nav.search")}
+      <div class="site-header__search">
+        <HeaderSearch
+          client:idle
+          apiUrl={API_URL}
+          locale={activeLocale}
+          labels={{
+            placeholder: t(activeLocale, "search.placeholder"),
+            from: t(activeLocale, "product.from"),
+            seeAllResults: t(activeLocale, "search.seeAllResults"),
+            noResults: t(activeLocale, "search.noResults"),
+            loading: t(activeLocale, "search.loading"),
+          }}
+        />
+      </div>
+
+      <div class="site-header__actions">
+        <button
+          type="button"
+          class="site-nav__icon-link site-header__menu-toggle"
+          data-mobile-nav-toggle
+          data-close-label={t(activeLocale, "nav.closeMenu")}
+          aria-expanded="false"
+          aria-controls={mobileNavId}
+          aria-label={t(activeLocale, "nav.menu")}
         >
-          <svg
-            class="site-nav__icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="m20 20-3.5-3.5"></path>
-          </svg>
-        </a>
-        <a
-          class="site-nav__icon-link"
-          href={localizePath(activeLocale, "/cart")}
-          aria-label={t(activeLocale, "nav.cart")}
-        >
-          <svg
-            class="site-nav__icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.4a2 2 0 0 0 2-1.6L20 8H7"
-            ></path>
-            <circle cx="10" cy="20" r="1.2"></circle>
-            <circle cx="17" cy="20" r="1.2"></circle>
-          </svg>
-        </a>
+          <MenuIcon class="site-nav__icon site-header__menu-icon--open" />
+          <CloseIcon class="site-nav__icon site-header__menu-icon--close" />
+        </button>
+
         <a
           class="site-nav__icon-link"
           href={localizePath(activeLocale, "/account")}
           aria-label={t(activeLocale, "nav.account")}
         >
-          <svg
-            class="site-nav__icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="8" r="3.5"></circle>
-            <path d="M5.5 19a6.5 6.5 0 0 1 13 0"></path>
-          </svg>
+          <AccountIcon class="site-nav__icon" />
         </a>
+
+        <CartDrawer
+          client:load
+          apiUrl={API_URL}
+          locale={activeLocale}
+          labels={{
+            title: t(activeLocale, "cart.title"),
+            empty: t(activeLocale, "cart.empty"),
+            checkout: t(activeLocale, "cart.checkout"),
+            remove: t(activeLocale, "cart.remove"),
+            freeShipProgress: t(activeLocale, "cart.freeShipProgress"),
+            freeShipUnlocked: t(activeLocale, "cart.freeShipUnlocked"),
+            open: t(activeLocale, "cart.open"),
+            close: t(activeLocale, "cart.close"),
+            viewCart: t(activeLocale, "cart.viewCart"),
+            subtotal: t(activeLocale, "cart.subtotal"),
+            qty: t(activeLocale, "cart.qty"),
+          }}
+        />
 
         <details class="locale-menu" data-locale-menu>
           <summary
@@ -126,18 +185,7 @@ const localeMenuId = "site-locale-menu";
             >
             <span class="locale-menu__code">{currentLocale.code.toUpperCase()}</span
             >
-            <svg
-              class="locale-menu__chevron"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M2.5 4.5 6 8l3.5-3.5"></path>
-            </svg>
+            <ChevronDownIcon class="locale-menu__chevron" />
           </summary>
           <div class="locale-menu__panel" id={localeMenuId}>
             {
@@ -165,6 +213,108 @@ const localeMenuId = "site-locale-menu";
           </div>
         </details>
       </div>
+    </div>
+
+    <nav
+      class="site-header__nav"
+      id={mobileNavId}
+      data-mobile-nav
+      aria-label="Primary"
+    >
+      <ul class="site-nav__list">
+        {
+          categories.map((category) => {
+            const panelId = `mega-${category.id}`;
+            const allFor = t(activeLocale, "nav.allFor").replace(
+              "{name}",
+              category.title,
+            );
+            const hasChildren = category.children.length > 0;
+            return (
+              <li
+                class:list={[
+                  "site-nav__item",
+                  { "has-mega": hasChildren },
+                ]}
+                data-mega-item={hasChildren ? "" : undefined}
+              >
+                {hasChildren ? (
+                  <>
+                    <button
+                      type="button"
+                      class="site-nav__trigger"
+                      data-mega-trigger
+                      aria-expanded="false"
+                      aria-controls={panelId}
+                    >
+                      <span>{category.title}</span>
+                      <ChevronDownIcon class="site-nav__chevron" />
+                    </button>
+                    <div
+                      class="mega-menu"
+                      id={panelId}
+                      data-mega-panel
+                      hidden
+                    >
+                      <div class="mega-menu__head">
+                        <p class="mega-menu__title">{allFor}</p>
+                        <a
+                          class="mega-menu__see-all"
+                          href={localizePath(
+                            activeLocale,
+                            `/collections/${category.slug}`,
+                          )}
+                        >
+                          {t(activeLocale, "nav.seeAll")} →
+                        </a>
+                      </div>
+                      <ul class="mega-menu__grid">
+                        {category.children.map((child) => (
+                          <li>
+                            <a
+                              class="mega-menu__link"
+                              href={localizePath(
+                                activeLocale,
+                                `/collections/${child.slug}`,
+                              )}
+                            >
+                              <span class="mega-menu__icon" aria-hidden="true">
+                                <CategoryIcon
+                                  slug={child.slug}
+                                  class="mega-menu__glyph"
+                                />
+                              </span>
+                              <span>{child.title}</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <a
+                    class="site-nav__link"
+                    href={localizePath(
+                      activeLocale,
+                      `/collections/${category.slug}`,
+                    )}
+                  >
+                    {category.title}
+                  </a>
+                )}
+              </li>
+            );
+          })
+        }
+        <li class="site-nav__item">
+          <a
+            class="site-nav__link"
+            href={localizePath(activeLocale, "/shop")}
+          >
+            {t(activeLocale, "nav.shop")}
+          </a>
+        </li>
+      </ul>
     </nav>
   </div>
 </header>
@@ -186,4 +336,113 @@ const localeMenuId = "site-locale-menu";
       }
     });
   });
+
+  const header = document.querySelector("[data-site-header]");
+  if (header instanceof HTMLElement) {
+    const mobileToggle = header.querySelector("[data-mobile-nav-toggle]");
+    const mobileNav = header.querySelector("[data-mobile-nav]");
+
+    function setMobileOpen(open: boolean) {
+      if (!(mobileToggle instanceof HTMLElement)) return;
+      header?.classList.toggle("is-nav-open", open);
+      mobileToggle.setAttribute("aria-expanded", String(open));
+      mobileToggle.setAttribute(
+        "aria-label",
+        open
+          ? mobileToggle.dataset.closeLabel ?? "Close menu"
+          : mobileToggle.dataset.openLabel ?? "Menu",
+      );
+    }
+
+    if (mobileToggle instanceof HTMLElement) {
+      mobileToggle.dataset.openLabel =
+        mobileToggle.getAttribute("aria-label") ?? "Menu";
+      mobileToggle.dataset.closeLabel =
+        mobileToggle.getAttribute("data-close-label") ?? "Close menu";
+      mobileToggle.addEventListener("click", () => {
+        setMobileOpen(!header.classList.contains("is-nav-open"));
+      });
+    }
+
+    function closeAllMega(except?: Element | null) {
+      header
+        ?.querySelectorAll("[data-mega-item].is-open")
+        .forEach((item) => {
+          if (except && item === except) return;
+          item.classList.remove("is-open");
+          const trigger = item.querySelector("[data-mega-trigger]");
+          const panel = item.querySelector("[data-mega-panel]");
+          if (trigger instanceof HTMLElement) {
+            trigger.setAttribute("aria-expanded", "false");
+          }
+          if (panel instanceof HTMLElement) {
+            panel.hidden = true;
+          }
+        });
+    }
+
+    function openMega(item: Element) {
+      const trigger = item.querySelector("[data-mega-trigger]");
+      const panel = item.querySelector("[data-mega-panel]");
+      item.classList.add("is-open");
+      if (trigger instanceof HTMLElement) {
+        trigger.setAttribute("aria-expanded", "true");
+      }
+      if (panel instanceof HTMLElement) {
+        panel.hidden = false;
+      }
+    }
+
+    header.querySelectorAll("[data-mega-item]").forEach((item) => {
+      const trigger = item.querySelector("[data-mega-trigger]");
+      if (!(trigger instanceof HTMLElement)) return;
+
+      trigger.addEventListener("click", (event) => {
+        event.preventDefault();
+        const isOpen = item.classList.contains("is-open");
+        closeAllMega();
+        if (!isOpen) openMega(item);
+      });
+
+      item.addEventListener("mouseenter", () => {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          closeAllMega();
+          openMega(item);
+        }
+      });
+
+      item.addEventListener("mouseleave", () => {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          closeAllMega();
+        }
+      });
+
+      item.addEventListener("focusin", () => {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          closeAllMega();
+          openMega(item);
+        }
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Node) || header.contains(target)) return;
+      closeAllMega();
+      setMobileOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeAllMega();
+        setMobileOpen(false);
+      }
+    });
+
+    if (mobileNav instanceof HTMLElement) {
+      mobileNav.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => setMobileOpen(false));
+      });
+    }
+  }
 </script>

@@ -1,0 +1,75 @@
+---
+import BedsIcon from "./BedsIcon.astro";
+import CareIcon from "./CareIcon.astro";
+import FoodIcon from "./FoodIcon.astro";
+import HabitatIcon from "./HabitatIcon.astro";
+import LitterIcon from "./LitterIcon.astro";
+import ToysIcon from "./ToysIcon.astro";
+import TreatsIcon from "./TreatsIcon.astro";
+
+interface Props {
+  slug: string;
+  class?: string;
+}
+
+const { slug, class: className } = Astro.props;
+
+const food = new Set([
+  "dog-food",
+  "cat-food",
+  "small-pet-food",
+  "hundefutter",
+  "katzenfutter",
+  "kleintierfutter",
+]);
+const treats = new Set([
+  "dog-treats",
+  "cat-treats",
+  "hundeleckerlis",
+  "katzenleckerlis",
+]);
+const toys = new Set([
+  "dog-toys",
+  "cat-toys",
+  "hundespielzeug",
+  "katzenspielzeug",
+]);
+const care = new Set(["dog-care", "cat-care", "hundepflege", "katzenpflege"]);
+const beds = new Set(["dog-beds-travel", "hundebetten-reisen"]);
+const litter = new Set(["litter-toilets", "streu-toiletten"]);
+const habitat = new Set(["small-pet-habitat", "kleintier-habitat"]);
+
+const kind = food.has(slug)
+  ? "food"
+  : treats.has(slug)
+    ? "treats"
+    : toys.has(slug)
+      ? "toys"
+      : care.has(slug)
+        ? "care"
+        : beds.has(slug)
+          ? "beds"
+          : litter.has(slug)
+            ? "litter"
+            : habitat.has(slug)
+              ? "habitat"
+              : "food";
+---
+
+{
+  kind === "food" ? (
+    <FoodIcon class={className} />
+  ) : kind === "treats" ? (
+    <TreatsIcon class={className} />
+  ) : kind === "toys" ? (
+    <ToysIcon class={className} />
+  ) : kind === "care" ? (
+    <CareIcon class={className} />
+  ) : kind === "beds" ? (
+    <BedsIcon class={className} />
+  ) : kind === "litter" ? (
+    <LitterIcon class={className} />
+  ) : (
+    <HabitatIcon class={className} />
+  )
+}

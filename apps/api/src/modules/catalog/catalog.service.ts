@@ -11,7 +11,7 @@ import {
   UpdateCollectionSchema,
 } from "@online-store/shared-types";
 import { Prisma } from "@prisma/client";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class CatalogService {
@@ -462,8 +462,8 @@ export class CatalogService {
     return this.getCollection(id);
   }
 
-  async search(q: string, locale = "en") {
-    return this.listProducts({ q, locale, status: "active" });
+  async search(q: string, locale = "en", take?: number) {
+    return this.listProducts({ q, locale, status: "active", take });
   }
 
   async relatedProducts(productId: string, locale: string, take = 4) {

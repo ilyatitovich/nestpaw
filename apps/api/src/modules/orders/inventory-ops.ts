@@ -1,4 +1,4 @@
-import type { InventoryItem, Prisma } from "@prisma/client";
+import { type InventoryItem, type Prisma } from "@prisma/client";
 
 type Tx = Prisma.TransactionClient;
 

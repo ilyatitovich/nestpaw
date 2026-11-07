@@ -4,10 +4,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import type { OrderStatus } from "@prisma/client";
-import type { Queue } from "bullmq";
-import type { PrismaService } from "../../prisma/prisma.service.js";
-import type { DiscountsService } from "../discounts/discounts.service.js";
+import { type OrderStatus } from "@prisma/client";
+import { type Queue } from "bullmq";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { DiscountsService } from "../discounts/discounts.service.js";
 import {
   decrementInventoryForLine,
   restockInventoryForLines,

@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { CatalogService } from "./catalog.service.js";
+import { CatalogService } from "./catalog.service.js";
 
 @Controller()
 export class CatalogController {
@@ -54,8 +54,12 @@ export class CatalogController {
 
   @Public()
   @Get("search")
-  search(@Query("q") q = "", @Query("locale") locale = "en") {
-    return this.catalog.search(q, locale);
+  search(
+    @Query("q") q = "",
+    @Query("locale") locale = "en",
+    @Query("take") take?: string,
+  ) {
+    return this.catalog.search(q, locale, take ? Number(take) : undefined);
   }
 
   @Roles("owner", "staff")

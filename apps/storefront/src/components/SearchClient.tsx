@@ -55,7 +55,12 @@ export default function SearchClient({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only initial search
   useEffect(() => {
-    if (initialQuery) void run(initialQuery);
+    const fromUrl =
+      new URLSearchParams(window.location.search).get("q") ?? initialQuery;
+    if (fromUrl) {
+      setQ(fromUrl);
+      void run(fromUrl);
+    }
   }, []);
 
   return (

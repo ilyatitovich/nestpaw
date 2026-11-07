@@ -10,7 +10,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { MediaService } from "./media.service.js";
+import { MediaService } from "./media.service.js";
 
 @Controller("admin/media")
 export class MediaController {

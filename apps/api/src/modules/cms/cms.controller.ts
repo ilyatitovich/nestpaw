@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { CmsService } from "./cms.service.js";
+import { CmsService } from "./cms.service.js";
 
 @Controller()
 export class CmsController {

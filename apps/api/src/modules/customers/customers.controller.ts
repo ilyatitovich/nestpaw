@@ -14,7 +14,7 @@ import {
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
 import { CustomerJwtGuard } from "../../common/guards/customer-jwt.guard.js";
-import type { CustomersService } from "./customers.service.js";
+import { CustomersService } from "./customers.service.js";
 
 @Controller()
 export class CustomersController {

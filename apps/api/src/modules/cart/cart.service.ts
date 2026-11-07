@@ -8,8 +8,8 @@ import {
   ApplyDiscountSchema,
   UpdateCartLineSchema,
 } from "@online-store/shared-types";
-import type { PrismaService } from "../../prisma/prisma.service.js";
-import type { DiscountsService } from "../discounts/discounts.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { DiscountsService } from "../discounts/discounts.service.js";
 
 const cartInclude = {
   lines: {

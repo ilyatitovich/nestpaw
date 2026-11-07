@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import * as argon2 from "argon2";
 import { z } from "zod";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 const CreateStaffSchema = z.object({
   email: z.string().email(),

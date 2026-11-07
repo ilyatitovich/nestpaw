@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { DiscountsService } from "./discounts.service.js";
+import { DiscountsService } from "./discounts.service.js";
 
 @Controller("admin/discounts")
 export class DiscountsController {

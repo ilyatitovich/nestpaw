@@ -6,7 +6,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import Stripe from "stripe";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 import { OrdersService } from "../orders/orders.service.js";
 import { buildStripeLineItems } from "./build-stripe-line-items.js";
 import { allowMockPayments } from "./mock-payments.js";

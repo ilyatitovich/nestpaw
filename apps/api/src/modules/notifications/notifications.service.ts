@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import nodemailer from "nodemailer";
-import type { PrismaService } from "../../prisma/prisma.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
 
 @Injectable()
 export class NotificationsService {

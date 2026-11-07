@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { AnalyticsService } from "./analytics.service.js";
+import { AnalyticsService } from "./analytics.service.js";
 
 @Controller()
 export class AnalyticsController {

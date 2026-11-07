@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { CreateCheckoutSchema } from "@online-store/shared-types";
-import type { PrismaService } from "../../prisma/prisma.service.js";
-import type { CartService } from "../cart/cart.service.js";
-import type { DiscountsService } from "../discounts/discounts.service.js";
-import type { PaymentsService } from "../payments/payments.service.js";
-import type { ShippingService } from "../shipping/shipping.service.js";
-import type { TaxService } from "../tax/tax.service.js";
+import { PrismaService } from "../../prisma/prisma.service.js";
+import { CartService } from "../cart/cart.service.js";
+import { DiscountsService } from "../discounts/discounts.service.js";
+import { PaymentsService } from "../payments/payments.service.js";
+import { ShippingService } from "../shipping/shipping.service.js";
+import { TaxService } from "../tax/tax.service.js";
 
 @Injectable()
 export class CheckoutService {

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { ReviewsService } from "./reviews.service.js";
+import { ReviewsService } from "./reviews.service.js";
 
 @Controller()
 export class ReviewsController {

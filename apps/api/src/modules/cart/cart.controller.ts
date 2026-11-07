@@ -9,9 +9,9 @@ import {
   Post,
   Res,
 } from "@nestjs/common";
-import type { Response } from "express";
+import { type Response } from "express";
 import { Public } from "../../common/decorators/public.decorator.js";
-import type { CartService } from "./cart.service.js";
+import { CartService } from "./cart.service.js";
 
 @Controller("cart")
 export class CartController {

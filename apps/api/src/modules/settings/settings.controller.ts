@@ -5,7 +5,7 @@ import {
 } from "../../common/decorators/current-user.decorator.js";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
-import type { SettingsService } from "./settings.service.js";
+import { SettingsService } from "./settings.service.js";
 
 @Controller()
 export class SettingsController {
