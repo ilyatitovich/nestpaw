@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { locales, localizePath, type Locale } from "../../../i18n/ui";
+import { API_URL } from "../../../lib/api";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+---
+
+<BaseLayout locale={locale} title="Order confirmed" canonicalPath="/checkout/success">
+  <div class="container section">
+    <h1 class="section__title">Thank you</h1>
+    <p>Your payment was received. A confirmation email is on the way.</p>
+    <a class="btn btn--primary" href={localizePath(locale, "/")}>Continue shopping</a>
+  </div>
+  <script is:inline define:vars={{ API_URL, locale }}>
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (sessionId && params.get("mock") === "1") {
+      fetch(`${API_URL}/payments/mock-complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      }).catch(() => {});
+    }
+    fetch(`${API_URL}/analytics/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "purchase", payload: { sessionId }, locale }),
+    }).catch(() => {});
+  </script>
+</BaseLayout>

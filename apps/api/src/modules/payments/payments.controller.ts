@@ -1,0 +1,32 @@
+import {
+  Body,
+  Controller,
+  Headers,
+  Post,
+  Req,
+} from "@nestjs/common";
+import type { RawBodyRequest } from "@nestjs/common";
+import type { Request } from "express";
+import { Public } from "../../common/decorators/public.decorator";
+import { PaymentsService } from "./payments.service";
+
+@Controller("payments")
+export class PaymentsController {
+  constructor(private payments: PaymentsService) {}
+
+  @Public()
+  @Post("webhook")
+  webhook(
+    @Req() req: RawBodyRequest<Request>,
+    @Headers("stripe-signature") signature: string,
+  ) {
+    const raw = req.rawBody ?? Buffer.from("");
+    return this.payments.handleWebhook(raw, signature ?? "");
+  }
+
+  @Public()
+  @Post("mock-complete")
+  mockComplete(@Body() body: { sessionId?: string }) {
+    return this.payments.completeMockSession(body.sessionId ?? "");
+  }
+}

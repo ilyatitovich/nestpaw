@@ -1,0 +1,30 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { locales, t, type Locale } from "../../i18n/ui";
+import { API_URL } from "../../lib/api";
+import CartClient from "@components/CartClient";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+---
+
+<BaseLayout locale={locale} title={t(locale, "cart.title")} canonicalPath="/cart">
+  <div class="container cart">
+    <h1 class="section__title">{t(locale, "cart.title")}</h1>
+    <CartClient
+      client:load
+      apiUrl={API_URL}
+      locale={locale}
+      labels={{
+        empty: t(locale, "cart.empty"),
+        checkout: t(locale, "cart.checkout"),
+        discount: t(locale, "cart.discount"),
+        apply: t(locale, "cart.apply"),
+      }}
+      storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
+    />
+  </div>
+</BaseLayout>

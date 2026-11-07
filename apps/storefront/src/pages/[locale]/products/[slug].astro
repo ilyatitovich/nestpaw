@@ -1,0 +1,130 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { locales, t, type Locale } from "../../../i18n/ui";
+import { apiGet, API_URL } from "../../../lib/api";
+import AddToCart from "@components/AddToCart";
+
+export async function getStaticPaths() {
+  const paths: { params: { locale: string; slug: string } }[] = [];
+  for (const locale of locales) {
+    try {
+      const data = await apiGet<{
+        items: { translations: { locale: string; slug: string }[] }[];
+      }>(`/products?locale=${locale}&take=100`);
+      for (const p of data.items) {
+        const tr = p.translations.find((x) => x.locale === locale);
+        if (tr) paths.push({ params: { locale, slug: tr.slug } });
+      }
+    } catch {
+      // API may be offline during build; fall back empty
+    }
+  }
+  if (!paths.length) {
+    return [
+      { params: { locale: "en", slug: "ceramic-mug" } },
+      { params: { locale: "de", slug: "keramiktasse" } },
+    ];
+  }
+  return paths;
+}
+
+const locale = Astro.params.locale as Locale;
+const slug = Astro.params.slug!;
+
+type Product = {
+  id: string;
+  translations: {
+    locale: string;
+    title: string;
+    description: string;
+    slug: string;
+    seoTitle?: string;
+    seoDescription?: string;
+  }[];
+  media: { url: string; alt: string }[];
+  variants: {
+    id: string;
+    price: number;
+    option1?: string;
+    inventory?: { quantity: number };
+  }[];
+  reviews?: { rating: number; body: string; authorName: string }[];
+};
+
+let product: Product | null = null;
+try {
+  product = await apiGet<Product>(`/products/${locale}/${slug}`);
+} catch {
+  product = null;
+}
+
+const tr =
+  product?.translations.find((x) => x.locale === locale) ??
+  product?.translations[0];
+const img = product?.media[0];
+const variant = product?.variants[0];
+---
+
+{
+  product && tr && variant ? (
+    <BaseLayout
+      locale={locale}
+      title={tr.seoTitle ?? tr.title}
+      description={tr.seoDescription ?? tr.description.slice(0, 160)}
+      canonicalPath={`/products/${slug}`}
+      ogImage={img?.url}
+      jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: tr.title,
+        description: tr.description,
+        image: img?.url,
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "EUR",
+          price: (variant.price / 100).toFixed(2),
+          availability: "https://schema.org/InStock",
+        },
+      }}
+    >
+      <div class="container pdp">
+        <div class="pdp__media">
+          {img ? <img src={img.url} alt={img.alt || tr.title} /> : null}
+        </div>
+        <div>
+          <h1 class="pdp__title">{tr.title}</h1>
+          <p class="pdp__price">€{(variant.price / 100).toFixed(2)}</p>
+          <p class="pdp__desc">{tr.description}</p>
+          <AddToCart
+            client:load
+            apiUrl={API_URL}
+            variantId={variant.id}
+            label={t(locale, "product.add")}
+            locale={locale}
+          />
+          {product.reviews?.length ? (
+            <section class="section">
+              <h2 class="section__title">Reviews</h2>
+              {product.reviews.map((r) => (
+                <p>
+                  <strong>
+                    {r.authorName} · {r.rating}/5
+                  </strong>
+                  <br />
+                  {r.body}
+                </p>
+              ))}
+            </section>
+          ) : null}
+        </div>
+      </div>
+    </BaseLayout>
+  ) : (
+    <BaseLayout locale={locale} title="Not found" canonicalPath={`/products/${slug}`}>
+      <div class="container section">
+        <h1>Product unavailable</h1>
+        <p>Start the API and rebuild, or open an active product from the catalog.</p>
+      </div>
+    </BaseLayout>
+  )
+}

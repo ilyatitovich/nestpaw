@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { locales, t, localizePath, type Locale } from "../../i18n/ui";
+import { apiGet } from "../../lib/api";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+
+type ProductList = {
+  items: {
+    id: string;
+    translations: { locale: string; title: string; slug: string }[];
+    media: { url: string; alt: string }[];
+    variants: { price: number }[];
+  }[];
+};
+
+let products: ProductList["items"] = [];
+try {
+  const data = await apiGet<ProductList>(`/products?locale=${locale}&take=8`);
+  products = data.items;
+} catch {
+  products = [];
+}
+
+const storeName = "Online Store";
+---
+
+<BaseLayout
+  locale={locale}
+  title={storeName}
+  description={t(locale, "home.lead")}
+  canonicalPath="/"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: storeName,
+    url: Astro.site?.toString(),
+  }}
+>
+  <section class="hero">
+    <div class="container hero__content">
+      <h1 class="hero__brand">{storeName}</h1>
+      <p class="hero__lead">{t(locale, "home.lead")}</p>
+      <a class="btn btn--primary" href={localizePath(locale, "/collections/home")}>
+        {t(locale, "home.cta")}
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section__title">{t(locale, "nav.shop")}</h2>
+      <p class="section__lead">{t(locale, "home.lead")}</p>
+      <div class="product-grid">
+        {
+          products.map((p) => {
+            const tr =
+              p.translations.find((x) => x.locale === locale) ?? p.translations[0];
+            const price = p.variants[0]?.price ?? 0;
+            const img = p.media[0];
+            return (
+              <a
+                class="product-card"
+                href={localizePath(locale, `/products/${tr?.slug}`)}
+              >
+                <div class="product-card__media">
+                  {img ? <img src={img.url} alt={img.alt || tr?.title || ""} loading="lazy" /> : null}
+                </div>
+                <h3 class="product-card__title">{tr?.title}</h3>
+                <p class="product-card__price">
+                  {t(locale, "product.from")} €{(price / 100).toFixed(2)}
+                </p>
+              </a>
+            );
+          })
+        }
+      </div>
+    </div>
+  </section>
+</BaseLayout>

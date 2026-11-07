@@ -1,0 +1,203 @@
+import { z } from "zod";
+
+export const LocaleSchema = z.enum(["en", "de"]);
+export type Locale = z.infer<typeof LocaleSchema>;
+
+export const CurrencySchema = z.enum(["EUR", "USD", "GBP"]);
+export type Currency = z.infer<typeof CurrencySchema>;
+
+export const UserRoleSchema = z.enum(["owner", "staff"]);
+export type UserRole = z.infer<typeof UserRoleSchema>;
+
+export const OrderStatusSchema = z.enum([
+  "pending_payment",
+  "paid",
+  "fulfilled",
+  "cancelled",
+  "refunded",
+]);
+export type OrderStatus = z.infer<typeof OrderStatusSchema>;
+
+export const StockPolicySchema = z.enum(["deny", "continue"]);
+export type StockPolicy = z.infer<typeof StockPolicySchema>;
+
+export const DiscountTypeSchema = z.enum([
+  "percentage",
+  "fixed_amount",
+  "free_shipping",
+]);
+export type DiscountType = z.infer<typeof DiscountTypeSchema>;
+
+export const MoneySchema = z.object({
+  amount: z.number().int().nonnegative(),
+  currency: CurrencySchema,
+});
+export type Money = z.infer<typeof MoneySchema>;
+
+export const ProductTranslationSchema = z.object({
+  locale: LocaleSchema,
+  title: z.string().min(1).max(200),
+  description: z.string().max(10000).default(""),
+  slug: z.string().min(1).max(200),
+  seoTitle: z.string().max(200).optional(),
+  seoDescription: z.string().max(500).optional(),
+});
+
+export const CreateProductSchema = z.object({
+  status: z.enum(["draft", "active", "archived"]).default("draft"),
+  option1Name: z.string().max(50).optional(),
+  option2Name: z.string().max(50).optional(),
+  option3Name: z.string().max(50).optional(),
+  translations: z.array(ProductTranslationSchema).min(1),
+  variants: z
+    .array(
+      z.object({
+        sku: z.string().min(1).max(100),
+        barcode: z.string().max(100).optional(),
+        price: z.number().int().nonnegative(),
+        compareAtPrice: z.number().int().nonnegative().optional(),
+        option1: z.string().max(100).optional(),
+        option2: z.string().max(100).optional(),
+        option3: z.string().max(100).optional(),
+        weightGrams: z.number().int().nonnegative().default(0),
+        stock: z.number().int().nonnegative().default(0),
+        stockPolicy: StockPolicySchema.default("deny"),
+      }),
+    )
+    .min(1),
+  metafields: z
+    .array(
+      z.object({
+        namespace: z.string().min(1).max(50),
+        key: z.string().min(1).max(50),
+        type: z.enum(["string", "number", "boolean", "json"]),
+        value: z.unknown(),
+      }),
+    )
+    .optional(),
+});
+export type CreateProductInput = z.infer<typeof CreateProductSchema>;
+
+export const UpdateProductSchema = CreateProductSchema.partial().extend({
+  id: z.string().cuid().optional(),
+});
+
+export const AddToCartSchema = z.object({
+  variantId: z.string().cuid(),
+  quantity: z.number().int().positive().max(99).default(1),
+});
+export type AddToCartInput = z.infer<typeof AddToCartSchema>;
+
+export const UpdateCartLineSchema = z.object({
+  quantity: z.number().int().nonnegative().max(99),
+});
+
+export const ApplyDiscountSchema = z.object({
+  code: z.string().min(1).max(50),
+});
+
+export const CheckoutAddressSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email(),
+  phone: z.string().max(40).optional(),
+  line1: z.string().min(1).max(200),
+  line2: z.string().max(200).optional(),
+  city: z.string().min(1).max(100),
+  postalCode: z.string().min(1).max(20),
+  country: z.string().length(2),
+  state: z.string().max(100).optional(),
+});
+
+export const CreateCheckoutSchema = z.object({
+  shippingAddress: CheckoutAddressSchema,
+  shippingRateId: z.string().cuid().optional(),
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
+  locale: LocaleSchema.default("en"),
+  currency: CurrencySchema.default("EUR"),
+});
+export type CreateCheckoutInput = z.infer<typeof CreateCheckoutSchema>;
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+});
+
+export const CreateDiscountSchema = z.object({
+  code: z.string().min(1).max(50),
+  type: DiscountTypeSchema,
+  value: z.number().int().nonnegative(),
+  minSubtotal: z.number().int().nonnegative().default(0),
+  usageLimit: z.number().int().positive().optional(),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
+  active: z.boolean().default(true),
+});
+
+export const CreateCollectionSchema = z.object({
+  translations: z
+    .array(
+      z.object({
+        locale: LocaleSchema,
+        title: z.string().min(1).max(200),
+        description: z.string().max(5000).default(""),
+        slug: z.string().min(1).max(200),
+      }),
+    )
+    .min(1),
+  productIds: z.array(z.string().cuid()).default([]),
+});
+
+export const CreatePageSchema = z.object({
+  status: z.enum(["draft", "published"]).default("draft"),
+  translations: z
+    .array(
+      z.object({
+        locale: LocaleSchema,
+        title: z.string().min(1).max(200),
+        slug: z.string().min(1).max(200),
+        body: z.string().max(50000).default(""),
+        seoTitle: z.string().max(200).optional(),
+        seoDescription: z.string().max(500).optional(),
+      }),
+    )
+    .min(1),
+  blocks: z.array(z.record(z.unknown())).default([]),
+});
+
+export const CreateReviewSchema = z.object({
+  productId: z.string().cuid(),
+  rating: z.number().int().min(1).max(5),
+  title: z.string().max(200).optional(),
+  body: z.string().min(1).max(5000),
+  authorName: z.string().min(1).max(100),
+  authorEmail: z.string().email(),
+});
+
+export const CustomerRegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+});
+
+export const AnalyticsEventSchema = z.object({
+  name: z.enum([
+    "view_item",
+    "add_to_cart",
+    "begin_checkout",
+    "purchase",
+    "search",
+  ]),
+  payload: z.record(z.unknown()).default({}),
+  locale: LocaleSchema.optional(),
+  sessionId: z.string().max(100).optional(),
+});
+
+export const ApiErrorSchema = z.object({
+  statusCode: z.number(),
+  message: z.string(),
+  code: z.string().optional(),
+});
+export type ApiError = z.infer<typeof ApiErrorSchema>;

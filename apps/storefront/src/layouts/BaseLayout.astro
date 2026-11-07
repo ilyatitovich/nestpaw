@@ -1,0 +1,114 @@
+---
+import "../styles/global.css";
+import { t, localizePath, type Locale } from "../i18n/ui";
+
+interface Props {
+  title: string;
+  description?: string;
+  locale: Locale | string;
+  canonicalPath?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+  title,
+  description = "Small-batch goods for everyday life",
+  locale,
+  canonicalPath = "/",
+  ogImage,
+  jsonLd,
+} = Astro.props;
+
+const site = Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
+const canonical = `${site}${localizePath(locale, canonicalPath)}`;
+const storeName = "Online Store";
+const provider = import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? "plausible";
+const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN;
+const ga4 = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={`${site}/en${canonicalPath === "/" ? "" : canonicalPath}`} />
+    <link rel="alternate" hreflang="de" href={`${site}/de${canonicalPath === "/" ? "" : canonicalPath}`} />
+    <link rel="alternate" hreflang="x-default" href={`${site}/en${canonicalPath === "/" ? "" : canonicalPath}`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage ? <meta property="og:image" content={ogImage} /> : null}
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Source+Sans+3:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    {jsonLd ? (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    ) : null}
+    {
+      provider === "plausible" && plausibleDomain ? (
+        <script
+          defer
+          data-domain={plausibleDomain}
+          src="https://plausible.io/js/script.js"
+        />
+      ) : null
+    }
+    {
+      provider === "ga4" && ga4 ? (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`} />
+          <script
+            is:inline
+            define:vars={{ ga4 }}
+          >{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ga4);`}</script>
+        </>
+      ) : null
+    }
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <div class="container site-header__inner">
+          <a class="site-header__brand" href={localizePath(locale, "/")}>{storeName}</a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href={localizePath(locale, "/collections/home")}>
+              {t(locale, "nav.shop")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, "/pages/about")}>
+              {t(locale, "nav.about")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, "/cart")}>
+              {t(locale, "nav.cart")}
+            </a>
+            <a class="site-nav__link" href={localizePath(locale, "/account")}>
+              {t(locale, "account.login")}
+            </a>
+            <div class="locale-switch">
+              <a class={`locale-switch__btn ${locale === "en" ? "is-active" : ""}`} href="/en/">EN</a>
+              <a class={`locale-switch__btn ${locale === "de" ? "is-active" : ""}`} href="/de/">DE</a>
+            </div>
+          </nav>
+        </div>
+      </header>
+      <main class="page__main">
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <div class="container site-footer__inner">
+          <span>{storeName}</span>
+          <a href={localizePath(locale, "/pages/privacy")}>{t(locale, "footer.privacy")}</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

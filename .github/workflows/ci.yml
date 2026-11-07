@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: store
+          POSTGRES_PASSWORD: store
+          POSTGRES_DB: online_store
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U store -d online_store"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm --filter @online-store/shared-types build
+      - run: pnpm --filter @online-store/api-client build
+      - name: Generate Prisma + migrate
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://store:store@localhost:5432/online_store?schema=public
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @online-store/api build
+      - run: pnpm --filter @online-store/admin build
+        env:
+          VITE_API_URL: http://localhost:3001
+      - run: pnpm --filter @online-store/storefront build
+        env:
+          PUBLIC_API_URL: http://localhost:3001
+          PUBLIC_STORE_URL: http://localhost:4321
+      - name: API unit tests
+        run: pnpm --filter @online-store/api test
+      - run: pnpm audit --prod || true

@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.astro
+.turbo
+.env
+.env.local
+*.log
+coverage
+.DS_Store
+playwright-report
+test-results
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+.cursor/
