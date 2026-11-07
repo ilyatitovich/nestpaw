@@ -1,0 +1,325 @@
+---
+import ReviewForm from "./ReviewForm";
+import { type Locale, t } from "../i18n/ui";
+
+type Review = {
+  rating: number;
+  title?: string;
+  body: string;
+  authorName: string;
+};
+
+type Spec = {
+  label: string;
+  value: string;
+};
+
+interface Props {
+  locale: Locale;
+  apiUrl: string;
+  productId: string;
+  title: string;
+  description: string;
+  shareUrl: string;
+  specs: Spec[];
+  benefits?: string | null;
+  reviews?: Review[];
+}
+
+const {
+  locale,
+  apiUrl,
+  productId,
+  title,
+  description,
+  shareUrl,
+  specs,
+  benefits,
+  reviews = [],
+} = Astro.props;
+
+const ids = {
+  desc: `pdp-tab-desc-${productId}`,
+  specs: `pdp-tab-specs-${productId}`,
+  reviews: `pdp-tab-reviews-${productId}`,
+  panelDesc: `pdp-panel-desc-${productId}`,
+  panelSpecs: `pdp-panel-specs-${productId}`,
+  panelReviews: `pdp-panel-reviews-${productId}`,
+};
+
+const encodedUrl = encodeURIComponent(shareUrl);
+const encodedTitle = encodeURIComponent(title);
+const facebookHref = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+const emailHref = `mailto:?subject=${encodedTitle}&body=${encodedUrl}`;
+---
+
+<section class="pdp-details" data-pdp-details>
+  <div class="pdp-details__toolbar">
+    <div class="pdp-details__tabs" role="tablist" aria-label={t(locale, "product.detailsTabs")}>
+      <button
+        type="button"
+        class="pdp-details__tab is-active"
+        role="tab"
+        id={ids.desc}
+        aria-controls={ids.panelDesc}
+        aria-selected="true"
+        tabindex="0"
+        data-tab-target={ids.panelDesc}
+      >
+        {t(locale, "product.descriptionTab")}
+      </button>
+      <button
+        type="button"
+        class="pdp-details__tab"
+        role="tab"
+        id={ids.specs}
+        aria-controls={ids.panelSpecs}
+        aria-selected="false"
+        tabindex="-1"
+        data-tab-target={ids.panelSpecs}
+      >
+        {t(locale, "product.specsTab")}
+      </button>
+      <button
+        type="button"
+        class="pdp-details__tab"
+        role="tab"
+        id={ids.reviews}
+        aria-controls={ids.panelReviews}
+        aria-selected="false"
+        tabindex="-1"
+        data-tab-target={ids.panelReviews}
+      >
+        {t(locale, "product.reviews")}
+      </button>
+    </div>
+
+    <div class="pdp-share">
+      <span class="pdp-share__label">{t(locale, "product.share")}:</span>
+      <div class="pdp-share__actions">
+        <a
+          class="pdp-share__btn"
+          href={facebookHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t(locale, "product.shareFacebook")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16">
+            <path
+              fill="currentColor"
+              d="M14 8h2.5V5.5H14c-1.9 0-3.5 1.6-3.5 3.5V12H8v3h2.5v6h3v-6H16l.5-3h-3V9c0-.6.4-1 1-1z"
+            ></path>
+          </svg>
+        </a>
+        <button
+          type="button"
+          class="pdp-share__btn"
+          data-share-copy
+          data-share-url={shareUrl}
+          data-copied-label={t(locale, "product.linkCopied")}
+          aria-label={t(locale, "product.shareInstagram")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="4" y="4" width="16" height="16" rx="4"></rect>
+            <circle cx="12" cy="12" r="3.5"></circle>
+            <circle cx="16.5" cy="7.5" r="1" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </button>
+        <a
+          class="pdp-share__btn"
+          href={emailHref}
+          aria-label={t(locale, "product.shareEmail")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect>
+            <path d="m4.5 7.5 7.5 6 7.5-6"></path>
+          </svg>
+        </a>
+        <button
+          type="button"
+          class="pdp-share__btn"
+          data-share-copy
+          data-share-url={shareUrl}
+          data-copied-label={t(locale, "product.linkCopied")}
+          aria-label={t(locale, "product.shareCopy")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M10 14a4.5 4.5 0 0 0 6.4.1l2-2a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1"></path>
+            <path d="M14 10a4.5 4.5 0 0 0-6.4-.1l-2 2a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1"></path>
+          </svg>
+        </button>
+      </div>
+      <span class="visually-hidden" data-share-status aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div
+    class="pdp-details__panel"
+    role="tabpanel"
+    id={ids.panelDesc}
+    aria-labelledby={ids.desc}
+    tabindex="0"
+  >
+    <div class="pdp-details__content">
+      <h2 class="pdp-details__heading">{title}</h2>
+      <p class="pdp-details__text">{description}</p>
+      {
+        benefits ? (
+          <>
+            <h3 class="pdp-details__subheading">{t(locale, "product.benefits")}</h3>
+            <p class="pdp-details__text">{benefits}</p>
+          </>
+        ) : null
+      }
+    </div>
+  </div>
+
+  <div
+    class="pdp-details__panel"
+    role="tabpanel"
+    id={ids.panelSpecs}
+    aria-labelledby={ids.specs}
+    tabindex="0"
+    hidden="until-found"
+  >
+    <div class="pdp-details__content">
+      <h2 class="pdp-details__heading">{t(locale, "product.characteristics")}</h2>
+      {
+        specs.length ? (
+          <dl class="pdp-specs">
+            {specs.map((spec) => (
+              <div class="pdp-specs__row">
+                <dt>{spec.label}:</dt>
+                <dd>{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p class="pdp-details__text">{t(locale, "product.noSpecs")}</p>
+        )
+      }
+    </div>
+  </div>
+
+  <div
+    class="pdp-details__panel"
+    role="tabpanel"
+    id={ids.panelReviews}
+    aria-labelledby={ids.reviews}
+    tabindex="0"
+    hidden="until-found"
+  >
+    <div class="pdp-details__content">
+      <h2 class="pdp-details__heading">{t(locale, "product.reviews")}</h2>
+      {
+        reviews.length ? (
+          <div class="review-list">
+            {reviews.map((r) => (
+              <div class="review-item">
+                <strong>
+                  {r.authorName} · {r.rating}/5
+                </strong>
+                {r.title ? <div>{r.title}</div> : null}
+                <p style="margin:0.35rem 0 0">{r.body}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p class="pdp-details__text">{t(locale, "product.noReviews")}</p>
+        )
+      }
+      <ReviewForm
+        client:load
+        apiUrl={apiUrl}
+        productId={productId}
+        label={t(locale, "product.writeReview")}
+      />
+    </div>
+  </div>
+</section>
+
+<script>
+  function supportsUntilFound() {
+    return typeof HTMLElement !== "undefined" && "onbeforematch" in document.documentElement;
+  }
+
+  function hidePanel(panel: HTMLElement) {
+    if (supportsUntilFound()) {
+      panel.setAttribute("hidden", "until-found");
+    } else {
+      panel.hidden = true;
+    }
+  }
+
+  function showPanel(panel: HTMLElement) {
+    panel.removeAttribute("hidden");
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-pdp-details]").forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+
+    function activate(tab: HTMLButtonElement) {
+      const targetId = tab.dataset.tabTarget;
+      tabs.forEach((btn) => {
+        const on = btn === tab;
+        btn.classList.toggle("is-active", on);
+        btn.setAttribute("aria-selected", on ? "true" : "false");
+        btn.tabIndex = on ? 0 : -1;
+      });
+      panels.forEach((panel) => {
+        if (panel.id === targetId) showPanel(panel);
+        else hidePanel(panel);
+      });
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => activate(tab));
+      tab.addEventListener("keydown", (event) => {
+        const i = tabs.indexOf(tab);
+        let next = -1;
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          next = (i + 1) % tabs.length;
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          next = (i - 1 + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          next = 0;
+        } else if (event.key === "End") {
+          next = tabs.length - 1;
+        }
+        if (next < 0) return;
+        event.preventDefault();
+        tabs[next]?.focus();
+        activate(tabs[next]!);
+      });
+    });
+
+    root.addEventListener("beforematch", (event) => {
+      const panel = event.target;
+      if (!(panel instanceof HTMLElement) || panel.getAttribute("role") !== "tabpanel") {
+        return;
+      }
+      const tab = tabs.find((btn) => btn.dataset.tabTarget === panel.id);
+      if (tab) activate(tab);
+    });
+
+    const status = root.querySelector<HTMLElement>("[data-share-status]");
+    root.querySelectorAll<HTMLButtonElement>("[data-share-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const url = btn.dataset.shareUrl;
+        if (!url) return;
+        try {
+          await navigator.clipboard.writeText(url);
+          if (status) {
+            status.textContent = btn.dataset.copiedLabel || "Link copied";
+            window.setTimeout(() => {
+              status.textContent = "";
+            }, 1600);
+          }
+        } catch {
+          if (status) status.textContent = "";
+        }
+      });
+    });
+  });
+</script>

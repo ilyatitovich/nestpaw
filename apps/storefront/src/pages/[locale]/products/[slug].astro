@@ -2,7 +2,7 @@
 import AddToCart from "../../../components/AddToCart";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import HeartIcon from "../../../components/icons/HeartIcon.astro";
-import ReviewForm from "../../../components/ReviewForm";
+import ProductDetails from "../../../components/ProductDetails.astro";
 import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { API_URL, apiGet } from "../../../lib/api";
@@ -135,6 +135,42 @@ const breadcrumbs = [
   ...(tr ? [{ label: tr.title }] : []),
 ];
 
+const variantSizes = (product?.variants ?? [])
+  .map((v) => v.option1)
+  .filter((x): x is string => Boolean(x));
+
+const specs: { label: string; value: string }[] = [
+  petMeta("species")
+    ? { label: String(t(locale, "product.species")), value: petMeta("species")! }
+    : null,
+  petMeta("life_stage")
+    ? {
+        label: String(t(locale, "product.lifeStage")),
+        value: petMeta("life_stage")!,
+      }
+    : null,
+  petMeta("product_type")
+    ? {
+        label: String(t(locale, "product.type")),
+        value: petMeta("product_type")!,
+      }
+    : null,
+  petMeta("size_class") && petMeta("size_class") !== "na"
+    ? { label: String(t(locale, "product.size")), value: petMeta("size_class")! }
+    : null,
+  variantSizes.length
+    ? {
+        label: String(t(locale, "product.variantSizes")),
+        value: variantSizes.join(", "),
+      }
+    : null,
+].filter((x): x is { label: string; value: string } => x != null);
+
+const shareUrl = new URL(
+  `/${locale}/products/${slug}`,
+  Astro.site ?? "http://localhost:4321",
+).href;
+
 let related: {
   id: string;
   translations: { locale: string; title: string; slug: string }[];
@@ -250,62 +286,20 @@ if (product) {
               outOfStockLabel={t(locale, "product.outOfStock")}
               errorLabel={t(locale, "product.addError")}
             />
-
-            <div class="pdp__meta">
-              {petMeta("species") ? (
-                <div>
-                  <strong>{t(locale, "product.species")}:</strong>{" "}
-                  {petMeta("species")}
-                </div>
-              ) : null}
-              {petMeta("life_stage") ? (
-                <div>
-                  <strong>{t(locale, "product.lifeStage")}:</strong>{" "}
-                  {petMeta("life_stage")}
-                </div>
-              ) : null}
-              {petMeta("product_type") ? (
-                <div>
-                  <strong>{t(locale, "product.type")}:</strong>{" "}
-                  {petMeta("product_type")}
-                </div>
-              ) : null}
-              {petMeta("size_class") && petMeta("size_class") !== "na" ? (
-                <div>
-                  <strong>{t(locale, "product.size")}:</strong>{" "}
-                  {petMeta("size_class")}
-                </div>
-              ) : null}
-            </div>
           </div>
         </div>
 
-        <section class="pdp-reviews">
-          <h2 class="section__title" style="font-size:1.4rem">
-            {t(locale, "product.reviews")}
-          </h2>
-          {product.reviews?.length ? (
-            <div class="review-list">
-              {product.reviews.map((r) => (
-                <div class="review-item">
-                  <strong>
-                    {r.authorName} · {r.rating}/5
-                  </strong>
-                  {r.title ? <div>{r.title}</div> : null}
-                  <p style="margin:0.35rem 0 0">{r.body}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p class="section__lead">{t(locale, "product.noReviews")}</p>
-          )}
-          <ReviewForm
-            client:load
-            apiUrl={API_URL}
-            productId={product.id}
-            label={t(locale, "product.writeReview")}
-          />
-        </section>
+        <ProductDetails
+          locale={locale}
+          apiUrl={API_URL}
+          productId={product.id}
+          title={tr.title}
+          description={tr.description}
+          shareUrl={shareUrl}
+          specs={specs}
+          benefits={t(locale, "product.benefitsLead")}
+          reviews={product.reviews}
+        />
       </div>
 
       {related.length ? (
