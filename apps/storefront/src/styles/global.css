@@ -20,14 +20,14 @@ body {
   color: var(--color-ink);
   background:
     radial-gradient(
-      ellipse at 85% 0%,
-      color-mix(in srgb, var(--color-accent) 28%, transparent),
-      transparent 45%
+      ellipse 90% 60% at 100% 0%,
+      color-mix(in oklab, var(--color-accent) 22%, var(--color-bg)),
+      var(--color-bg) 55%
     ),
     radial-gradient(
-      ellipse at 8% 12%,
-      color-mix(in srgb, var(--color-surface-sky) 22%, transparent),
-      transparent 40%
+      ellipse 70% 50% at 0% 0%,
+      color-mix(in oklab, var(--color-surface-soft) 40%, var(--color-bg)),
+      var(--color-bg) 50%
     ),
     var(--color-bg);
   min-height: 100vh;
