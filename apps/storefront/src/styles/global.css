@@ -3387,6 +3387,19 @@ a.cart-line__title:hover {
 .checkout-form__row {
   display: grid;
   gap: var(--space-4);
+  align-items: start;
+}
+
+/* Reserve one error line so paired fields stay aligned when one is invalid */
+.checkout-form__row .account-field {
+  position: relative;
+  padding-bottom: 1.2em;
+}
+
+.checkout-form__row .account-field__error {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
 }
 
 @media (min-width: 640px) {
@@ -3409,8 +3422,9 @@ a.cart-line__title:hover {
 }
 
 .checkout-form .account-field select:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
-  outline-offset: 2px;
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
 }
 
 .checkout-form .account-field select[aria-invalid="true"] {
@@ -4147,8 +4161,9 @@ html[data-account-session="guest"] .account-page__title {
 }
 
 .account-field input:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
-  outline-offset: 2px;
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
 }
 
 .account-field input[aria-invalid="true"],
@@ -4158,7 +4173,8 @@ html[data-account-session="guest"] .account-page__title {
 
 .account-field input[aria-invalid="true"]:focus-visible,
 .account-field input:user-invalid:focus-visible {
-  outline-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
 }
 
 .account-field__error {
