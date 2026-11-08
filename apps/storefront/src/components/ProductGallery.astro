@@ -1,0 +1,265 @@
+---
+import HeartIcon from "./icons/HeartIcon.astro";
+
+interface MediaItem {
+  url: string;
+  alt: string;
+}
+
+interface Props {
+  media: MediaItem[];
+  title: string;
+  productId: string;
+  salePercent?: number | null;
+  saleLabel: string;
+  wishlistAddLabel: string;
+  wishlistRemoveLabel: string;
+  prevLabel: string;
+  nextLabel: string;
+  gotoLabel: string;
+  galleryLabel: string;
+}
+
+const {
+  media,
+  title,
+  productId,
+  salePercent,
+  saleLabel,
+  wishlistAddLabel,
+  wishlistRemoveLabel,
+  prevLabel,
+  nextLabel,
+  gotoLabel,
+  galleryLabel,
+} = Astro.props;
+
+const hasMultiple = media.length > 1;
+---
+
+<div
+  class:list={["pdp__gallery", hasMultiple && "pdp__gallery--multi"]}
+  data-pdp-gallery={hasMultiple ? "true" : undefined}
+  role={hasMultiple ? "region" : undefined}
+  aria-roledescription={hasMultiple ? "carousel" : undefined}
+  aria-label={hasMultiple ? galleryLabel : undefined}
+>
+  {
+    hasMultiple ? (
+      <div class="pdp__thumbs" data-pdp-thumbs>
+        {media.map((item, index) => (
+          <button
+            type="button"
+            class:list={["pdp__thumb", index === 0 && "is-active"]}
+            aria-label={gotoLabel.replace("{n}", String(index + 1))}
+            aria-current={index === 0 ? "true" : undefined}
+            data-pdp-thumb={index}
+          >
+            <img
+              src={item.url}
+              alt=""
+              width="88"
+              height="88"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        ))}
+      </div>
+    ) : null
+  }
+
+  <div class="pdp__stage">
+    <div class="pdp__media">
+      {
+        salePercent ? (
+          <div class="pdp__badges">
+            <span class="pdp__badge">{saleLabel}</span>
+            <span class="pdp__badge">{salePercent}%</span>
+          </div>
+        ) : null
+      }
+      <button
+        type="button"
+        class="pdp__wishlist"
+        data-wishlist-toggle
+        data-product-id={productId}
+        data-label-add={wishlistAddLabel}
+        data-label-remove={wishlistRemoveLabel}
+        aria-pressed="false"
+        aria-label={wishlistAddLabel}
+      >
+        <HeartIcon class="pdp__wishlist-icon" />
+      </button>
+
+      {
+        hasMultiple ? (
+          <>
+            <div class="pdp__viewport" data-pdp-viewport>
+              <div class="pdp__slides">
+                {media.map((item, index) => (
+                  <div
+                    class="pdp__slide"
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${index + 1} / ${media.length}`}
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.alt || title}
+                      width="800"
+                      height="800"
+                      fetchpriority={index === 0 ? "high" : "low"}
+                      loading={index === 0 ? "eager" : "lazy"}
+                      decoding={index === 0 ? "sync" : "async"}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="pdp__nav pdp__nav--prev"
+              aria-label={prevLabel}
+              data-pdp-prev
+            >
+              <svg
+                class="pdp__nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="pdp__nav pdp__nav--next"
+              aria-label={nextLabel}
+              data-pdp-next
+            >
+              <svg
+                class="pdp__nav-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+
+            <div class="pdp__dots" data-pdp-dots>
+              {media.map((_, index) => (
+                <button
+                  type="button"
+                  class:list={["pdp__dot", index === 0 && "is-active"]}
+                  aria-label={gotoLabel.replace("{n}", String(index + 1))}
+                  aria-current={index === 0 ? "true" : undefined}
+                  data-pdp-dot={index}
+                />
+              ))}
+            </div>
+          </>
+        ) : media[0] ? (
+          <img
+            src={media[0].url}
+            alt={media[0].alt || title}
+            width="800"
+            height="800"
+            fetchpriority="high"
+          />
+        ) : null
+      }
+    </div>
+  </div>
+</div>
+
+{
+  hasMultiple ? (
+    <script>
+      import EmblaCarousel from "embla-carousel";
+
+      function initProductGallery(root: HTMLElement) {
+        if (root.dataset.pdpReady === "true") return;
+        const viewport = root.querySelector("[data-pdp-viewport]");
+        if (!(viewport instanceof HTMLElement)) return;
+        root.dataset.pdpReady = "true";
+
+        const emblaApi = EmblaCarousel(viewport, {
+          loop: true,
+          align: "start",
+          duration: 22,
+        });
+
+        const prev = root.querySelector<HTMLButtonElement>("[data-pdp-prev]");
+        const next = root.querySelector<HTMLButtonElement>("[data-pdp-next]");
+        const dots = [
+          ...root.querySelectorAll<HTMLButtonElement>("[data-pdp-dot]"),
+        ];
+        const thumbs = [
+          ...root.querySelectorAll<HTMLButtonElement>("[data-pdp-thumb]"),
+        ];
+
+        function syncUi() {
+          const selected = emblaApi.selectedScrollSnap();
+
+          for (const [index, dot] of dots.entries()) {
+            const active = index === selected;
+            dot.classList.toggle("is-active", active);
+            if (active) dot.setAttribute("aria-current", "true");
+            else dot.removeAttribute("aria-current");
+          }
+
+          for (const [index, thumb] of thumbs.entries()) {
+            const active = index === selected;
+            thumb.classList.toggle("is-active", active);
+            if (active) {
+              thumb.setAttribute("aria-current", "true");
+              thumb.scrollIntoView({
+                block: "nearest",
+                inline: "nearest",
+                behavior: "smooth",
+              });
+            } else {
+              thumb.removeAttribute("aria-current");
+            }
+          }
+        }
+
+        prev?.addEventListener("click", () => emblaApi.scrollPrev());
+        next?.addEventListener("click", () => emblaApi.scrollNext());
+
+        for (const dot of dots) {
+          dot.addEventListener("click", () => {
+            const index = Number(dot.dataset.pdpDot);
+            if (Number.isFinite(index)) emblaApi.scrollTo(index);
+          });
+        }
+
+        for (const thumb of thumbs) {
+          thumb.addEventListener("click", () => {
+            const index = Number(thumb.dataset.pdpThumb);
+            if (Number.isFinite(index)) emblaApi.scrollTo(index);
+          });
+        }
+
+        emblaApi.on("select", syncUi);
+        emblaApi.on("reInit", syncUi);
+        syncUi();
+      }
+
+      document
+        .querySelectorAll<HTMLElement>("[data-pdp-gallery]")
+        .forEach(initProductGallery);
+    </script>
+  ) : null
+}

@@ -75,6 +75,17 @@ const IMG = {
     "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80",
 };
 
+const IMG_POOL = Object.values(IMG).filter((url) => !url.includes("w=1600"));
+
+function mediaForProduct(primary: string, alt: string) {
+  const extras = IMG_POOL.filter((url) => url !== primary).slice(0, 2);
+  return [primary, ...extras].map((url, position) => ({
+    url,
+    alt: position === 0 ? alt : `${alt} (${position + 1})`,
+    position,
+  }));
+}
+
 async function main() {
   const email = process.env.ADMIN_EMAIL ?? "admin@example.com";
   const password = process.env.ADMIN_PASSWORD ?? "ChangeMe123!";
@@ -1205,7 +1216,7 @@ async function main() {
           })),
         },
         media: {
-          create: [{ url: p.image, alt: p.alt, position: 0 }],
+          create: mediaForProduct(p.image, p.alt),
         },
         metafields: {
           create: [

@@ -184,6 +184,17 @@ test.describe("commerce smoke", () => {
       await expect(first).toBeVisible();
       await first.click();
       await expect(page.locator(".pdp__title")).toBeVisible();
+      await expect(page.locator(".pdp__gallery")).toBeVisible();
+
+      const thumbs = page.locator(".pdp__thumb");
+      if ((await thumbs.count()) > 1) {
+        await expect(thumbs.first()).toHaveClass(/is-active/);
+        await page.getByRole("button", { name: /next image/i }).click();
+        await expect(thumbs.nth(1)).toHaveClass(/is-active/);
+        await thumbs.nth(2).click();
+        await expect(thumbs.nth(2)).toHaveClass(/is-active/);
+      }
+
       await page.getByRole("button", { name: /add to cart/i }).click();
       await expect(page).toHaveURL(/\/en\/cart/);
     });

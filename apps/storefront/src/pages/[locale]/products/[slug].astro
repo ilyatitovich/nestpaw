@@ -2,9 +2,9 @@
 import type { TipTapDoc } from "@online-store/rich-text";
 import AddToCart from "../../../components/AddToCart";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
-import HeartIcon from "../../../components/icons/HeartIcon.astro";
 import ProductCard from "../../../components/ProductCard";
 import ProductDetails from "../../../components/ProductDetails.astro";
+import ProductGallery from "../../../components/ProductGallery.astro";
 import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import { API_URL, apiGet } from "../../../lib/api";
@@ -213,7 +213,10 @@ if (product) {
           "@type": "Product",
           name: tr.title,
           description: tr.description,
-          image: img?.url,
+          image:
+            product.media.length > 1
+              ? product.media.map((m) => m.url)
+              : img?.url,
           brand: brand ? { "@type": "Brand", name: brand } : undefined,
           offers: {
             "@type": "Offer",
@@ -244,37 +247,19 @@ if (product) {
         <Breadcrumbs items={breadcrumbs} label={t(locale, "product.breadcrumb")} />
 
         <div class="pdp">
-          <div class="pdp__gallery">
-            <div class="pdp__media">
-              {salePercent ? (
-                <div class="pdp__badges">
-                  <span class="pdp__badge">{t(locale, "product.sale")}</span>
-                  <span class="pdp__badge">{salePercent}%</span>
-                </div>
-              ) : null}
-              <button
-                type="button"
-                class="pdp__wishlist"
-                data-wishlist-toggle
-                data-product-id={product.id}
-                data-label-add={t(locale, "product.wishlist")}
-                data-label-remove={t(locale, "product.wishlistAdded")}
-                aria-pressed="false"
-                aria-label={t(locale, "product.wishlist")}
-              >
-                <HeartIcon class="pdp__wishlist-icon" />
-              </button>
-              {img ? (
-                <img
-                  src={img.url}
-                  alt={img.alt || tr.title}
-                  width="800"
-                  height="800"
-                  fetchpriority="high"
-                />
-              ) : null}
-            </div>
-          </div>
+          <ProductGallery
+            media={product.media}
+            title={tr.title}
+            productId={product.id}
+            salePercent={salePercent}
+            saleLabel={t(locale, "product.sale")}
+            wishlistAddLabel={t(locale, "product.wishlist")}
+            wishlistRemoveLabel={t(locale, "product.wishlistAdded")}
+            prevLabel={t(locale, "product.galleryPrev")}
+            nextLabel={t(locale, "product.galleryNext")}
+            gotoLabel={t(locale, "product.galleryGoto")}
+            galleryLabel={t(locale, "product.galleryLabel")}
+          />
 
           <div class="pdp__info">
             {brand ? <p class="pdp__brand">{brand}</p> : null}
