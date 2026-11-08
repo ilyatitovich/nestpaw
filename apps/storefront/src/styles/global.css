@@ -3119,7 +3119,7 @@ button.site-header__menu-toggle {
   .cart-page__layout,
   .checkout-page__layout {
     grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 22rem);
-    gap: var(--space-7);
+    gap: var(--space-8);
   }
 }
 
@@ -3362,6 +3362,7 @@ button.site-header__menu-toggle {
   .checkout-page__layout {
     display: flex;
     flex-direction: column;
+    gap: var(--space-6);
   }
 
   .checkout-summary {
