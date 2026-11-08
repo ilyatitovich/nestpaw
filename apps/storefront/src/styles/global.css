@@ -2510,13 +2510,19 @@ a.cart-drawer__upsell-name:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  min-height: 0;
+  /* Match stage height without expanding the gallery row */
+  height: 0;
+  min-height: 100%;
   align-self: stretch;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   padding-inline: 0.1rem;
+}
+
+.pdp__thumbs::-webkit-scrollbar {
+  display: none;
 }
 
 .pdp__thumb {
@@ -4821,8 +4827,11 @@ html[data-account-session="guest"] .account-page__title {
 
   .pdp__thumbs {
     flex-direction: row;
-    max-height: none;
-    width: 100%;
+    height: auto;
+    min-height: 0;
+    /* Match stage width without expanding the gallery column */
+    width: 0;
+    min-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
   }

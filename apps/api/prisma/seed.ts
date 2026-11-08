@@ -75,10 +75,30 @@ const IMG = {
     "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80",
 };
 
-const IMG_POOL = Object.values(IMG).filter((url) => !url.includes("w=1600"));
+const EXTRA_GALLERY = [
+  "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800&q=80",
+  "https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&q=80",
+  "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&q=80",
+  "https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=800&q=80",
+  "https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800&q=80",
+  "https://images.unsplash.com/photo-1598133894008-61f7fdb8cc3a?w=800&q=80",
+  "https://images.unsplash.com/photo-1587302912306-cf1ed9ca7369?w=800&q=80",
+  "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80",
+  "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80",
+  "https://images.unsplash.com/photo-1495360010541-f023898ee6e0?w=800&q=80",
+  "https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=800&q=80",
+  "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80",
+];
+
+const IMG_POOL = [
+  ...new Set([
+    ...Object.values(IMG).filter((url) => !url.includes("w=1600")),
+    ...EXTRA_GALLERY,
+  ]),
+];
 
 function mediaForProduct(primary: string, alt: string) {
-  const extras = IMG_POOL.filter((url) => url !== primary).slice(0, 2);
+  const extras = IMG_POOL.filter((url) => url !== primary).slice(0, 10);
   return [primary, ...extras].map((url, position) => ({
     url,
     alt: position === 0 ? alt : `${alt} (${position + 1})`,
