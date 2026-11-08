@@ -15,8 +15,11 @@ import { ProductEditPage } from "./pages/ProductEditPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { NewsletterPage } from "./pages/NewsletterPage";
 import { ReviewsPage } from "./pages/ReviewsPage";
+import { ReturnsPage } from "./pages/ReturnsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ShippingPage } from "./pages/ShippingPage";
+import { SubscriptionsPage } from "./pages/SubscriptionsPage";
+import { TaxPage } from "./pages/TaxPage";
 
 function Private({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -48,7 +51,10 @@ export function App() {
                 <Route path="/customers" element={<CustomersPage />} />
                 <Route path="/discounts" element={<DiscountsPage />} />
                 <Route path="/shipping" element={<ShippingPage />} />
+                <Route path="/tax" element={<TaxPage />} />
                 <Route path="/pages" element={<PagesCmsPage />} />
+                <Route path="/returns" element={<ReturnsPage />} />
+                <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/reviews" element={<ReviewsPage />} />
                 <Route path="/newsletter" element={<NewsletterPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

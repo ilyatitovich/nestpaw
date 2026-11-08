@@ -19,9 +19,11 @@ import { NewsletterModule } from "./modules/newsletter/newsletter.module.js";
 import { NotificationsModule } from "./modules/notifications/notifications.module.js";
 import { OrdersModule } from "./modules/orders/orders.module.js";
 import { PaymentsModule } from "./modules/payments/payments.module.js";
+import { ReturnsModule } from "./modules/returns/returns.module.js";
 import { ReviewsModule } from "./modules/reviews/reviews.module.js";
 import { SettingsModule } from "./modules/settings/settings.module.js";
 import { ShippingModule } from "./modules/shipping/shipping.module.js";
+import { SubscriptionsModule } from "./modules/subscriptions/subscriptions.module.js";
 import { TaxModule } from "./modules/tax/tax.module.js";
 import { UsersModule } from "./modules/users/users.module.js";
 import { PrismaModule } from "./prisma/prisma.module.js";
@@ -61,6 +63,8 @@ import { RedisModule } from "./redis/redis.module.js";
     NewsletterModule,
     AnalyticsModule,
     ReviewsModule,
+    ReturnsModule,
+    SubscriptionsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

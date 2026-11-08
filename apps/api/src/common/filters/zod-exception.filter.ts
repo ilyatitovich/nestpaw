@@ -4,11 +4,15 @@ import {
   type ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
+import * as Sentry from "@sentry/node";
 import { ZodError } from "zod";
 
 @Catch()
 export class ZodExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ZodExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<{
@@ -26,6 +30,10 @@ export class ZodExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
+      if (status >= 500) {
+        Sentry.captureException(exception);
+        this.logger.error(exception);
+      }
       return response
         .status(status)
         .json(
@@ -35,8 +43,8 @@ export class ZodExceptionFilter implements ExceptionFilter {
         );
     }
 
-    // eslint-disable-next-line no-console
-    console.error(exception);
+    Sentry.captureException(exception);
+    this.logger.error(exception);
     return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: "Internal server error",

@@ -50,16 +50,65 @@ export class NotificationsService {
       )
       .join("\n");
 
-    try {
-      await this.transporter.sendMail({
-        from: this.from(),
-        to: order.email,
-        subject: `${this.storeName()} — Order #${order.number} confirmed`,
-        text: `Thanks for your order!\n\nOrder #${order.number}\n\n${lines}\n\nTotal: ${(order.total / 100).toFixed(2)} ${order.currency}`,
-      });
-    } catch (e) {
-      this.logger.error(`Failed to send order email for ${orderId}`, e);
-    }
+    const vatNote = `VAT included: ${(order.taxTotal / 100).toFixed(2)} ${order.currency}`;
+    const invoice =
+      order.invoiceNumber != null ? `Invoice #${order.invoiceNumber}\n` : "";
+
+    await this.transporter.sendMail({
+      from: this.from(),
+      to: order.email,
+      subject: `${this.storeName()} — Order #${order.number} confirmed`,
+      text: `Thanks for your order!\n\n${invoice}Order #${order.number}\n\n${lines}\n\nShipping: ${(order.shippingTotal / 100).toFixed(2)} ${order.currency}\n${vatNote}\nTotal: ${(order.total / 100).toFixed(2)} ${order.currency}`,
+    });
+  }
+
+  async sendOrderShipped(orderId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) return;
+    const track = order.trackingNumber
+      ? `\nCarrier: ${order.carrier ?? "—"}\nTracking: ${order.trackingNumber}`
+      : "";
+    await this.transporter.sendMail({
+      from: this.from(),
+      to: order.email,
+      subject: `${this.storeName()} — Order #${order.number} shipped`,
+      text: `Your order #${order.number} is on its way.${track}`,
+    });
+  }
+
+  async sendAbandonedCart(cartId: string) {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        lines: {
+          include: {
+            variant: {
+              include: { product: { include: { translations: true } } },
+            },
+          },
+        },
+      },
+    });
+    if (!cart?.email || !cart.lines.length || cart.abandonedEmailSentAt) return;
+
+    const storefront = (
+      process.env.STOREFRONT_URL ?? "http://localhost:4321"
+    ).replace(/\/$/, "");
+    const titles = cart.lines
+      .map((l) => l.variant.product.translations[0]?.title ?? l.variant.sku)
+      .join(", ");
+
+    await this.transporter.sendMail({
+      from: this.from(),
+      to: cart.email,
+      subject: `${this.storeName()} — You left something behind`,
+      text: `You still have items in your cart (${titles}).\n\nContinue checkout: ${storefront}/en/cart`,
+    });
+
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { abandonedEmailSentAt: new Date() },
+    });
   }
 
   async sendCustomerOtp(params: {

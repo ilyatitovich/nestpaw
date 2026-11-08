@@ -135,14 +135,68 @@ async function main() {
     },
   });
 
-  await prisma.taxRate.upsert({
-    where: { country: "DE" },
-    create: { country: "DE", name: "Germany VAT", rateBps: 1900 },
-    update: {},
+  for (const row of [
+    {
+      country: "DE",
+      taxClass: "standard" as const,
+      name: "Germany VAT 19%",
+      rateBps: 1900,
+    },
+    {
+      country: "DE",
+      taxClass: "reduced" as const,
+      name: "Germany VAT 7% (food)",
+      rateBps: 700,
+    },
+    {
+      country: "AT",
+      taxClass: "standard" as const,
+      name: "Austria VAT 20%",
+      rateBps: 2000,
+    },
+    {
+      country: "AT",
+      taxClass: "reduced" as const,
+      name: "Austria VAT 10% (food)",
+      rateBps: 1000,
+    },
+    {
+      country: "FR",
+      taxClass: "standard" as const,
+      name: "France VAT 20%",
+      rateBps: 2000,
+    },
+    {
+      country: "NL",
+      taxClass: "standard" as const,
+      name: "Netherlands VAT 21%",
+      rateBps: 2100,
+    },
+    {
+      country: "BE",
+      taxClass: "standard" as const,
+      name: "Belgium VAT 21%",
+      rateBps: 2100,
+    },
+  ]) {
+    await prisma.taxRate.upsert({
+      where: {
+        country_taxClass: { country: row.country, taxClass: row.taxClass },
+      },
+      create: row,
+      update: { name: row.name, rateBps: row.rateBps },
+    });
+  }
+
+  await prisma.storeSetting.upsert({
+    where: { key: "free_shipping_threshold_cents" },
+    create: { key: "free_shipping_threshold_cents", value: 4900 },
+    update: { value: 4900 },
   });
-  await prisma.taxRate.upsert({
-    where: { country: "AT" },
-    create: { country: "AT", name: "Austria VAT", rateBps: 2000 },
+
+  await prisma.invoiceSequence.upsert({
+    where: { id: "default" },
+    create: { id: "default", nextVal: 1 },
     update: {},
   });
 
@@ -1203,9 +1257,16 @@ async function main() {
       },
     ];
 
+    const isFood =
+      p.productType.includes("food") ||
+      p.productType.includes("treat") ||
+      p.productType === "wet_food" ||
+      p.productType === "dry_food";
+
     const product = await prisma.product.create({
       data: {
         status: "active",
+        taxClass: isFood ? "reduced" : "standard",
         option1Name: p.option1Name,
         translations: {
           create: [
@@ -1236,13 +1297,18 @@ async function main() {
           ],
         },
         variants: {
-          create: variants.map((v) => ({
-            sku: v.sku,
-            price: v.price,
-            option1: v.option1,
-            weightGrams: v.weightGrams ?? 500,
-            inventory: { create: { quantity: v.stock, policy: "deny" } },
-          })),
+          create: variants.map((v) => {
+            const grams = v.weightGrams ?? 500;
+            return {
+              sku: v.sku,
+              price: v.price,
+              option1: v.option1,
+              weightGrams: grams,
+              unitAmountGrams: isFood ? grams : null,
+              lowestPrice30d: Math.round(v.price * 0.95),
+              inventory: { create: { quantity: v.stock, policy: "deny" } },
+            };
+          }),
         },
         media: {
           create: mediaForProduct(p.image, p.alt),
@@ -1489,6 +1555,30 @@ async function main() {
     {
       title: "Kontakt",
       body: "E-Mail hello@nestpaw.example — Antwort innerhalb eines Werktags. Bei Bestellungen bitte die Bestellnummer angeben.",
+    },
+  );
+
+  await upsertPage(
+    "impressum",
+    {
+      title: "Legal notice (Impressum)",
+      body: "Nestpaw Demo UG (haftungsbeschränkt) — Musterstraße 1, 10115 Berlin, Germany. Represented by: Demo Owner. Email: hello@nestpaw.example. VAT ID: DE000000000. This is demo content for the portfolio storefront; replace with real merchant details before go-live.",
+    },
+    {
+      title: "Impressum",
+      body: "Nestpaw Demo UG (haftungsbeschränkt) — Musterstraße 1, 10115 Berlin. Vertreten durch: Demo Owner. E-Mail: hello@nestpaw.example. USt-IdNr.: DE000000000. Demo-Inhalte für das Portfolio — vor dem Livegang durch echte Angaben ersetzen.",
+    },
+  );
+
+  await upsertPage(
+    "widerruf",
+    {
+      title: "Right of withdrawal",
+      body: "Consumers in the EU have a 14-day right of withdrawal for most goods. To exercise it, contact hello@nestpaw.example with your order number. Food, hygiene, and sealed goods opened after delivery may be excluded. Full model withdrawal form available on request.",
+    },
+    {
+      title: "Widerrufsbelehrung",
+      body: "Verbraucher in der EU haben ein 14-tägiges Widerrufsrecht. Schreiben Sie an hello@nestpaw.example mit Ihrer Bestellnummer. Lebensmittel, Hygieneartikel und versiegelte Ware, die nach Erhalt geöffnet wurden, können ausgenommen sein. Ein Muster-Widerrufsformular senden wir auf Anfrage.",
     },
   );
 

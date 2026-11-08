@@ -26,6 +26,12 @@ export class CatalogController {
     @Query("ids") ids?: string,
     @Query("take") take?: string,
     @Query("skip") skip?: string,
+    @Query("lifeStage") lifeStage?: string,
+    @Query("productType") productType?: string,
+    @Query("species") species?: string,
+    @Query("minPrice") minPrice?: string,
+    @Query("maxPrice") maxPrice?: string,
+    @Query("sort") sort?: "price_asc" | "price_desc" | "newest",
   ) {
     const idList = ids
       ? ids
@@ -42,6 +48,12 @@ export class CatalogController {
       status: "active",
       take: take ? Number(take) : idList?.length,
       skip: skip ? Number(skip) : undefined,
+      lifeStage,
+      productType,
+      species,
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      sort,
     });
   }
 

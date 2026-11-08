@@ -14,9 +14,9 @@ Commerce monorepo for **Nestpaw**, a DACH specialty shop for dogs, cats, and sma
 - **Storefront:** http://localhost:4321/en/
 - **API docs:** http://localhost:3001/docs
 - **Discount:** `WELCOME10` (10%)
-- **Free shipping UX:** progress messaging from €49 (shipping rates still charged unless a free-shipping discount applies)
+- **Free shipping:** €49 threshold enforced server-side
 
-Seed loads ~26 pet products across Dogs / Cats / Small pets with nested categories, Unsplash demo images, CMS pages (about, shipping, returns, privacy, terms, contact), and sample reviews.
+Seed loads ~26 pet products across Dogs / Cats / Small pets with nested categories, Unsplash demo images, CMS pages (about, shipping, returns, privacy, terms, contact, **Impressum**, **Widerruf**), and sample reviews.
 
 ### Image attribution
 
@@ -24,24 +24,28 @@ Product and hero photos are hotlinked from [Unsplash](https://unsplash.com/licen
 
 ## Status
 
-**Demo-complete locally** (catalog → cart → checkout → mock/Stripe pay → admin fulfill). Not a turnkey production deploy until you finish the checklist below.
+**Demo-complete locally** (catalog → cart → checkout → mock/Stripe pay → admin fulfill). Production deploy still needs real secrets, TLS reverse proxy, and Stripe Dashboard payment methods (Klarna/PayPal/SEPA).
 
-### Production blockers addressed in codebase
+### Production engineering in codebase
 
-- Stripe line items match order totals (including discounts)
+- Gross (VAT-inclusive) prices + product tax classes (DE/AT reduced food rates)
+- Stripe line items match order totals; currency forced to EUR; checkout URL allowlist
 - Mock payments gated (`ALLOW_MOCK_PAYMENTS`, forced off when `NODE_ENV=production`)
-- Guest checkout collects a real shipping address
-- Inventory decrements atomically on pay; restock on cancel/refund of paid orders
-- Production boot refuses default/weak `JWT_ACCESS_SECRET`
-- Wishlist requires a customer JWT (no body `customerId`)
-- Customer accounts use email OTP or Google/Apple OAuth (see `docs/runbooks/customer-auth.md`)
-- Admin Categories CRUD with nesting + product assignment
+- Atomic `markPaid` + auto-refund on stock failure; webhook `payment_status` + async/expired events
+- Invoices (PDF + sequential numbers); shipments (carrier/tracking + email)
+- Partial refunds with Stripe idempotency; paid cancel routes through refund
+- Server free-shipping threshold; checkout shows shipping + VAT before pay; terms consent
+- Sentry in API filter + worker; notification job retries
+- Returns (RMA), subscriptions (subscribe-and-save), abandoned-cart enqueue
+- Guest order lookup; customer address-book CRUD
+- Admin editors: shipping zones, tax rates, CMS pages, returns, subscriptions, free-ship setting
 
 ### Still thin / verify before real traffic
 
-- Shipping/CMS/settings admin editors remain list-oriented
-- Observability (Sentry init only; no deep tracing)
-- Playwright critical path is opt-in (`E2E_API=1`, `E2E_STOREFRONT=1`)
+- TLS/reverse proxy not bundled (compose exposes via `expose`, not public ports)
+- Stripe Payment Method types come from Dashboard (enable Klarna/PayPal there)
+- Full DB integration tests for concurrent `markPaid` are covered by e2e mock path + unit invariants; add `stripe-mock` if you harden further
+- Static Astro PDP stock/price still bake at build time
 
 ## Quick start
 
@@ -80,7 +84,8 @@ pnpm db:seed
 - [ADRs](docs/adr/)
 - [Backup/restore](docs/runbooks/backup-restore.md)
 - [Production deploy](docs/runbooks/production-deploy.md)
+- [Stuck orders](docs/runbooks/stuck-orders.md)
 
 ## Modules
 
-Catalog (variants + metafields + nested collections), inventory, cart, Stripe checkout, orders, discounts, shipping, tax rates, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (email OTP + Google/Apple OAuth), multi-currency rates (stored; checkout still EUR-primary).
+Catalog (variants + metafields + nested collections + facets), inventory, cart, Stripe checkout, orders/invoices/shipments, discounts, shipping, tax classes, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (email OTP + Google/Apple OAuth), returns, subscriptions, abandoned cart, multi-currency rates (display; checkout EUR-only).

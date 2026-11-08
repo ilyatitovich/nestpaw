@@ -23,7 +23,6 @@ const locations = [
   "Köln",
   "Frankfurt",
   "Wien",
-  "Zürich",
   "Stuttgart",
 ] as const;
 
@@ -31,9 +30,11 @@ const serviceLinks = [
   { href: localizePath(activeLocale, "/pages/about"), label: t(activeLocale, "footer.about") },
   { href: localizePath(activeLocale, "/pages/shipping"), label: t(activeLocale, "footer.shipping") },
   { href: localizePath(activeLocale, "/pages/returns"), label: t(activeLocale, "footer.returns") },
+  { href: localizePath(activeLocale, "/pages/widerruf"), label: t(activeLocale, "footer.widerruf") },
   { href: localizePath(activeLocale, "/pages/privacy"), label: t(activeLocale, "footer.privacy") },
   { href: localizePath(activeLocale, "/pages/cookies"), label: t(activeLocale, "footer.cookies") },
   { href: localizePath(activeLocale, "/pages/terms"), label: t(activeLocale, "footer.terms") },
+  { href: localizePath(activeLocale, "/pages/impressum"), label: t(activeLocale, "footer.impressum") },
   { href: localizePath(activeLocale, "/pages/contact"), label: t(activeLocale, "footer.contact") },
 ] as const;
 

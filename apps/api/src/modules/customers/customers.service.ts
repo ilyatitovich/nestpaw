@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   CustomerProfileUpdateSchema,
   LocaleSchema,
@@ -6,6 +10,18 @@ import {
 import { z } from "zod";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { NewsletterService } from "../newsletter/newsletter.service.js";
+
+const AddressSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  line1: z.string().min(1).max(200),
+  line2: z.string().max(200).optional(),
+  city: z.string().min(1).max(100),
+  postalCode: z.string().min(1).max(20),
+  country: z.string().length(2),
+  phone: z.string().max(40).optional(),
+  isDefault: z.boolean().optional(),
+});
 
 const customerPublicSelect = {
   id: true,
@@ -61,6 +77,18 @@ export class CustomersService {
             total: true,
             currency: true,
             createdAt: true,
+            trackingNumber: true,
+            carrier: true,
+            shippedAt: true,
+            invoiceNumber: true,
+            lines: {
+              select: {
+                title: true,
+                quantity: true,
+                total: true,
+                sku: true,
+              },
+            },
           },
         },
       },
@@ -77,6 +105,56 @@ export class CustomersService {
       },
       select: customerPublicSelect,
     });
+  }
+
+  async lookupOrder(email: string, numberRaw: string) {
+    const number = Number(numberRaw);
+    if (!email || !Number.isFinite(number)) {
+      throw new BadRequestException("email and number required");
+    }
+    const order = await this.prisma.order.findFirst({
+      where: {
+        number,
+        email: { equals: email, mode: "insensitive" },
+      },
+      select: {
+        number: true,
+        status: true,
+        total: true,
+        currency: true,
+        createdAt: true,
+        trackingNumber: true,
+        carrier: true,
+        shippedAt: true,
+        lines: {
+          select: { title: true, quantity: true, total: true, sku: true },
+        },
+      },
+    });
+    if (!order) throw new NotFoundException("Order not found");
+    return order;
+  }
+
+  async addAddress(customerId: string, input: unknown) {
+    const data = AddressSchema.parse(input);
+    if (data.isDefault) {
+      await this.prisma.customerAddress.updateMany({
+        where: { customerId },
+        data: { isDefault: false },
+      });
+    }
+    return this.prisma.customerAddress.create({
+      data: { customerId, ...data, country: data.country.toUpperCase() },
+    });
+  }
+
+  async deleteAddress(customerId: string, addressId: string) {
+    const existing = await this.prisma.customerAddress.findFirst({
+      where: { id: addressId, customerId },
+    });
+    if (!existing) throw new NotFoundException("Address not found");
+    await this.prisma.customerAddress.delete({ where: { id: addressId } });
+    return { ok: true };
   }
 
   async optInNewsletter(customerId: string, input: unknown) {

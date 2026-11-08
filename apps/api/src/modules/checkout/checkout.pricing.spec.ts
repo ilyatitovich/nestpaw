@@ -5,20 +5,23 @@ import {
   buildStripeLineItems,
   sumStripeLineItems,
 } from "../payments/build-stripe-line-items.js";
+import { extractIncludedTax } from "../tax/tax-inclusive.js";
 
-/** Mirrors CheckoutService totals → Stripe session amount invariant. */
+/** Gross (tax-inclusive) totals → Stripe session amount invariant. */
 function orderTotals(input: {
   lines: { price: number; quantity: number; name: string }[];
   discountType?: "percentage" | "fixed_amount" | "free_shipping";
   discountValue?: number;
   shipping: number;
   taxBps: number;
+  freeShipThreshold?: number;
 }) {
   const subtotal = input.lines.reduce((s, l) => s + l.price * l.quantity, 0);
   let discountTotal = 0;
   let shippingTotal = input.shipping;
+  let freeShipping = false;
   if (input.discountType && input.discountValue != null) {
-    if (input.discountType === "free_shipping") shippingTotal = 0;
+    if (input.discountType === "free_shipping") freeShipping = true;
     else {
       discountTotal = computeDiscountAmount(
         { type: input.discountType, value: input.discountValue },
@@ -26,9 +29,16 @@ function orderTotals(input: {
       );
     }
   }
-  const taxable = Math.max(0, subtotal - discountTotal + shippingTotal);
-  const taxTotal = Math.floor((taxable * input.taxBps) / 10_000);
-  const total = taxable + taxTotal;
+  const afterDiscount = Math.max(0, subtotal - discountTotal);
+  if (
+    freeShipping ||
+    (input.freeShipThreshold != null &&
+      afterDiscount >= input.freeShipThreshold)
+  ) {
+    shippingTotal = 0;
+  }
+  const total = afterDiscount + shippingTotal;
+  const taxTotal = extractIncludedTax(total, input.taxBps);
   const stripeItems = buildStripeLineItems({
     lineItems: input.lines.map((l) => ({
       name: l.name,
@@ -36,7 +46,7 @@ function orderTotals(input: {
       quantity: l.quantity,
     })),
     shippingAmount: shippingTotal,
-    taxAmount: taxTotal,
+    taxAmount: 0,
     discountAmount: discountTotal,
     expectedTotal: total,
   });
@@ -50,8 +60,8 @@ function orderTotals(input: {
   };
 }
 
-describe("checkout pricing invariant", () => {
-  it("Stripe charge equals order total with percentage discount", () => {
+describe("checkout pricing invariant (gross)", () => {
+  it("Stripe charge equals gross order total with percentage discount", () => {
     const result = orderTotals({
       lines: [
         { name: "Mug", price: 2500, quantity: 2 },
@@ -63,11 +73,24 @@ describe("checkout pricing invariant", () => {
       taxBps: 1900,
     });
     assert.equal(sumStripeLineItems(result.stripeItems), result.total);
+    assert.ok(result.taxTotal > 0);
+    assert.ok(result.taxTotal < result.total);
   });
 
-  it("Stripe charge equals order total with fixed discount + free shipping", () => {
+  it("free shipping threshold zeroes shipping server-side", () => {
     const result = orderTotals({
-      lines: [{ name: "Mug", price: 5000, quantity: 1 }],
+      lines: [{ name: "Food", price: 5000, quantity: 1 }],
+      shipping: 799,
+      taxBps: 1900,
+      freeShipThreshold: 4900,
+    });
+    assert.equal(result.shippingTotal, 0);
+    assert.equal(sumStripeLineItems(result.stripeItems), result.total);
+  });
+
+  it("free_shipping discount zeroes shipping", () => {
+    const result = orderTotals({
+      lines: [{ name: "Mug", price: 2000, quantity: 1 }],
       discountType: "free_shipping",
       discountValue: 0,
       shipping: 799,

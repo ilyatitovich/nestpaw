@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -20,6 +21,12 @@ import { CustomersService } from "./customers.service.js";
 @Controller()
 export class CustomersController {
   constructor(private customers: CustomersService) {}
+
+  @Public()
+  @Get("orders/lookup")
+  lookup(@Query("email") email: string, @Query("number") number: string) {
+    return this.customers.lookupOrder(email, number);
+  }
 
   @Public()
   @UseGuards(CustomerJwtGuard)
@@ -71,5 +78,25 @@ export class CustomersController {
     @Body() body: { productId: string },
   ) {
     return this.customers.addWishlist(customer.id, body.productId);
+  }
+
+  @Public()
+  @UseGuards(CustomerJwtGuard)
+  @Post("customers/me/addresses")
+  addAddress(
+    @CurrentCustomer() customer: AuthCustomer,
+    @Body() body: unknown,
+  ) {
+    return this.customers.addAddress(customer.id, body);
+  }
+
+  @Public()
+  @UseGuards(CustomerJwtGuard)
+  @Delete("customers/me/addresses/:id")
+  deleteAddress(
+    @CurrentCustomer() customer: AuthCustomer,
+    @Param("id") id: string,
+  ) {
+    return this.customers.deleteAddress(customer.id, id);
   }
 }

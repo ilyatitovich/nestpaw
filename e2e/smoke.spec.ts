@@ -130,6 +130,7 @@ test.describe("commerce smoke", () => {
           },
           locale: "en",
           currency: "EUR",
+          acceptTerms: true,
           successUrl: `${STORE}/en/checkout/success`,
           cancelUrl: `${STORE}/en/cart`,
         },

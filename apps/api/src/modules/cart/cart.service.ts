@@ -67,6 +67,10 @@ export class CartService {
       create: { cartId: cart.id, variantId, quantity },
       update: { quantity: { increment: quantity } },
     });
+    await this.prisma.cart.update({
+      where: { id: cart.id },
+      data: { lastActivityAt: new Date() },
+    });
 
     return this.getOrCreate(cart.token);
   }
@@ -146,6 +150,19 @@ export class CartService {
     }
   }
 
+  private async freeShipThreshold(): Promise<number> {
+    const row = await this.prisma.storeSetting.findUnique({
+      where: { key: "free_shipping_threshold_cents" },
+    });
+    const v = row?.value;
+    if (typeof v === "number" && v >= 0) return v;
+    if (v && typeof v === "object" && "amount" in v) {
+      const n = Number((v as { amount: unknown }).amount);
+      if (Number.isFinite(n) && n >= 0) return n;
+    }
+    return 4900;
+  }
+
   private async withTotals(
     cart: Awaited<ReturnType<CartService["requireCart"]>>,
   ) {
@@ -154,21 +171,32 @@ export class CartService {
       0,
     );
     let discountTotal = 0;
+    let freeShippingCode = false;
     if (cart.discountCode) {
       try {
         const d = await this.discounts.validate(cart.discountCode, subtotal);
-        discountTotal = this.discounts.computeAmount(d, subtotal);
+        if (d.type === "free_shipping") freeShippingCode = true;
+        else discountTotal = this.discounts.computeAmount(d, subtotal);
       } catch {
         // stale code ignored until cleared
       }
     }
+    const threshold = await this.freeShipThreshold();
+    const afterDiscount = Math.max(0, subtotal - discountTotal);
+    const qualifiesFreeShipping =
+      freeShippingCode || afterDiscount >= threshold;
     return {
       ...cart,
       totals: {
         subtotal,
         discountTotal,
-        total: Math.max(0, subtotal - discountTotal),
+        total: afterDiscount,
         currency: cart.currency,
+        freeShipThreshold: threshold,
+        qualifiesFreeShipping,
+        remainingToFreeShipping: qualifiesFreeShipping
+          ? 0
+          : Math.max(0, threshold - afterDiscount),
       },
     };
   }

@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
   Logger,
 } from "@nestjs/common";
+import * as Sentry from "@sentry/node";
 import Stripe from "stripe";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { OrdersService } from "../orders/orders.service.js";
@@ -56,7 +58,8 @@ export class PaymentsService {
     const priced = buildStripeLineItems({
       lineItems: params.lineItems,
       shippingAmount: params.shippingAmount,
-      taxAmount: params.taxAmount,
+      // Gross prices: VAT already in line amounts; don't add tax as a Stripe line
+      taxAmount: 0,
       discountAmount: params.discountAmount,
       expectedTotal: params.amount,
     });
@@ -87,6 +90,7 @@ export class PaymentsService {
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
       line_items,
+      // Payment methods (Klarna/PayPal/SEPA) come from Stripe Dashboard settings
       metadata: { orderId: params.orderId },
       payment_intent_data: {
         metadata: { orderId: params.orderId },
@@ -121,6 +125,27 @@ export class PaymentsService {
     return stripe.checkout.sessions.retrieve(sessionId);
   }
 
+  private paymentIntentId(session: Stripe.Checkout.Session): string | undefined {
+    return typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+  }
+
+  private async markPaidFromSession(session: Stripe.Checkout.Session) {
+    const orderId = session.metadata?.orderId;
+    if (!orderId) return;
+    if (session.payment_status !== "paid") {
+      this.logger.log(
+        `Session ${session.id} completed with payment_status=${session.payment_status}; waiting for paid`,
+      );
+      return;
+    }
+    await this.orders.markPaid(orderId, {
+      stripeSessionId: session.id,
+      stripePaymentIntentId: this.paymentIntentId(session),
+    });
+  }
+
   async handleWebhook(rawBody: Buffer, signature: string) {
     if (!this.stripe) {
       this.logger.warn("Stripe not configured; ignoring webhook");
@@ -128,11 +153,19 @@ export class PaymentsService {
     }
     const stripe = this.stripe;
 
-    const event = stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET ?? "",
-    );
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET ?? "",
+      );
+    } catch (e) {
+      this.logger.warn("Invalid Stripe webhook signature");
+      throw new BadRequestException(
+        e instanceof Error ? e.message : "Invalid signature",
+      );
+    }
 
     const existing = await this.prisma.stripeEvent.findUnique({
       where: { id: event.id },
@@ -145,18 +178,27 @@ export class PaymentsService {
       update: {},
     });
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const orderId = session.metadata?.orderId;
-      if (orderId) {
-        await this.orders.markPaid(orderId, {
-          stripeSessionId: session.id,
-          stripePaymentIntentId:
-            typeof session.payment_intent === "string"
-              ? session.payment_intent
-              : session.payment_intent?.id,
-        });
+    try {
+      switch (event.type) {
+        case "checkout.session.completed":
+        case "checkout.session.async_payment_succeeded": {
+          const session = event.data.object as Stripe.Checkout.Session;
+          await this.markPaidFromSession(session);
+          break;
+        }
+        case "checkout.session.async_payment_failed":
+        case "checkout.session.expired": {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const orderId = session.metadata?.orderId;
+          if (orderId) await this.orders.expirePending(orderId);
+          break;
+        }
+        default:
+          break;
       }
+    } catch (e) {
+      Sentry.captureException(e, { tags: { stripeEvent: event.type } });
+      throw e;
     }
 
     await this.prisma.stripeEvent.update({
@@ -167,19 +209,94 @@ export class PaymentsService {
     return { received: true };
   }
 
-  async refund(orderId: string) {
+  async refund(
+    orderId: string,
+    opts?: { amount?: number; reason?: string },
+  ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
     });
-    if (!order?.stripePaymentIntentId) {
-      return this.orders.markRefunded(orderId);
+    if (!order) throw new BadRequestException("Order not found");
+
+    const remaining = order.total - order.refundedTotal;
+    const amount = opts?.amount ?? remaining;
+    if (amount <= 0 || amount > remaining) {
+      throw new BadRequestException("Invalid refund amount");
     }
-    if (this.stripe) {
-      await this.stripe.refunds.create({
-        payment_intent: order.stripePaymentIntentId,
+
+    if (order.stripePaymentIntentId && this.stripe) {
+      await this.stripe.refunds.create(
+        {
+          payment_intent: order.stripePaymentIntentId,
+          amount,
+        },
+        { idempotencyKey: `refund-${orderId}-${order.refundedTotal}-${amount}` },
+      );
+    } else if (order.stripePaymentIntentId && !this.stripe) {
+      if (!allowMockPayments()) {
+        throw new ForbiddenException("Stripe required to refund this order");
+      }
+    }
+
+    return this.orders.markRefunded(orderId, {
+      amount,
+      note: opts?.reason,
+    });
+  }
+
+  /** Customer charged but stock gone — refund full amount and leave order refunded. */
+  async refundAfterStockFailure(orderId: string, note: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) return;
+
+    try {
+      if (order.stripePaymentIntentId && this.stripe) {
+        await this.stripe.refunds.create(
+          { payment_intent: order.stripePaymentIntentId },
+          { idempotencyKey: `stock-fail-refund-${orderId}` },
+        );
+      }
+    } catch (e) {
+      this.logger.error(`Auto-refund failed for ${orderId}`, e);
+      Sentry.captureException(e, {
+        tags: { orderId, reason: "stock_fail_refund" },
       });
     }
-    return this.orders.markRefunded(orderId);
+
+    // Order may still be pending_payment if claim rolled back
+    if (order.status === "pending_payment") {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: "refunded",
+          refundedTotal: order.total,
+          transitions: {
+            create: {
+              fromStatus: "pending_payment",
+              toStatus: "refunded",
+              actorType: "system",
+              note: `Auto-refund: ${note}`,
+            },
+          },
+          auditLogs: {
+            create: {
+              action: "order.stock_fail_refund",
+              entity: "Order",
+              entityId: orderId,
+              actorType: "system",
+              meta: { note },
+            },
+          },
+        },
+      });
+      return;
+    }
+
+    await this.orders.markRefunded(orderId, {
+      amount: order.total - order.refundedTotal,
+      restock: false,
+      note: `Auto-refund: ${note}`,
+    });
   }
 
   /** Dev-only helper when Stripe keys are not configured. */

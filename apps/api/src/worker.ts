@@ -1,9 +1,16 @@
 import { NestFactory } from "@nestjs/core";
+import * as Sentry from "@sentry/node";
 import { WorkerModule } from "./worker.module.js";
 
 async function bootstrap() {
+  if (process.env.SENTRY_DSN) {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.SENTRY_ENVIRONMENT ?? "development",
+    });
+  }
+
   const app = await NestFactory.createApplicationContext(WorkerModule);
-  // BullMQ processors register via Nest DI; keep process alive.
   // eslint-disable-next-line no-console
   console.log("Worker started");
   process.on("SIGTERM", async () => {

@@ -66,6 +66,11 @@ type Props = {
     subtotal: string;
     discountLabel: string;
     total: string;
+    shippingCost: string;
+    vatIncluded: string;
+    acceptTerms: string;
+    payObligation: string;
+    termsRequired: string;
     errorGeneric: string;
     errorLoad: string;
   } & CheckoutValidationLabels;
@@ -121,6 +126,14 @@ export default function CheckoutClient({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [quote, setQuote] = useState<{
+    shippingTotal: number;
+    taxTotal: number;
+    total: number;
+    freeShipping: boolean;
+  } | null>(null);
 
   const validationLabels: CheckoutValidationLabels = {
     errorRequired: labels.errorRequired,
@@ -158,6 +171,30 @@ export default function CheckoutClient({
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!cart?.token || !shipping.country) return;
+    const token = cart.token;
+    const country = shipping.country;
+    const timer = window.setTimeout(() => {
+      void fetch(
+        `${apiUrl}/checkout/quote?country=${encodeURIComponent(country)}`,
+        { headers: { "X-Cart-Token": token } },
+      )
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = (await res.json()) as {
+            shippingTotal: number;
+            taxTotal: number;
+            total: number;
+            freeShipping: boolean;
+          };
+          setQuote(data);
+        })
+        .catch(() => undefined);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [apiUrl, cart?.token, shipping.country]);
 
   function clearFieldError(field: CheckoutField) {
     setFieldErrors((prev) => {
@@ -205,6 +242,10 @@ export default function CheckoutClient({
       focusFirstError(result.errors);
       return;
     }
+    if (!acceptTerms) {
+      setError(labels.termsRequired);
+      return;
+    }
 
     setSubmitting(true);
     setBusy(true);
@@ -223,7 +264,7 @@ export default function CheckoutClient({
         headers: {
           "Content-Type": "application/json",
           "X-Cart-Token": cart.token,
-          "Idempotency-Key": crypto.randomUUID(),
+          "Idempotency-Key": idempotencyKey,
           ...(customerToken
             ? { Authorization: `Bearer ${customerToken}` }
             : {}),
@@ -231,7 +272,8 @@ export default function CheckoutClient({
         body: JSON.stringify({
           shippingAddress: toShippingAddressPayload(shipping),
           locale,
-          currency: cart.totals.currency || "EUR",
+          currency: "EUR",
+          acceptTerms: true,
           successUrl: `${storeUrl}/${locale}/checkout/success`,
           cancelUrl: `${storeUrl}/${locale}/checkout`,
         }),
@@ -464,6 +506,16 @@ export default function CheckoutClient({
             </div>
           </div>
 
+          <label className="checkout-form__terms">
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              disabled={busy}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+            />
+            <span>{labels.acceptTerms}</span>
+          </label>
+
           {error ? (
             <p className="checkout-page__error" role="alert">
               {error}
@@ -475,7 +527,7 @@ export default function CheckoutClient({
             className="btn btn--primary account-form__submit"
             disabled={busy}
           >
-            {labels.paySecurely}
+            {labels.payObligation}
           </button>
           <p className="checkout-form__note">{labels.secureNote}</p>
         </form>
@@ -523,9 +575,31 @@ export default function CheckoutClient({
                   </dd>
                 </div>
               ) : null}
+              {quote ? (
+                <div className="checkout-summary__row">
+                  <dt>{labels.shippingCost}</dt>
+                  <dd>
+                    {quote.freeShipping
+                      ? formatMoney(0, locale, currency)
+                      : formatMoney(quote.shippingTotal, locale, currency)}
+                  </dd>
+                </div>
+              ) : null}
+              {quote ? (
+                <div className="checkout-summary__row">
+                  <dt>{labels.vatIncluded}</dt>
+                  <dd>{formatMoney(quote.taxTotal, locale, currency)}</dd>
+                </div>
+              ) : null}
               <div className="checkout-summary__row checkout-summary__row--total">
                 <dt>{labels.total}</dt>
-                <dd>{formatMoney(cart.totals.total, locale, currency)}</dd>
+                <dd>
+                  {formatMoney(
+                    quote?.total ?? cart.totals.total,
+                    locale,
+                    currency,
+                  )}
+                </dd>
               </div>
             </dl>
             <p className="checkout-summary__taxes">{labels.taxesNote}</p>

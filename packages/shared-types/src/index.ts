@@ -7,6 +7,12 @@ export type Locale = z.infer<typeof LocaleSchema>;
 export const CurrencySchema = z.enum(["EUR", "USD", "GBP"]);
 export type Currency = z.infer<typeof CurrencySchema>;
 
+/** Checkout currency — EUR only until server-side FX is enforced. */
+export const CheckoutCurrencySchema = z.enum(["EUR"]);
+
+export const TaxClassSchema = z.enum(["standard", "reduced"]);
+export type TaxClass = z.infer<typeof TaxClassSchema>;
+
 export const UserRoleSchema = z.enum(["owner", "staff"]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
@@ -125,9 +131,26 @@ export const CreateCheckoutSchema = z.object({
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
   locale: LocaleSchema.default("en"),
-  currency: CurrencySchema.default("EUR"),
+  currency: CheckoutCurrencySchema.default("EUR").optional(),
+  acceptTerms: z.literal(true),
 });
 export type CreateCheckoutInput = z.infer<typeof CreateCheckoutSchema>;
+
+export const FulfillOrderSchema = z.object({
+  carrier: z.string().min(1).max(80).optional(),
+  trackingNumber: z.string().min(1).max(120).optional(),
+});
+
+export const RefundOrderSchema = z.object({
+  amount: z.number().int().positive().optional(),
+  reason: z.string().max(500).optional(),
+});
+
+export const CreateReturnSchema = z.object({
+  orderId: z.string().cuid(),
+  reason: z.string().min(3).max(1000),
+  email: z.string().email(),
+});
 
 export const LoginSchema = z.object({
   email: z.string().email(),

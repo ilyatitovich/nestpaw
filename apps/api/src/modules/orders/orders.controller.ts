@@ -1,4 +1,15 @@
-import { Controller, Get, Param, Post, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Param,
+  Post,
+  Query,
+  Res,
+} from "@nestjs/common";
+import { FulfillOrderSchema, RefundOrderSchema } from "@online-store/shared-types";
+import { type Response } from "express";
 import {
   type AuthUser,
   CurrentUser,
@@ -35,9 +46,29 @@ export class OrdersController {
   }
 
   @Roles("owner", "staff")
+  @Get(":id/invoice.pdf")
+  @Header("Content-Type", "application/pdf")
+  async invoice(
+    @Param("id") id: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const pdf = await this.orders.invoicePdf(id);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="invoice-${id}.pdf"`,
+    );
+    res.send(pdf);
+  }
+
+  @Roles("owner", "staff")
   @Post(":id/fulfill")
-  fulfill(@Param("id") id: string, @CurrentUser() user: AuthUser) {
-    return this.orders.fulfill(id, user.id);
+  fulfill(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthUser,
+    @Body() body: unknown,
+  ) {
+    const data = FulfillOrderSchema.parse(body ?? {});
+    return this.orders.fulfill(id, user.id, data);
   }
 
   @Roles("owner", "staff")
@@ -48,7 +79,8 @@ export class OrdersController {
 
   @Roles("owner")
   @Post(":id/refund")
-  refund(@Param("id") id: string) {
-    return this.payments.refund(id);
+  refund(@Param("id") id: string, @Body() body: unknown) {
+    const data = RefundOrderSchema.parse(body ?? {});
+    return this.payments.refund(id, data);
   }
 }

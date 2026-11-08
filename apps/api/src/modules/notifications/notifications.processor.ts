@@ -5,7 +5,8 @@ import { NotificationsService } from "./notifications.service.js";
 type NotificationJob =
   | { orderId: string }
   | { subscriberId: string; confirmUrl: string; locale: string }
-  | { recipientId: string };
+  | { recipientId: string }
+  | { cartId: string };
 
 @Processor("notifications", {
   limiter: { max: 10, duration: 1000 },
@@ -19,6 +20,16 @@ export class NotificationsProcessor extends WorkerHost {
     if (job.name === "order-paid") {
       const data = job.data as { orderId: string };
       await this.notifications.sendOrderPaid(data.orderId);
+      return;
+    }
+    if (job.name === "order-shipped") {
+      const data = job.data as { orderId: string };
+      await this.notifications.sendOrderShipped(data.orderId);
+      return;
+    }
+    if (job.name === "abandoned-cart") {
+      const data = job.data as { cartId: string };
+      await this.notifications.sendAbandonedCart(data.cartId);
       return;
     }
     if (job.name === "newsletter-confirm") {

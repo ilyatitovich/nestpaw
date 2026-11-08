@@ -39,6 +39,39 @@ export class CmsService {
     });
   }
 
+  async updatePage(id: string, input: unknown) {
+    const data = CreatePageSchema.partial().parse(input);
+    const existing = await this.prisma.page.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Page not found");
+
+    if (data.translations?.length) {
+      for (const t of data.translations) {
+        await this.prisma.pageTranslation.upsert({
+          where: {
+            pageId_locale: { pageId: id, locale: t.locale },
+          },
+          create: { pageId: id, ...t },
+          update: {
+            title: t.title,
+            slug: t.slug,
+            body: t.body,
+            seoTitle: t.seoTitle,
+            seoDescription: t.seoDescription,
+          },
+        });
+      }
+    }
+
+    return this.prisma.page.update({
+      where: { id },
+      data: {
+        ...(data.status ? { status: data.status } : {}),
+        ...(data.blocks ? { blocks: data.blocks as Prisma.InputJsonValue } : {}),
+      },
+      include: { translations: true },
+    });
+  }
+
   async getPageBySlug(locale: string, slug: string) {
     const t = await this.prisma.pageTranslation.findUnique({
       where: { locale_slug: { locale, slug } },

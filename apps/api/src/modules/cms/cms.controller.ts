@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 import { Public } from "../../common/decorators/public.decorator.js";
 import { Roles } from "../../common/decorators/roles.decorator.js";
 import { CmsService } from "./cms.service.js";
@@ -29,6 +29,12 @@ export class CmsController {
   @Post("admin/pages")
   createPage(@Body() body: unknown) {
     return this.cms.createPage(body);
+  }
+
+  @Roles("owner", "staff")
+  @Patch("admin/pages/:id")
+  updatePage(@Param("id") id: string, @Body() body: unknown) {
+    return this.cms.updatePage(id, body);
   }
 
   @Roles("owner", "staff")

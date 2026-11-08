@@ -13,22 +13,39 @@ Storefront account sign-in is passwordless (email OTP and optional Google/Apple 
 
 ## Money path
 
-1. Storefront cart uses `X-Cart-Token`; guest enters shipping on cart checkout form (signed-in customers send Bearer so `Order.customerId` is set)
-2. `POST /checkout` creates `Order` (`pending_payment`) + Stripe Checkout Session whose `amount_total` matches `Order.total` (discounts applied to line items)
-3. Stripe webhook (or gated mock-complete in non-prod) marks order `paid`, decrements inventory atomically, queues email; success page clears the cart
-4. Admin fulfills / refunds / cancels (paid cancel & refund restock inventory)
+1. Storefront cart uses `X-Cart-Token`; guest enters shipping on checkout (signed-in customers send Bearer so `Order.customerId` is set)
+2. `GET /checkout/quote` previews **gross** totals (VAT included) with server free-shipping threshold
+3. `POST /checkout` (requires `acceptTerms: true`) creates `Order` (`pending_payment`) + Stripe Checkout Session whose `amount_total` matches `Order.total`
+4. Stripe webhook (`checkout.session.completed` / `async_payment_succeeded` with `payment_status=paid`) calls atomic `markPaid` (claim via `updateMany`, decrement stock, invoice number, email job)
+5. Insufficient stock after charge → auto-refund + order `refunded` + Sentry alert
+6. `checkout.session.expired` / `async_payment_failed` → cancel pending order
+7. Admin fulfills with carrier/tracking (ships email); refunds support partial amounts with Stripe idempotency keys
 
 Mock payments require `ALLOW_MOCK_PAYMENTS` and are disabled when `NODE_ENV=production`.
+
+### Failure modes
+
+| Failure | Behavior |
+| --- | --- |
+| Stock gone at pay | Auto Stripe refund; order `refunded`; Sentry |
+| Duplicate webhook | `StripeEvent.processed` + atomic status claim |
+| Async unpaid session | Ignore until `payment_status=paid` |
+| SMTP down | BullMQ retries order-paid / order-shipped jobs |
+| Cancel paid order | Routes through Stripe refund |
+
+## Pricing & tax
+
+Prices are **gross (VAT-inclusive)**. Products have `taxClass` (`standard` / `reduced`). `taxTotal` on orders is extracted for invoices, not added on top. Free shipping threshold is stored in `StoreSetting.free_shipping_threshold_cents` (default €49).
 
 ## Customization
 
 - Design tokens: `packages/ui-tokens/tokens.css`
-- CMS pages + menu handles via admin API
-- Product metafields for unknown verticals
-- Locales: `en`, `de` (extend `STORE_LOCALES` + i18n dictionaries)
+- CMS pages + menu handles via admin API (Impressum, Widerruf seeded)
+- Product metafields for unknown verticals; server-side PLP facets (`lifeStage`, `productType`, `species`, price, sort)
+- Locales: `en`, `de`
 
 ## Deploy
 
 - Storefront → Cloudflare Pages
-- API/Admin/Postgres/Redis → Docker Compose on VPS
+- API/Admin/Postgres/Redis → Docker Compose on VPS (`docker/docker-compose.prod.yml`: migrate job, Redis AOF+password, ready healthchecks, TLS at reverse proxy)
 - Media → MinIO locally, Cloudflare R2 in production

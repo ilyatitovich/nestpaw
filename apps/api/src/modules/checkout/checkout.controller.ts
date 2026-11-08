@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Post, Req } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Post, Query, Req } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { type Request } from "express";
 import { Public } from "../../common/decorators/public.decorator.js";
@@ -13,6 +13,16 @@ export class CheckoutController {
     private jwt: JwtService,
     private prisma: PrismaService,
   ) {}
+
+  @Public()
+  @Get("quote")
+  quote(
+    @Headers("x-cart-token") token: string | undefined,
+    @Query("country") country: string,
+    @Query("shippingRateId") shippingRateId?: string,
+  ) {
+    return this.checkout.quote(token, country, shippingRateId);
+  }
 
   @Public()
   @Post()

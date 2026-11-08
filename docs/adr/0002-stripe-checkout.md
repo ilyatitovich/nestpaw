@@ -10,4 +10,4 @@ Use Stripe Checkout Sessions + signed webhooks. Mock checkout when `STRIPE_SECRE
 
 ## Consequences
 
-Custom Elements checkout deferred. Idempotency via `Idempotency-Key` + `StripeEvent` dedupe.
+Custom Elements checkout deferred. Idempotency via `Idempotency-Key` + `StripeEvent` dedupe. Webhook only marks paid when `payment_status=paid`; also handles `async_payment_*` and `expired`. Stock-fail after charge auto-refunds (see ADR 0007).

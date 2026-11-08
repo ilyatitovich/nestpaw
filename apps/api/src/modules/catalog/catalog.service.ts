@@ -26,12 +26,41 @@ export class CatalogService {
     take?: number;
     skip?: number;
     admin?: boolean;
+    lifeStage?: string;
+    productType?: string;
+    species?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    sort?: "price_asc" | "price_desc" | "newest";
   }) {
     const take = Math.min(
       params.take ?? (params.ids?.length ? params.ids.length : 24),
       100,
     );
     const skip = params.skip ?? 0;
+    const metafieldFilters: Prisma.MetafieldWhereInput[] = [];
+    if (params.lifeStage) {
+      metafieldFilters.push({
+        namespace: "pet",
+        key: "life_stage",
+        value: { equals: params.lifeStage },
+      });
+    }
+    if (params.productType) {
+      metafieldFilters.push({
+        namespace: "pet",
+        key: "product_type",
+        value: { equals: params.productType },
+      });
+    }
+    if (params.species) {
+      metafieldFilters.push({
+        namespace: "pet",
+        key: "species",
+        value: { equals: params.species },
+      });
+    }
+
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
       ...(params.status
@@ -42,14 +71,28 @@ export class CatalogService {
       ...(params.ids?.length ? { id: { in: params.ids } } : {}),
       ...(params.q
         ? {
-            translations: {
-              some: {
-                OR: [
-                  { title: { contains: params.q, mode: "insensitive" } },
-                  { description: { contains: params.q, mode: "insensitive" } },
-                ],
+            OR: [
+              {
+                translations: {
+                  some: {
+                    OR: [
+                      { title: { contains: params.q, mode: "insensitive" } },
+                      {
+                        description: {
+                          contains: params.q,
+                          mode: "insensitive",
+                        },
+                      },
+                    ],
+                  },
+                },
               },
-            },
+              {
+                variants: {
+                  some: { sku: { contains: params.q, mode: "insensitive" } },
+                },
+              },
+            ],
           }
         : {}),
       ...(params.collection
@@ -65,7 +108,31 @@ export class CatalogService {
             },
           }
         : {}),
+      ...(metafieldFilters.length
+        ? { AND: metafieldFilters.map((f) => ({ metafields: { some: f } })) }
+        : {}),
+      ...(params.minPrice != null || params.maxPrice != null
+        ? {
+            variants: {
+              some: {
+                price: {
+                  ...(params.minPrice != null
+                    ? { gte: params.minPrice }
+                    : {}),
+                  ...(params.maxPrice != null
+                    ? { lte: params.maxPrice }
+                    : {}),
+                },
+              },
+            },
+          }
+        : {}),
     };
+
+    const orderBy: Prisma.ProductOrderByWithRelationInput =
+      params.sort === "newest"
+        ? { createdAt: "desc" }
+        : { updatedAt: "desc" };
 
     const [items, total] = await Promise.all([
       this.prisma.product.findMany({
@@ -79,13 +146,24 @@ export class CatalogService {
             include: { collection: { include: { translations: true } } },
           },
         },
-        orderBy: { updatedAt: "desc" },
+        orderBy,
         take,
         skip,
       }),
       this.prisma.product.count({ where }),
     ]);
-    return { items, total, take, skip };
+
+    let sorted = items;
+    if (params.sort === "price_asc" || params.sort === "price_desc") {
+      const dir = params.sort === "price_asc" ? 1 : -1;
+      sorted = [...items].sort((a, b) => {
+        const pa = a.variants[0]?.price ?? 0;
+        const pb = b.variants[0]?.price ?? 0;
+        return (pa - pb) * dir;
+      });
+    }
+
+    return { items: sorted, total, take, skip };
   }
 
   async getBySlug(locale: string, slug: string) {

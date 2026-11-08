@@ -59,6 +59,8 @@ type Product = {
     id: string;
     price: number;
     compareAtPrice?: number | null;
+    lowestPrice30d?: number | null;
+    unitAmountGrams?: number | null;
     option1?: string | null;
     inventory?: { quantity: number } | null;
   }[];
@@ -113,6 +115,30 @@ const salePercent = saleVariant?.compareAtPrice
         100,
     )
   : null;
+
+const money = (cents: number) =>
+  new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-IE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(cents / 100);
+
+const unitPriceLabel =
+  variant?.unitAmountGrams && variant.unitAmountGrams > 0
+    ? t(locale, "product.unitPrice").replace(
+        "{price}",
+        money((variant.price * 1000) / variant.unitAmountGrams),
+      )
+    : null;
+
+const omnibusLabel =
+  variant?.lowestPrice30d != null &&
+  variant.compareAtPrice != null &&
+  variant.compareAtPrice > variant.price
+    ? t(locale, "product.lowestPrice").replace(
+        "{price}",
+        money(variant.lowestPrice30d),
+      )
+    : null;
 
 const collectionTrail = (product?.collections ?? [])
   .map((c) => c.collection)
@@ -281,6 +307,8 @@ if (product) {
               outOfStockLabel={t(locale, "product.outOfStock")}
               errorLabel={t(locale, "product.addError")}
             />
+            {unitPriceLabel ? <p class="pdp__unit-price">{unitPriceLabel}</p> : null}
+            {omnibusLabel ? <p class="pdp__omnibus">{omnibusLabel}</p> : null}
           </div>
         </div>
 

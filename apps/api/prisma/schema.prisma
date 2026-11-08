@@ -74,6 +74,25 @@ enum MetafieldType {
   json
 }
 
+enum TaxClass {
+  standard
+  reduced
+}
+
+enum ReturnStatus {
+  pending
+  approved
+  received
+  refunded
+  rejected
+}
+
+enum SubscriptionStatus {
+  active
+  paused
+  cancelled
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -121,6 +140,7 @@ model Customer {
   wishlists       WishlistItem[]
   identities      CustomerIdentity[]
   refreshTokens   CustomerRefreshToken[]
+  subscriptions   Subscription[]
 }
 
 model CustomerIdentity {
@@ -188,6 +208,7 @@ model CustomerAddress {
 model Product {
   id              String               @id @default(cuid())
   status          ProductStatus        @default(draft)
+  taxClass        TaxClass             @default(standard)
   option1Name     String?
   option2Name     String?
   option3Name     String?
@@ -201,6 +222,7 @@ model Product {
   collections     CollectionProduct[]
   reviews         Review[]
   wishlistItems   WishlistItem[]
+  subscriptions   Subscription[]
 }
 
 model ProductTranslation {
@@ -221,23 +243,28 @@ model ProductTranslation {
 }
 
 model ProductVariant {
-  id             String         @id @default(cuid())
-  productId      String
-  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku            String         @unique
-  barcode        String?
-  price          Int
-  compareAtPrice Int?
-  currency       String         @default("EUR")
-  option1        String?
-  option2        String?
-  option3        String?
-  weightGrams    Int            @default(0)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  inventory      InventoryItem?
-  cartLines      CartLine[]
-  orderLines     OrderLine[]
+  id               String         @id @default(cuid())
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku              String         @unique
+  barcode          String?
+  price            Int
+  compareAtPrice   Int?
+  /// Omnibus: lowest price in last 30 days (cents), when compare-at is shown
+  lowestPrice30d   Int?
+  /// Pack contents in grams for Grundpreis (€/kg); null = not applicable
+  unitAmountGrams  Int?
+  currency         String         @default("EUR")
+  option1          String?
+  option2          String?
+  option3          String?
+  weightGrams      Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  inventory        InventoryItem?
+  cartLines        CartLine[]
+  orderLines       OrderLine[]
+  subscriptions    Subscription[]
 
   @@index([productId])
 }
@@ -315,14 +342,20 @@ model CollectionProduct {
 }
 
 model Cart {
-  id           String     @id @default(cuid())
-  token        String     @unique @default(cuid())
-  customerId   String?
-  currency     String     @default("EUR")
-  discountCode String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  lines        CartLine[]
+  id             String     @id @default(cuid())
+  token          String     @unique @default(cuid())
+  customerId     String?
+  email          String?
+  currency       String     @default("EUR")
+  discountCode   String?
+  abandonedEmailSentAt DateTime?
+  lastActivityAt DateTime   @default(now())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  lines          CartLine[]
+
+  @@index([email])
+  @@index([lastActivityAt])
 }
 
 model CartLine {
@@ -350,36 +383,46 @@ model Order {
   subtotal              Int
   discountTotal         Int              @default(0)
   shippingTotal         Int              @default(0)
+  /// VAT included in total (gross pricing); informational for invoices
   taxTotal              Int              @default(0)
   total                 Int
+  refundedTotal         Int              @default(0)
   discountCode          String?
   stripeSessionId       String?          @unique
   stripePaymentIntentId String?
   shippingAddress       Json
   shippingRateId        String?
   idempotencyKey        String?          @unique
+  invoiceNumber         Int?             @unique
+  paidAt                DateTime?
+  carrier               String?
+  trackingNumber        String?
+  shippedAt             DateTime?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
   lines                 OrderLine[]
   transitions           OrderTransition[]
   auditLogs             AuditLog[]
+  returnRequests        ReturnRequest[]
 
   @@index([email])
   @@index([status])
 }
 
 model OrderLine {
-  id          String         @id @default(cuid())
-  orderId     String
-  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  variantId   String?
-  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  title       String
-  variantTitle String        @default("")
-  sku         String
-  quantity    Int
-  unitPrice   Int
-  total       Int
+  id           String          @id @default(cuid())
+  orderId      String
+  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId    String?
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  title        String
+  variantTitle String          @default("")
+  sku          String
+  quantity     Int
+  unitPrice    Int
+  total        Int
+  taxClass     TaxClass        @default(standard)
+  taxTotal     Int             @default(0)
 }
 
 model OrderTransition {
@@ -435,12 +478,53 @@ model ShippingRate {
 model TaxRate {
   id        String   @id @default(cuid())
   country   String
+  taxClass  TaxClass @default(standard)
   name      String
   rateBps   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([country])
+  @@unique([country, taxClass])
+}
+
+model ReturnRequest {
+  id           String       @id @default(cuid())
+  orderId      String
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  email        String
+  reason       String
+  status       ReturnStatus @default(pending)
+  refundAmount Int?
+  adminNote    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  customerId   String
+  customer     Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product            @relation(fields: [productId], references: [id])
+  variantId    String
+  variant      ProductVariant     @relation(fields: [variantId], references: [id])
+  intervalDays Int                @default(30)
+  quantity     Int                @default(1)
+  status       SubscriptionStatus @default(active)
+  nextOrderAt  DateTime
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([customerId])
+  @@index([status, nextOrderAt])
+}
+
+model InvoiceSequence {
+  id      String @id @default("default")
+  nextVal Int    @default(1)
 }
 
 model MediaAsset {
