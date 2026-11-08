@@ -1,4 +1,5 @@
 ---
+import CloseIcon from "./icons/CloseIcon.astro";
 import HeartIcon from "./icons/HeartIcon.astro";
 
 interface MediaItem {
@@ -18,6 +19,7 @@ interface Props {
   nextLabel: string;
   gotoLabel: string;
   galleryLabel: string;
+  closeLabel: string;
 }
 
 const {
@@ -32,167 +34,312 @@ const {
   nextLabel,
   gotoLabel,
   galleryLabel,
+  closeLabel,
 } = Astro.props;
 
+const hasMedia = media.length > 0;
 const hasMultiple = media.length > 1;
 ---
 
-<div
-  class:list={["pdp__gallery", hasMultiple && "pdp__gallery--multi"]}
-  data-pdp-gallery={hasMultiple ? "true" : undefined}
-  role={hasMultiple ? "region" : undefined}
-  aria-roledescription={hasMultiple ? "carousel" : undefined}
-  aria-label={hasMultiple ? galleryLabel : undefined}
->
-  {
-    hasMultiple ? (
-      <div class="pdp__thumbs" data-pdp-thumbs>
-        {media.map((item, index) => (
+{
+  hasMedia ? (
+    <div
+      class:list={["pdp__gallery", hasMultiple && "pdp__gallery--multi"]}
+      data-pdp-gallery
+      role={hasMultiple ? "region" : undefined}
+      aria-roledescription={hasMultiple ? "carousel" : undefined}
+      aria-label={hasMultiple ? galleryLabel : undefined}
+    >
+      {hasMultiple ? (
+        <div class="pdp__thumbs" data-pdp-thumbs>
+          {media.map((item, index) => (
+            <button
+              type="button"
+              class:list={["pdp__thumb", index === 0 && "is-active"]}
+              aria-label={gotoLabel.replace("{n}", String(index + 1))}
+              aria-current={index === 0 ? "true" : undefined}
+              data-pdp-thumb={index}
+            >
+              <img
+                src={item.url}
+                alt=""
+                width="88"
+                height="88"
+                loading="lazy"
+                decoding="async"
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <div class="pdp__stage">
+        <div class="pdp__media pdp__media--zoomable" data-pdp-open>
+          {salePercent ? (
+            <div class="pdp__badges">
+              <span class="pdp__badge">{saleLabel}</span>
+              <span class="pdp__badge">{salePercent}%</span>
+            </div>
+          ) : null}
           <button
             type="button"
-            class:list={["pdp__thumb", index === 0 && "is-active"]}
-            aria-label={gotoLabel.replace("{n}", String(index + 1))}
-            aria-current={index === 0 ? "true" : undefined}
-            data-pdp-thumb={index}
+            class="pdp__wishlist"
+            data-wishlist-toggle
+            data-product-id={productId}
+            data-label-add={wishlistAddLabel}
+            data-label-remove={wishlistRemoveLabel}
+            aria-pressed="false"
+            aria-label={wishlistAddLabel}
           >
-            <img
-              src={item.url}
-              alt=""
-              width="88"
-              height="88"
-              loading="lazy"
-              decoding="async"
-            />
+            <HeartIcon class="pdp__wishlist-icon" />
           </button>
-        ))}
-      </div>
-    ) : null
-  }
 
-  <div class="pdp__stage">
-    <div class="pdp__media">
-      {
-        salePercent ? (
-          <div class="pdp__badges">
-            <span class="pdp__badge">{saleLabel}</span>
-            <span class="pdp__badge">{salePercent}%</span>
-          </div>
-        ) : null
-      }
-      <button
-        type="button"
-        class="pdp__wishlist"
-        data-wishlist-toggle
-        data-product-id={productId}
-        data-label-add={wishlistAddLabel}
-        data-label-remove={wishlistRemoveLabel}
-        aria-pressed="false"
-        aria-label={wishlistAddLabel}
-      >
-        <HeartIcon class="pdp__wishlist-icon" />
-      </button>
+          {hasMultiple ? (
+            <>
+              <div class="pdp__viewport" data-pdp-viewport>
+                <div class="pdp__slides">
+                  {media.map((item, index) => (
+                    <div
+                      class="pdp__slide"
+                      role="group"
+                      aria-roledescription="slide"
+                      aria-label={`${index + 1} / ${media.length}`}
+                    >
+                      <img
+                        src={item.url}
+                        alt={item.alt || title}
+                        width="800"
+                        height="800"
+                        fetchpriority={index === 0 ? "high" : "low"}
+                        loading={index === 0 ? "eager" : "lazy"}
+                        decoding={index === 0 ? "sync" : "async"}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-      {
-        hasMultiple ? (
-          <>
-            <div class="pdp__viewport" data-pdp-viewport>
-              <div class="pdp__slides">
-                {media.map((item, index) => (
-                  <div
-                    class="pdp__slide"
-                    role="group"
-                    aria-roledescription="slide"
-                    aria-label={`${index + 1} / ${media.length}`}
-                  >
-                    <img
-                      src={item.url}
-                      alt={item.alt || title}
-                      width="800"
-                      height="800"
-                      fetchpriority={index === 0 ? "high" : "low"}
-                      loading={index === 0 ? "eager" : "lazy"}
-                      decoding={index === 0 ? "sync" : "async"}
-                    />
-                  </div>
+              <button
+                type="button"
+                class="pdp__nav pdp__nav--prev"
+                aria-label={prevLabel}
+                data-pdp-prev
+              >
+                <svg
+                  class="pdp__nav-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pdp__nav pdp__nav--next"
+                aria-label={nextLabel}
+                data-pdp-next
+              >
+                <svg
+                  class="pdp__nav-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+
+              <div class="pdp__dots" data-pdp-dots>
+                {media.map((_, index) => (
+                  <button
+                    type="button"
+                    class:list={["pdp__dot", index === 0 && "is-active"]}
+                    aria-label={gotoLabel.replace("{n}", String(index + 1))}
+                    aria-current={index === 0 ? "true" : undefined}
+                    data-pdp-dot={index}
+                  />
                 ))}
               </div>
-            </div>
+            </>
+          ) : (
+            <img
+              src={media[0].url}
+              alt={media[0].alt || title}
+              width="800"
+              height="800"
+              fetchpriority="high"
+            />
+          )}
 
-            <button
-              type="button"
-              class="pdp__nav pdp__nav--prev"
-              aria-label={prevLabel}
-              data-pdp-prev
-            >
-              <svg
-                class="pdp__nav-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="pdp__nav pdp__nav--next"
-              aria-label={nextLabel}
-              data-pdp-next
-            >
-              <svg
-                class="pdp__nav-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
+        </div>
+      </div>
 
-            <div class="pdp__dots" data-pdp-dots>
-              {media.map((_, index) => (
+      <dialog
+        class="pdp-lightbox"
+        data-pdp-lightbox
+        closedby="any"
+        aria-label={galleryLabel}
+      >
+        <form method="dialog" class="pdp-lightbox__toolbar">
+          <button
+            type="submit"
+            class="pdp-lightbox__close"
+            autofocus
+            aria-label={closeLabel}
+          >
+            <CloseIcon class="pdp-lightbox__close-icon" />
+          </button>
+        </form>
+
+        <div
+          class:list={[
+            "pdp__gallery",
+            "pdp-lightbox__gallery",
+            hasMultiple && "pdp__gallery--multi",
+          ]}
+          data-pdp-lightbox-gallery
+        >
+          {hasMultiple ? (
+            <div class="pdp__thumbs" data-pdp-thumbs>
+              {media.map((item, index) => (
                 <button
                   type="button"
-                  class:list={["pdp__dot", index === 0 && "is-active"]}
+                  class:list={["pdp__thumb", index === 0 && "is-active"]}
                   aria-label={gotoLabel.replace("{n}", String(index + 1))}
                   aria-current={index === 0 ? "true" : undefined}
-                  data-pdp-dot={index}
-                />
+                  data-pdp-thumb={index}
+                >
+                  <img
+                    src={item.url}
+                    alt=""
+                    width="88"
+                    height="88"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </button>
               ))}
             </div>
-          </>
-        ) : media[0] ? (
-          <img
-            src={media[0].url}
-            alt={media[0].alt || title}
-            width="800"
-            height="800"
-            fetchpriority="high"
-          />
-        ) : null
-      }
+          ) : null}
+
+          <div class="pdp__stage">
+            <div class="pdp__media pdp-lightbox__media">
+              {hasMultiple ? (
+                <>
+                  <div class="pdp__viewport" data-pdp-viewport>
+                    <div class="pdp__slides">
+                      {media.map((item, index) => (
+                        <div
+                          class="pdp__slide"
+                          role="group"
+                          aria-roledescription="slide"
+                          aria-label={`${index + 1} / ${media.length}`}
+                        >
+                          <img
+                            src={item.url}
+                            alt={item.alt || title}
+                            width="1200"
+                            height="1200"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="pdp__nav pdp__nav--prev"
+                    aria-label={prevLabel}
+                    data-pdp-prev
+                  >
+                    <svg
+                      class="pdp__nav-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="pdp__nav pdp__nav--next"
+                    aria-label={nextLabel}
+                    data-pdp-next
+                  >
+                    <svg
+                      class="pdp__nav-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+
+                  <div class="pdp__dots" data-pdp-dots>
+                    {media.map((_, index) => (
+                      <button
+                        type="button"
+                        class:list={["pdp__dot", index === 0 && "is-active"]}
+                        aria-label={gotoLabel.replace("{n}", String(index + 1))}
+                        aria-current={index === 0 ? "true" : undefined}
+                        data-pdp-dot={index}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={media[0].url}
+                  alt={media[0].alt || title}
+                  width="1200"
+                  height="1200"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </dialog>
     </div>
-  </div>
-</div>
+  ) : null
+}
 
 {
-  hasMultiple ? (
+  hasMedia ? (
     <script>
       import EmblaCarousel from "embla-carousel";
 
-      function initProductGallery(root: HTMLElement) {
-        if (root.dataset.pdpReady === "true") return;
-        const viewport = root.querySelector("[data-pdp-viewport]");
-        if (!(viewport instanceof HTMLElement)) return;
-        root.dataset.pdpReady = "true";
+      type GalleryEmbla = ReturnType<typeof EmblaCarousel>;
+
+      function wireCarousel(root: HTMLElement): GalleryEmbla | null {
+        // Only the direct stage — never the nested lightbox copy inside <dialog>.
+        const stage = root.querySelector(":scope > .pdp__stage");
+        if (!(stage instanceof HTMLElement)) return null;
+        const viewport = stage.querySelector("[data-pdp-viewport]");
+        if (!(viewport instanceof HTMLElement)) return null;
+        const thumbsRoot = root.querySelector(":scope > .pdp__thumbs");
 
         const emblaApi = EmblaCarousel(viewport, {
           loop: true,
@@ -200,14 +347,18 @@ const hasMultiple = media.length > 1;
           duration: 22,
         });
 
-        const prev = root.querySelector<HTMLButtonElement>("[data-pdp-prev]");
-        const next = root.querySelector<HTMLButtonElement>("[data-pdp-next]");
+        const prev = stage.querySelector<HTMLButtonElement>("[data-pdp-prev]");
+        const next = stage.querySelector<HTMLButtonElement>("[data-pdp-next]");
         const dots = [
-          ...root.querySelectorAll<HTMLButtonElement>("[data-pdp-dot]"),
+          ...stage.querySelectorAll<HTMLButtonElement>("[data-pdp-dot]"),
         ];
-        const thumbs = [
-          ...root.querySelectorAll<HTMLButtonElement>("[data-pdp-thumb]"),
-        ];
+        const thumbs = thumbsRoot
+          ? [
+              ...thumbsRoot.querySelectorAll<HTMLButtonElement>(
+                "[data-pdp-thumb]",
+              ),
+            ]
+          : [];
 
         function syncUi() {
           const selected = emblaApi.selectedScrollSnap();
@@ -235,11 +386,18 @@ const hasMultiple = media.length > 1;
           }
         }
 
-        prev?.addEventListener("click", () => emblaApi.scrollPrev());
-        next?.addEventListener("click", () => emblaApi.scrollNext());
+        prev?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          emblaApi.scrollPrev();
+        });
+        next?.addEventListener("click", (e) => {
+          e.stopPropagation();
+          emblaApi.scrollNext();
+        });
 
         for (const dot of dots) {
-          dot.addEventListener("click", () => {
+          dot.addEventListener("click", (e) => {
+            e.stopPropagation();
             const index = Number(dot.dataset.pdpDot);
             if (Number.isFinite(index)) emblaApi.scrollTo(index);
           });
@@ -255,6 +413,121 @@ const hasMultiple = media.length > 1;
         emblaApi.on("select", syncUi);
         emblaApi.on("reInit", syncUi);
         syncUi();
+        return emblaApi;
+      }
+
+      function installClosedByFallback(dialog: HTMLDialogElement) {
+        if ("closedBy" in HTMLDialogElement.prototype) return;
+
+        let pressedOutside = false;
+        const outside = (e: PointerEvent) => {
+          const r = dialog.getBoundingClientRect();
+          return (
+            e.clientX < r.left ||
+            e.clientX > r.right ||
+            e.clientY < r.top ||
+            e.clientY > r.bottom
+          );
+        };
+
+        dialog.addEventListener("pointerdown", (e) => {
+          pressedOutside = outside(e);
+        });
+        dialog.addEventListener("pointerup", (e) => {
+          if (pressedOutside && outside(e)) dialog.close();
+        });
+      }
+
+      function initProductGallery(root: HTMLElement) {
+        if (root.dataset.pdpReady === "true") return;
+        root.dataset.pdpReady = "true";
+
+        const galleryEmbla = wireCarousel(root);
+        const dialog = root.querySelector<HTMLDialogElement>("[data-pdp-lightbox]");
+        const lightboxRoot = root.querySelector<HTMLElement>(
+          "[data-pdp-lightbox-gallery]",
+        );
+        if (!dialog || !lightboxRoot) return;
+
+        installClosedByFallback(dialog);
+
+        dialog.addEventListener("click", (e) => {
+          if (e.target === dialog) dialog.close();
+        });
+
+        let lightboxEmbla: GalleryEmbla | null = null;
+
+        function ensureLightboxCarousel() {
+          if (!lightboxEmbla) lightboxEmbla = wireCarousel(lightboxRoot!);
+          return lightboxEmbla;
+        }
+
+        function openLightbox() {
+          const index = galleryEmbla?.selectedScrollSnap() ?? 0;
+          // Defer past the opening click so closedby="any" doesn't instantly dismiss.
+          window.setTimeout(() => {
+            dialog!.showModal();
+            const lb = ensureLightboxCarousel();
+            requestAnimationFrame(() => {
+              lb?.reInit();
+              lb?.scrollTo(index, true);
+            });
+          }, 0);
+        }
+
+        const openTarget = root.querySelector<HTMLElement>(
+          ":scope > .pdp__stage [data-pdp-open]",
+        );
+
+        // Track drag so Embla swipes don't open the lightbox.
+        let dragOrigin: { x: number; y: number } | null = null;
+        let dragged = false;
+
+        openTarget?.addEventListener(
+          "pointerdown",
+          (e) => {
+            if (!(e.target instanceof Element) || e.target.closest("button")) {
+              dragOrigin = null;
+              dragged = false;
+              return;
+            }
+            dragOrigin = { x: e.clientX, y: e.clientY };
+            dragged = false;
+          },
+          true,
+        );
+
+        openTarget?.addEventListener(
+          "pointermove",
+          (e) => {
+            if (!dragOrigin) return;
+            if (
+              Math.abs(e.clientX - dragOrigin.x) > 6 ||
+              Math.abs(e.clientY - dragOrigin.y) > 6
+            ) {
+              dragged = true;
+            }
+          },
+          true,
+        );
+
+        openTarget?.addEventListener(
+          "click",
+          (e) => {
+            if (!(e.target instanceof Element) || e.target.closest("button")) {
+              return;
+            }
+            if (dragged) return;
+            e.preventDefault();
+            openLightbox();
+          },
+          true,
+        );
+
+        dialog.addEventListener("close", () => {
+          const index = lightboxEmbla?.selectedScrollSnap() ?? 0;
+          galleryEmbla?.scrollTo(index, true);
+        });
       }
 
       document
