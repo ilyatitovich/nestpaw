@@ -44,6 +44,7 @@ type Props = {
     badgeExtra: string;
     badgeDismiss: string;
     upsellGoto: string;
+    continueShopping: string;
   };
 };
 
@@ -160,27 +161,25 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
   }
 
   async function loadUpsells(current: Cart | null) {
+    if (!current?.lines.length) {
+      setUpsells([]);
+      setUpsellIndex(0);
+      return;
+    }
+
     try {
       const inCart = new Set(
-        current?.lines
+        current.lines
           .map((line) => line.variant.product.id)
-          .filter((id): id is string => Boolean(id)) ?? [],
+          .filter((id): id is string => Boolean(id)),
       );
-      const productId = current?.lines[0]?.variant.product.id;
+      const productId = current.lines[0]?.variant.product.id;
       let items: ProductCardProduct[] = [];
 
       if (productId) {
         const res = await fetch(
           `${apiUrl}/products/${productId}/related?locale=${locale}&take=6`,
         );
-        if (res.ok) {
-          const data = (await res.json()) as { items?: ProductCardProduct[] };
-          items = Array.isArray(data.items) ? data.items : [];
-        }
-      }
-
-      if (!items.length) {
-        const res = await fetch(`${apiUrl}/products?locale=${locale}&take=8`);
         if (res.ok) {
           const data = (await res.json()) as { items?: ProductCardProduct[] };
           items = Array.isArray(data.items) ? data.items : [];
@@ -308,6 +307,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
   }
 
   const count = lineCount(cart);
+  const hasLines = Boolean(cart?.lines.length);
   const remaining = cart
     ? Math.max(0, FREE_SHIP_THRESHOLD - cart.totals.subtotal)
     : FREE_SHIP_THRESHOLD;
@@ -322,6 +322,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
     ? formatCartMoney(cart.totals.total)
     : formatCartMoney(0);
   const activeUpsell = upsells[upsellIndex] ?? null;
+  const shopHref = `/${locale}`;
 
   return (
     <>
@@ -380,24 +381,37 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                   </button>
                 </header>
 
-                <div className="cart-drawer__notices">
-                  <p className="cart-drawer__promo">{labels.promo}</p>
-                  <div
-                    className={
-                      remaining === 0
-                        ? "cart-drawer__freeship is-unlocked"
-                        : "cart-drawer__freeship"
-                    }
-                  >
-                    <p className="cart-drawer__freeship-copy">{freeShipMsg}</p>
+                {hasLines ? (
+                  <div className="cart-drawer__notices">
+                    <p className="cart-drawer__promo">{labels.promo}</p>
+                    <div
+                      className={
+                        remaining === 0
+                          ? "cart-drawer__freeship is-unlocked"
+                          : "cart-drawer__freeship"
+                      }
+                    >
+                      <p className="cart-drawer__freeship-copy">{freeShipMsg}</p>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
-                <div className="cart-drawer__body">
+                <div
+                  className={
+                    hasLines
+                      ? "cart-drawer__body"
+                      : "cart-drawer__body is-empty"
+                  }
+                >
                   {!cart ? (
                     <p>{error ?? "…"}</p>
-                  ) : !cart.lines.length ? (
-                    <p className="cart-drawer__empty">{labels.empty}</p>
+                  ) : !hasLines ? (
+                    <div className="cart-drawer__empty">
+                      <p className="cart-drawer__empty-copy">{labels.empty}</p>
+                      <a className="btn btn--primary" href={shopHref}>
+                        {labels.continueShopping}
+                      </a>
+                    </div>
                   ) : (
                     <ul className="cart-drawer__lines">
                       {cart.lines.map((line) => {
@@ -528,7 +542,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                     </ul>
                   )}
 
-                  {activeUpsell ? (
+                  {activeUpsell && cart?.lines.length ? (
                     <section
                       className="cart-drawer__upsell"
                       aria-label={labels.completeWith}
@@ -627,58 +641,60 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                   ) : null}
                 </div>
 
-                <footer className="cart-drawer__footer">
-                  <p className="cart-drawer__taxes">{labels.taxesNote}</p>
-                  <form
-                    className="cart-summary__discount"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void applyDiscount();
-                    }}
-                  >
-                    <label className="visually-hidden" htmlFor={discountId}>
-                      {labels.discount}
-                    </label>
-                    <input
-                      id={discountId}
-                      className="cart-summary__discount-input"
-                      name="discount"
-                      autoComplete="off"
-                      placeholder={labels.discount}
-                      value={code}
-                      disabled={busy}
-                      onChange={(event) => setCode(event.target.value)}
-                    />
-                    <button
-                      type="submit"
-                      className="btn btn--ghost cart-summary__discount-btn"
-                      disabled={busy || !code.trim()}
+                {hasLines ? (
+                  <footer className="cart-drawer__footer">
+                    <p className="cart-drawer__taxes">{labels.taxesNote}</p>
+                    <form
+                      className="cart-summary__discount"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void applyDiscount();
+                      }}
                     >
-                      {labels.apply}
-                    </button>
-                  </form>
-                  {error ? (
-                    <p className="cart-page__error" role="alert">
-                      {error}
-                    </p>
-                  ) : null}
-                  <a
-                    className="btn btn--primary cart-drawer__checkout"
-                    href={`/${locale}/checkout`}
-                  >
-                    <span>{labels.checkout}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{checkoutTotal}</span>
-                  </a>
-                  <a
-                    className="cart-drawer__view"
-                    href={`/${locale}/cart`}
-                  >
-                    {labels.viewCart}
-                  </a>
-                </footer>
+                      <label className="visually-hidden" htmlFor={discountId}>
+                        {labels.discount}
+                      </label>
+                      <input
+                        id={discountId}
+                        className="cart-summary__discount-input"
+                        name="discount"
+                        autoComplete="off"
+                        placeholder={labels.discount}
+                        value={code}
+                        disabled={busy}
+                        onChange={(event) => setCode(event.target.value)}
+                      />
+                      <button
+                        type="submit"
+                        className="btn btn--ghost cart-summary__discount-btn"
+                        disabled={busy || !code.trim()}
+                      >
+                        {labels.apply}
+                      </button>
+                    </form>
+                    {error ? (
+                      <p className="cart-page__error" role="alert">
+                        {error}
+                      </p>
+                    ) : null}
+                    <a
+                      className="btn btn--primary cart-drawer__checkout"
+                      href={`/${locale}/checkout`}
+                    >
+                      <span>{labels.checkout}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{checkoutTotal}</span>
+                    </a>
+                    <a
+                      className="cart-drawer__view"
+                      href={`/${locale}/cart`}
+                    >
+                      {labels.viewCart}
+                    </a>
+                  </footer>
+                ) : null}
 
-                {badgeVisible ? (
+                {hasLines && badgeVisible ? (
                   <div className="cart-drawer__badge">
                     <button
                       type="button"
