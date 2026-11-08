@@ -148,6 +148,21 @@ const hasAnalytics =
         </script>
       ) : null
     }
+    {
+      isAccountChrome ? (
+        <script is:inline>
+          // Paint the last-known chrome before body to avoid guest→member flash.
+          try {
+            document.documentElement.dataset.accountSession =
+              sessionStorage.getItem("nestpaw-account-session") === "member"
+                ? "member"
+                : "guest";
+          } catch (e) {
+            document.documentElement.dataset.accountSession = "guest";
+          }
+        </script>
+      ) : null
+    }
   </head>
   <body class:list={[isAccountChrome && "page--account"]}>
     <div class="page">
@@ -167,6 +182,21 @@ const hasAnalytics =
               <PromoBanner locale={locale} />
               <SiteHeader locale={locale} />
             </div>
+            <script is:inline>
+              (function () {
+                var mode =
+                  document.documentElement.dataset.accountSession || "guest";
+                document
+                  .querySelectorAll("[data-account-chrome]")
+                  .forEach(function (el) {
+                    var show =
+                      el.getAttribute("data-account-chrome") === mode;
+                    el.hidden = !show;
+                    if (show) el.removeAttribute("inert");
+                    else el.setAttribute("inert", "");
+                  });
+              })();
+            </script>
           </>
         ) : (
           <div class="site-chrome" data-site-chrome>
@@ -188,6 +218,21 @@ const hasAnalytics =
               <NewsletterSignup locale={locale} />
               <SiteFooter locale={locale} />
             </div>
+            <script is:inline>
+              (function () {
+                var mode =
+                  document.documentElement.dataset.accountSession || "guest";
+                document
+                  .querySelectorAll("[data-account-chrome]")
+                  .forEach(function (el) {
+                    var show =
+                      el.getAttribute("data-account-chrome") === mode;
+                    el.hidden = !show;
+                    if (show) el.removeAttribute("inert");
+                    else el.setAttribute("inert", "");
+                  });
+              })();
+            </script>
           </>
         ) : (
           <>
@@ -198,12 +243,5 @@ const hasAnalytics =
       }
     </div>
     <CookieConsent locale={locale} />
-    {
-      isAccountChrome ? (
-        <script is:inline>
-          document.documentElement.dataset.accountSession = "guest";
-        </script>
-      ) : null
-    }
   </body>
 </html>

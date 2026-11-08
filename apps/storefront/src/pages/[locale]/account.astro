@@ -36,7 +36,7 @@ const breadcrumbs = [
       {t(locale, "account.login")}
     </h1>
     <AccountClient
-      client:load
+      client:only="react"
       apiUrl={API_URL}
       locale={locale}
       turnstileSiteKey={turnstileSiteKey}
@@ -83,7 +83,81 @@ const breadcrumbs = [
         termsRequired: t(locale, "account.termsRequired"),
         lead: t(locale, "account.lead"),
         lastUsed: t(locale, "account.lastUsed"),
+        loading: t(locale, "account.loading"),
       }}
-    />
+    >
+      <div slot="fallback">
+        <div
+          class="account-panel account-panel--signed-in account-fallback account-fallback--member"
+          hidden
+          aria-busy="true"
+        >
+          <p class="account-panel__signed-in">
+            {t(locale, "account.signedInAs")}{" "}
+            <strong data-account-fallback-email></strong>
+          </p>
+          <button type="button" class="btn btn--ghost" disabled tabindex="-1">
+            {t(locale, "account.logout")}
+          </button>
+          <h2 class="account-panel__orders-title">
+            {t(locale, "account.orders")}
+          </h2>
+          <p class="account-panel__empty" data-account-fallback-empty>
+            {t(locale, "account.noOrders")}
+          </p>
+          <div class="order-list" data-account-fallback-orders hidden></div>
+        </div>
+        <div
+          class="account-panel account-fallback account-fallback--guest"
+          aria-busy="true"
+        >
+          <p class="account-panel__lead">{t(locale, "account.lead")}</p>
+          <div class="account-fallback__guest-body"></div>
+        </div>
+      </div>
+    </AccountClient>
+    <script is:inline>
+      (function () {
+        try {
+          var raw = sessionStorage.getItem("nestpaw-account-snapshot");
+          if (!raw) return;
+          var snap = JSON.parse(raw);
+          if (!snap || !snap.email) return;
+          document
+            .querySelectorAll("[data-account-fallback-email]")
+            .forEach(function (el) {
+              el.textContent = snap.email;
+            });
+          if (Array.isArray(snap.orders) && snap.orders.length > 0) {
+            var empty = document.querySelector("[data-account-fallback-empty]");
+            var list = document.querySelector("[data-account-fallback-orders]");
+            if (empty) empty.hidden = true;
+            if (list) {
+              list.hidden = false;
+              list.innerHTML = snap.orders
+                .map(function (order) {
+                  var meta = "";
+                  try {
+                    meta =
+                      new Date(order.createdAt).toLocaleDateString() +
+                      " · " +
+                      String(order.status || "");
+                  } catch (err) {
+                    meta = String(order.status || "");
+                  }
+                  return (
+                    '<div class="order-row"><div><strong>#' +
+                    String(order.number) +
+                    '</strong><div class="order-row__meta">' +
+                    meta +
+                    "</div></div><div></div></div>"
+                  );
+                })
+                .join("");
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
   </div>
 </BaseLayout>

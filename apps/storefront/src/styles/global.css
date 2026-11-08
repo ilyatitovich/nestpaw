@@ -2708,21 +2708,31 @@ html[data-account-session="guest"] .page--account .page__main {
   padding-block: var(--space-6);
 }
 
+/* Override SSR [hidden] when a session hint paints member chrome early. */
+html[data-account-session="member"] [data-account-chrome="guest"] {
+  display: none !important;
+}
+
+html[data-account-session="member"] [data-account-chrome="member"] {
+  display: block !important;
+}
+
+/* Default to member shell width so SSR/first paint doesn't center like guest auth. */
 .account-page {
-  width: min(100% - 2rem, 28rem);
+  width: min(100% - 2rem, 40rem);
   margin-inline: auto;
 }
 
-html[data-account-session="member"] .account-page {
-  width: min(100% - 2rem, 40rem);
+html[data-account-session="guest"] .account-page {
+  width: min(100% - 2rem, 28rem);
 }
 
 .account-page__title {
-  text-align: center;
+  text-align: start;
 }
 
-html[data-account-session="member"] .account-page__title {
-  text-align: start;
+html[data-account-session="guest"] .account-page__title {
+  text-align: center;
 }
 
 .auth-chrome {
@@ -2854,6 +2864,81 @@ html[data-account-session="member"] .account-page__title {
   margin: 0;
   color: var(--color-ink-muted);
   line-height: 1.5;
+}
+
+.account-panel--loading {
+  gap: var(--space-3);
+}
+
+html[data-account-session="member"] .account-fallback--guest {
+  display: none !important;
+}
+
+html[data-account-session="member"] .account-fallback--member {
+  display: grid !important;
+}
+
+html[data-account-session="guest"] .account-fallback--member {
+  display: none !important;
+}
+
+.account-fallback__guest-body {
+  min-height: 16rem;
+}
+
+.account-skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    rgb(18 53 47 / 6%) 0%,
+    rgb(18 53 47 / 12%) 50%,
+    rgb(18 53 47 / 6%) 100%
+  );
+  background-size: 200% 100%;
+  animation: account-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.account-skeleton--lead {
+  height: 2.75rem;
+  width: 92%;
+}
+
+.account-skeleton--btn {
+  height: 3rem;
+}
+
+.account-skeleton--line {
+  height: 1rem;
+  width: 40%;
+  margin-inline: auto;
+}
+
+.account-skeleton--line-start {
+  margin-inline: 0;
+  width: 30%;
+}
+
+.account-skeleton--field {
+  height: 3rem;
+}
+
+.account-skeleton--btn-narrow {
+  width: 8rem;
+}
+
+@keyframes account-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-skeleton {
+    animation: none;
+  }
 }
 
 .account-panel__signed-in {

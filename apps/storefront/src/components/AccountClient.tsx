@@ -1,5 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { setAccountChrome } from "../lib/account-chrome";
+import {
+  readAccountSessionHint,
+  setAccountChrome,
+} from "../lib/account-chrome";
+import {
+  readAccountSnapshot,
+  writeAccountSnapshot,
+} from "../lib/account-snapshot";
 import {
   type AuthField,
   type FieldErrors,
@@ -39,6 +46,37 @@ import OAuthButtons from "./account/OAuthButtons";
 import OtpVerifyForm from "./account/OtpVerifyForm";
 import SignedInPanel from "./account/SignedInPanel";
 import type { TurnstileApi } from "./account/TurnstileWidget";
+
+function readOptimisticSession(): {
+  sessionStatus: "guest" | "member";
+  email: string | null;
+  firstName: string;
+  lastName: string;
+  needsName: boolean;
+  orders: AccountOrder[];
+} {
+  if (readAccountSessionHint() === "member") {
+    const snap = readAccountSnapshot();
+    return {
+      sessionStatus: "member",
+      email: snap?.email ?? null,
+      firstName: snap?.firstName ?? "",
+      lastName: snap?.lastName ?? "",
+      needsName: snap
+        ? !snap.firstName || !snap.lastName
+        : false,
+      orders: snap?.orders ?? [],
+    };
+  }
+  return {
+    sessionStatus: "guest",
+    email: null,
+    firstName: "",
+    lastName: "",
+    needsName: false,
+    orders: [],
+  };
+}
 
 type Props = {
   apiUrl: string;
@@ -89,12 +127,18 @@ export default function AccountClient({
   const [notice, setNotice] = useState<FormNotice | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
+  const [initialSession] = useState(readOptimisticSession);
+  const [sessionStatus, setSessionStatus] = useState<"guest" | "member">(
+    initialSession.sessionStatus,
+  );
   const [token, setToken] = useState<string | null>(null);
-  const [orders, setOrders] = useState<AccountOrder[]>([]);
-  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [needsName, setNeedsName] = useState(false);
+  const [orders, setOrders] = useState<AccountOrder[]>(initialSession.orders);
+  const [customerEmail, setCustomerEmail] = useState<string | null>(
+    initialSession.email,
+  );
+  const [firstName, setFirstName] = useState(initialSession.firstName);
+  const [lastName, setLastName] = useState(initialSession.lastName);
+  const [needsName, setNeedsName] = useState(initialSession.needsName);
   const [resendIn, setResendIn] = useState(0);
   const [lastUsed, setLastUsed] = useState<AuthMethod | null>(null);
   const turnstileApiRef = useRef<TurnstileApi | null>(null);
@@ -109,21 +153,32 @@ export default function AccountClient({
     const authError = consumeAuthErrorMessage(labels);
     if (authError) setNotice({ tone: "error", text: authError });
 
+    let cancelled = false;
     void (async () => {
       try {
         const accessToken = await refreshCustomerSession(apiUrl);
-        if (!accessToken) return;
-        setToken(accessToken);
-        await applyCustomer(accessToken);
+        if (cancelled) return;
+        if (accessToken) {
+          const ok = await applyCustomer(accessToken);
+          if (!cancelled) {
+            setSessionStatus(ok ? "member" : "guest");
+          }
+          return;
+        }
       } catch {
         // stay signed out
       }
+      if (!cancelled) setSessionStatus("guest");
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    setAccountChrome(token ? "member" : "guest");
-  }, [token]);
+    setAccountChrome(sessionStatus);
+  }, [sessionStatus]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -135,13 +190,24 @@ export default function AccountClient({
     const customer = await fetchCustomerMe(apiUrl, accessToken);
     if (!customer) {
       setToken(null);
-      return;
+      return false;
     }
+    const nextOrders = customer.orders ?? [];
+    const nextFirst = customer.firstName ?? "";
+    const nextLast = customer.lastName ?? "";
+    setToken(accessToken);
     setCustomerEmail(customer.email);
-    setOrders(customer.orders ?? []);
-    setFirstName(customer.firstName ?? "");
-    setLastName(customer.lastName ?? "");
+    setOrders(nextOrders);
+    setFirstName(nextFirst);
+    setLastName(nextLast);
     setNeedsName(!customer.firstName || !customer.lastName);
+    writeAccountSnapshot({
+      email: customer.email,
+      firstName: nextFirst,
+      lastName: nextLast,
+      orders: nextOrders,
+    });
+    return true;
   }
 
   function remember(method: AuthMethod) {
@@ -258,9 +324,9 @@ export default function AccountClient({
         return;
       }
       remember("email");
-      setToken(response.accessToken);
       setNotice(null);
-      await applyCustomer(response.accessToken);
+      const ok = await applyCustomer(response.accessToken);
+      setSessionStatus(ok ? "member" : "guest");
     } finally {
       setBusy(false);
     }
@@ -277,6 +343,7 @@ export default function AccountClient({
     setMarketingOptIn(false);
     setFieldErrors({});
     setNotice(null);
+    setSessionStatus("guest");
   }
 
   async function onSaveProfile(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -313,7 +380,7 @@ export default function AccountClient({
     }
   }
 
-  if (token) {
+  if (sessionStatus === "member") {
     return (
       <SignedInPanel
         labels={labels}

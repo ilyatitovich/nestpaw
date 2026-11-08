@@ -55,6 +55,7 @@ export type AccountLabels = {
   termsRequired: string;
   lead: string;
   lastUsed: string;
+  loading: string;
   errorEmailRequired: string;
   errorEmailInvalid: string;
   errorCodeRequired: string;
