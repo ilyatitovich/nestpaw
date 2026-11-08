@@ -6,8 +6,15 @@ export type CartLine = {
   id: string;
   quantity: number;
   variant: {
+    id?: string;
+    sku?: string;
     price: number;
+    compareAtPrice?: number | null;
+    option1?: string | null;
+    option2?: string | null;
+    option3?: string | null;
     product: {
+      id?: string;
       translations: { locale: string; title: string; slug?: string }[];
       media?: { url: string; alt: string }[];
     };
@@ -75,6 +82,45 @@ export async function patchCartLine(
   return data;
 }
 
+export async function addCartItem(
+  apiUrl: string,
+  token: string | null,
+  variantId: string,
+  quantity = 1,
+): Promise<Cart> {
+  const res = await fetch(`${apiUrl}/cart/items`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...cartHeaders(token),
+    },
+    body: JSON.stringify({ variantId, quantity }),
+  });
+  if (!res.ok) throw new Error("Could not add to cart");
+  const data = (await res.json()) as Cart;
+  persistCartToken(res, data);
+  return data;
+}
+
+export async function applyCartDiscount(
+  apiUrl: string,
+  token: string,
+  code: string,
+): Promise<Cart> {
+  const res = await fetch(`${apiUrl}/cart/discount`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...cartHeaders(token),
+    },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) throw new Error("Invalid code");
+  const data = (await res.json()) as Cart;
+  persistCartToken(res, data);
+  return data;
+}
+
 export function dispatchCartOpen() {
   window.dispatchEvent(new CustomEvent(CART_OPEN_EVENT));
 }
@@ -94,4 +140,16 @@ export function lineTitle(line: CartLine, locale: string): string {
     line.variant.product.translations[0]?.title ??
     "Item"
   );
+}
+
+export function lineVariantLabel(line: CartLine): string | null {
+  const options = [line.variant.option1, line.variant.option2, line.variant.option3]
+    .map((v) => v?.trim())
+    .filter((v): v is string => Boolean(v));
+  if (!options.length) return null;
+  return options.join(" / ").toUpperCase();
+}
+
+export function formatCartMoney(cents: number): string {
+  return `€${(cents / 100).toFixed(2)}`;
 }
