@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api } from "../api";
+import { api } from "@/api";
 
 type Translation = { locale: string; title: string; slug: string };
 type Collection = {

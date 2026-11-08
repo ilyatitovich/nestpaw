@@ -1,9 +1,9 @@
 ---
-import Breadcrumbs from "../components/Breadcrumbs.astro";
-import CartClient from "../components/CartClient";
-import { defaultLocale, type Locale, localizePath, t } from "../i18n/ui";
-import BaseLayout from "../layouts/BaseLayout.astro";
-import { API_URL } from "../lib/api";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import CartClient from "@/components/CartClient";
+import { defaultLocale, type Locale, localizePath, t } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { API_URL } from "@/lib/api";
 
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 

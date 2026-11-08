@@ -2,11 +2,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   readAccountSessionHint,
   setAccountChrome,
-} from "../lib/account-chrome";
+} from "@/lib/account-chrome";
 import {
   readAccountSnapshot,
   writeAccountSnapshot,
-} from "../lib/account-snapshot";
+} from "@/lib/account-snapshot";
 import {
   type AuthField,
   authFailureMessage,
@@ -20,7 +20,7 @@ import {
   validateOtpCode,
   validateOtpStep,
   validateProfileStep,
-} from "../lib/account-validation";
+} from "@/lib/account-validation";
 import {
   type AccountAddress,
   type AccountLabels,
@@ -44,10 +44,10 @@ import {
   updateCustomerProfile,
   verifyCustomerOtp,
   writeAuthStepToUrl,
-} from "../lib/customer-account";
-import { getCustomerAccessToken } from "../lib/customer-auth";
-import { type AuthMethod, getLastAuthMethod } from "../lib/last-auth-method";
-import { fetchWishlistProducts } from "../lib/wishlist";
+} from "@/lib/customer-account";
+import { getCustomerAccessToken } from "@/lib/customer-auth";
+import { type AuthMethod, getLastAuthMethod } from "@/lib/last-auth-method";
+import { fetchWishlistProducts } from "@/lib/wishlist";
 import AccountMessage from "./account/AccountMessage";
 import EmailSignInForm from "./account/EmailSignInForm";
 import OAuthButtons from "./account/OAuthButtons";

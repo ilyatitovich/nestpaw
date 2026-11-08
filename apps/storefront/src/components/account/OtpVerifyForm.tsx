@@ -6,11 +6,11 @@ import {
   useEffect,
   useRef,
 } from "react";
-import type { FieldErrors } from "../../lib/account-validation";
+import type { FieldErrors } from "@/lib/account-validation";
 import {
   type AccountLabels,
   sanitizeOtpCode,
-} from "../../lib/customer-account";
+} from "@/lib/customer-account";
 import FieldError from "./FieldError";
 import TurnstileWidget, { type TurnstileApi } from "./TurnstileWidget";
 

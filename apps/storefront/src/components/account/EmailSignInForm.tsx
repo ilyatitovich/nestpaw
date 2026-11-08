@@ -1,6 +1,6 @@
 import type { FormEvent, RefObject } from "react";
-import type { FieldErrors } from "../../lib/account-validation";
-import type { AccountLabels } from "../../lib/customer-account";
+import type { FieldErrors } from "@/lib/account-validation";
+import type { AccountLabels } from "@/lib/customer-account";
 import FieldError from "./FieldError";
 import TurnstileWidget, { type TurnstileApi } from "./TurnstileWidget";
 

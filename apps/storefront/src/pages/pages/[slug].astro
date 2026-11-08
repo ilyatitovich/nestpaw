@@ -1,15 +1,15 @@
 ---
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import {
   defaultLocale,
   type Locale,
   localizePath,
   t,
   translatedPaths,
-} from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { apiGet } from "../../lib/api";
-import { cmsPagePaths } from "../../lib/static-paths";
+} from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { apiGet } from "@/lib/api";
+import { cmsPagePaths } from "@/lib/static-paths";
 
 export function getStaticPaths() {
   return cmsPagePaths();
@@ -65,7 +65,7 @@ const breadcrumbs = [
   canonicalPath={`/pages/${slug}`}
   alternates={translatedPaths("pages", page.translations)}
 >
-  <div class="container page-shell prose">
+  <div class="container page-shell">
     <Breadcrumbs
       items={breadcrumbs}
       label={t(locale, "product.breadcrumb")}

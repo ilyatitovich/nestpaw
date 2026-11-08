@@ -1,10 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { localizePath } from "../i18n/ui";
-import FieldError from "./account/FieldError";
-import {
-  getCustomerAccessToken,
-  setCustomerAccessToken,
-} from "../lib/customer-auth";
+import { localizePath } from "@/i18n/ui";
 import {
   CHECKOUT_COUNTRIES,
   type CheckoutField,
@@ -16,7 +11,12 @@ import {
   toShippingAddressPayload,
   validateCheckoutField,
   validateCheckoutForm,
-} from "../lib/checkout-validation";
+} from "@/lib/checkout-validation";
+import {
+  getCustomerAccessToken,
+  setCustomerAccessToken,
+} from "@/lib/customer-auth";
+import FieldError from "./account/FieldError";
 
 type Cart = {
   token: string;

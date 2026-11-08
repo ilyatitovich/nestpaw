@@ -6,8 +6,8 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api";
-import { ProductBodyEditor } from "../components/ProductBodyEditor";
+import { api } from "@/api";
+import { ProductBodyEditor } from "@/components/ProductBodyEditor";
 
 type Translation = {
   locale: string;

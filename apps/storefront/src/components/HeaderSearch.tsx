@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { localizePath } from "../i18n/ui";
 import { createPortal } from "react-dom";
+import { localizePath } from "@/i18n/ui";
 
 type Product = {
   id: string;

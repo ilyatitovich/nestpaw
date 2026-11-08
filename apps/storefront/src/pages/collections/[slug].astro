@@ -1,16 +1,16 @@
 ---
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import ProductFilters from "../../components/ProductFilters";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import ProductFilters from "@/components/ProductFilters";
 import {
   defaultLocale,
   type Locale,
   localizePath,
   t,
   translatedPaths,
-} from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { API_URL, apiGet } from "../../lib/api";
-import { collectionPaths } from "../../lib/static-paths";
+} from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { API_URL, apiGet } from "@/lib/api";
+import { collectionPaths } from "@/lib/static-paths";
 
 export function getStaticPaths() {
   return collectionPaths("en");

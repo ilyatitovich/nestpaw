@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef } from "react";
 import {
   ensureTurnstileScript,
   readTurnstileToken,
-} from "../../lib/customer-account";
+} from "@/lib/customer-account";
 
 export type TurnstileApi = {
   getToken: () => string;

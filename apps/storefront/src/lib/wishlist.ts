@@ -1,4 +1,4 @@
-import type { ProductCardProduct } from "../components/ProductCard";
+import type { ProductCardProduct } from "@/components/ProductCard";
 
 const KEY = "nestpaw-wishlist";
 

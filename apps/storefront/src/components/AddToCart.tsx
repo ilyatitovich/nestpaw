@@ -5,7 +5,7 @@ import {
   dispatchCartOpen,
   dispatchCartUpdated,
   persistCartToken,
-} from "../lib/cart";
+} from "@/lib/cart";
 
 type Variant = {
   id: string;

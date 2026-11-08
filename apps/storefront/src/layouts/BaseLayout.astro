@@ -1,16 +1,16 @@
 ---
-import AuthChrome from "../components/AuthChrome.astro";
-import CookieConsent from "../components/CookieConsent.astro";
-import NewsletterSignup from "../components/NewsletterSignup.astro";
-import PromoBanner from "../components/PromoBanner.astro";
-import SiteFooter from "../components/SiteFooter.astro";
-import SiteHeader from "../components/SiteHeader.astro";
-import "../styles/global.css";
-import { type Locale, localizePath } from "../i18n/ui";
+import AuthChrome from "@/components/AuthChrome.astro";
+import CookieConsent from "@/components/CookieConsent.astro";
+import NewsletterSignup from "@/components/NewsletterSignup.astro";
+import PromoBanner from "@/components/PromoBanner.astro";
+import SiteFooter from "@/components/SiteFooter.astro";
+import SiteHeader from "@/components/SiteHeader.astro";
+import "@/styles/global.css";
+import { type Locale, localizePath } from "@/i18n/ui";
 import {
   COOKIE_CONSENT_ACCEPTED,
   COOKIE_CONSENT_KEY,
-} from "../lib/cookie-consent";
+} from "@/lib/cookie-consent";
 
 interface Props {
   title: string;

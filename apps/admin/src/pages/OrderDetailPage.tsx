@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { api } from "../api";
-import { useAuth } from "../auth";
+import { api } from "@/api";
+import { useAuth } from "@/auth";
 
 type Order = {
   id: string;

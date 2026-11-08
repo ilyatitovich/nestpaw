@@ -1,14 +1,14 @@
 import { useEffect, useId, useState } from "react";
-import { localizePath } from "../i18n/ui";
-import { setCustomerAccessToken } from "../lib/customer-auth";
+import { localizePath } from "@/i18n/ui";
 import {
-  type Cart,
   applyCartDiscount,
+  type Cart,
   fetchCart,
   lineTitle,
   lineVariantLabel,
   patchCartLine,
-} from "../lib/cart";
+} from "@/lib/cart";
+import { setCustomerAccessToken } from "@/lib/customer-auth";
 
 type Props = {
   apiUrl: string;

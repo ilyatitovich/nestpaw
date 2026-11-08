@@ -1,20 +1,20 @@
 ---
 import type { TipTapDoc } from "@online-store/rich-text";
-import AddToCart from "../../components/AddToCart";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import ProductCard from "../../components/ProductCard";
-import ProductDetails from "../../components/ProductDetails.astro";
-import ProductGallery from "../../components/ProductGallery.astro";
+import AddToCart from "@/components/AddToCart";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import ProductCard from "@/components/ProductCard";
+import ProductDetails from "@/components/ProductDetails.astro";
+import ProductGallery from "@/components/ProductGallery.astro";
 import {
   defaultLocale,
   type Locale,
   localizePath,
   t,
   translatedPaths,
-} from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { API_URL, apiGet } from "../../lib/api";
-import { productPaths } from "../../lib/static-paths";
+} from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { API_URL, apiGet } from "@/lib/api";
+import { productPaths } from "@/lib/static-paths";
 
 export function getStaticPaths() {
   return productPaths("en");

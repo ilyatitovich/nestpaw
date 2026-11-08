@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { localizePath } from "@/i18n/ui";
 import {
   addCartItem,
   applyCartDiscount,
@@ -14,8 +15,7 @@ import {
   lineTitle,
   lineVariantLabel,
   patchCartLine,
-} from "../lib/cart";
-import { localizePath } from "../i18n/ui";
+} from "@/lib/cart";
 import type { ProductCardProduct } from "./ProductCard";
 
 type Props = {

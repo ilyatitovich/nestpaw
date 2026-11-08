@@ -1,6 +1,6 @@
 ---
-import { type Locale, localizePath, t } from "../i18n/ui";
-import { COOKIE_CONSENT_KEY } from "../lib/cookie-consent";
+import { type Locale, localizePath, t } from "@/i18n/ui";
+import { COOKIE_CONSENT_KEY } from "@/lib/cookie-consent";
 
 interface Props {
   locale: Locale | string;
@@ -53,7 +53,7 @@ const cookiesHref = localizePath(locale, "/pages/cookies");
     COOKIE_CONSENT_KEY,
     COOKIE_CONSENT_REJECTED,
     type CookieConsentChoice,
-  } from "../lib/cookie-consent";
+  } from "@/lib/cookie-consent";
 
   let supportsDisplayTransition: boolean | undefined;
 

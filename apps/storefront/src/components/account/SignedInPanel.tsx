@@ -6,23 +6,23 @@ import {
   useRef,
   useState,
 } from "react";
-import type { FieldErrors, FormNotice } from "../../lib/account-validation";
+import ProductCard, { type ProductCardProduct } from "@/components/ProductCard";
+import { localizePath } from "@/i18n/ui";
+import type { FieldErrors, FormNotice } from "@/lib/account-validation";
 import {
+  ACCOUNT_TABS,
   type AccountAddress,
   type AccountLabels,
   type AccountOrder,
   type AccountTab,
-  ACCOUNT_TABS,
   DEFAULT_ACCOUNT_TAB,
   formatAddressLines,
   formatOrderTotal,
   readAccountTabFromUrl,
   writeAccountTabToUrl,
-} from "../../lib/customer-account";
-import { localizePath } from "../../i18n/ui";
+} from "@/lib/customer-account";
 import AccountMessage from "./AccountMessage";
 import FieldError from "./FieldError";
-import ProductCard, { type ProductCardProduct } from "../ProductCard";
 
 type Props = {
   labels: AccountLabels;

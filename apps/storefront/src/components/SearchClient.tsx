@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useId, useMemo, useState } from "react";
-import { localizePath } from "../i18n/ui";
+import { localizePath } from "@/i18n/ui";
 import ProductCard from "./ProductCard";
 
 type Product = {

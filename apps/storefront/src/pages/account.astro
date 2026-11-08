@@ -1,14 +1,14 @@
 ---
-import AccountClient from "../components/AccountClient";
-import Breadcrumbs from "../components/Breadcrumbs.astro";
+import AccountClient from "@/components/AccountClient";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import {
   defaultLocale, type Locale,
   localizePath,
   storeName,
   t,
-} from "../i18n/ui";
-import BaseLayout from "../layouts/BaseLayout.astro";
-import { API_URL } from "../lib/api";
+} from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { API_URL } from "@/lib/api";
 
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const turnstileSiteKey =

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
-import { api } from "../api";
+import { api } from "@/api";
 
 export function DiscountsPage() {
   const qc = useQueryClient();

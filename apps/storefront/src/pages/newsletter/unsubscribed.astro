@@ -1,12 +1,12 @@
 ---
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import {
   defaultLocale, type Locale,
   localizePath,
   storeName,
   t,
-} from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
+} from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 

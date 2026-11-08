@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { localizePath } from "../i18n/ui";
+import { localizePath } from "@/i18n/ui";
 import ProductCard, { type ProductCardProduct } from "./ProductCard";
 
 export type FilterProduct = ProductCardProduct & {

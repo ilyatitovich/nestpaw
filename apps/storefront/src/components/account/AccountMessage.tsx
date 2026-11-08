@@ -1,4 +1,4 @@
-import type { FormNotice } from "../../lib/account-validation";
+import type { FormNotice } from "@/lib/account-validation";
 
 type Props = {
   id?: string;

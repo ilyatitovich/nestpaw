@@ -1,6 +1,6 @@
 ---
-import { collectionPaths } from "../../../lib/static-paths";
-import Page from "../../collections/[slug].astro";
+import { collectionPaths } from "@/lib/static-paths";
+import Page from "@/pages/collections/[slug].astro";
 
 export function getStaticPaths() {
   return collectionPaths("de");

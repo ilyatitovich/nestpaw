@@ -3,8 +3,8 @@ import {
   type OAuthProvider,
   oauthStartUrl,
   orderedOAuthProviders,
-} from "../../lib/customer-account";
-import type { AuthMethod } from "../../lib/last-auth-method";
+} from "@/lib/customer-account";
+import type { AuthMethod } from "@/lib/last-auth-method";
 import { AppleIcon, GoogleIcon, ShopIcon } from "./OAuthIcons";
 
 type Props = {

@@ -3830,11 +3830,6 @@ a.cart-line__title:hover {
   }
 }
 
-.prose {
-  max-width: 42rem;
-  line-height: 1.7;
-}
-
 .page--account {
   min-height: 100vh;
 }

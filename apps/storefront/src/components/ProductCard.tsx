@@ -5,8 +5,8 @@ import {
   dispatchCartOpen,
   dispatchCartUpdated,
   persistCartToken,
-} from "../lib/cart";
-import { readWishlistIds, toggleWishlistId } from "../lib/wishlist";
+} from "@/lib/cart";
+import { readWishlistIds, toggleWishlistId } from "@/lib/wishlist";
 
 export type ProductCardVariant = {
   id: string;
