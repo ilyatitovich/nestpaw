@@ -17,6 +17,8 @@ interface Props {
   description?: string;
   locale: Locale | string;
   canonicalPath?: string;
+  /** Unprefixed path per locale when the slug is translated. */
+  alternates?: Partial<Record<Locale, string>>;
   ogImage?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   /** full = store chrome; account = guest auth shell, full chrome after sign-in */
@@ -28,6 +30,7 @@ const {
   description = "Everyday essentials for dogs, cats, and small pets",
   locale,
   canonicalPath = "/",
+  alternates,
   ogImage,
   jsonLd,
   chrome = "full",
@@ -36,7 +39,8 @@ const isAccountChrome = chrome === "account";
 
 const site =
   Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
-const canonical = `${site}${localizePath(locale, canonicalPath)}`;
+const pathFor = (code: Locale) => alternates?.[code] ?? canonicalPath;
+const canonical = `${site}${localizePath(locale, pathFor(locale as Locale))}`;
 const provider = import.meta.env.PUBLIC_ANALYTICS_PROVIDER ?? "plausible";
 // Keep a disabled Plausible tag in HTML even when env is unset (local/demo).
 const plausibleDomain =
@@ -56,9 +60,9 @@ const hasAnalytics =
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href={`${site}/en${canonicalPath === "/" ? "" : canonicalPath}`} />
-    <link rel="alternate" hreflang="de" href={`${site}/de${canonicalPath === "/" ? "" : canonicalPath}`} />
-    <link rel="alternate" hreflang="x-default" href={`${site}/en${canonicalPath === "/" ? "" : canonicalPath}`} />
+    <link rel="alternate" hreflang="en" href={`${site}${localizePath("en", pathFor("en"))}`} />
+    <link rel="alternate" hreflang="de" href={`${site}${localizePath("de", pathFor("de"))}`} />
+    <link rel="alternate" hreflang="x-default" href={`${site}${localizePath("en", pathFor("en"))}`} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -185,7 +189,11 @@ const hasAnalytics =
               inert
             >
               <PromoBanner locale={locale} />
-              <SiteHeader locale={locale} />
+              <SiteHeader
+                locale={locale}
+                canonicalPath={canonicalPath}
+                alternates={alternates}
+              />
             </div>
             <script is:inline>
               (function () {
@@ -206,7 +214,11 @@ const hasAnalytics =
         ) : (
           <div class="site-chrome" data-site-chrome>
             <PromoBanner locale={locale} />
-            <SiteHeader locale={locale} />
+            <SiteHeader
+              locale={locale}
+              canonicalPath={canonicalPath}
+              alternates={alternates}
+            />
           </div>
         )
       }

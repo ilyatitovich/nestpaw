@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { localizePath } from "../i18n/ui";
 import ProductCard, { type ProductCardProduct } from "./ProductCard";
 
 export type FilterProduct = ProductCardProduct & {
@@ -126,7 +127,7 @@ export default function ProductFilters({
               product={p}
               locale={locale}
               apiUrl={apiUrl}
-              href={`/${locale}/products/${tr?.slug}`}
+              href={localizePath(locale, `/products/${tr?.slug}`)}
               labels={{
                 from: labels.from,
                 sale: labels.sale,

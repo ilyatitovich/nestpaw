@@ -1,21 +1,16 @@
 ---
-import AccountClient from "../../components/AccountClient";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import AccountClient from "../components/AccountClient";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
 import {
-  type Locale,
-  locales,
+  defaultLocale, type Locale,
   localizePath,
   storeName,
   t,
-} from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { API_URL } from "../../lib/api";
+} from "../i18n/ui";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { API_URL } from "../lib/api";
 
-export function getStaticPaths() {
-  return locales.map((locale) => ({ params: { locale } }));
-}
-
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const turnstileSiteKey =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 const shopHref = localizePath(locale, "/shop");

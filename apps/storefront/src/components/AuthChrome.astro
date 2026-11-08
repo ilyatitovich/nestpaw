@@ -15,8 +15,8 @@ const homeHref = localizePath(activeLocale, "/");
 const year = new Date().getFullYear();
 
 const localeOptions = [
-  { code: "en" as const, label: "EN", href: "/en/account" },
-  { code: "de" as const, label: "DE", href: "/de/account" },
+  { code: "en" as const, label: "EN", href: localizePath("en", "/account") },
+  { code: "de" as const, label: "DE", href: localizePath("de", "/account") },
 ];
 ---
 

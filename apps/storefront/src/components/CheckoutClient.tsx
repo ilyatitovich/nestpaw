@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { localizePath } from "../i18n/ui";
 import FieldError from "./account/FieldError";
 import {
   getCustomerAccessToken,
@@ -274,8 +275,8 @@ export default function CheckoutClient({
           locale,
           currency: "EUR",
           acceptTerms: true,
-          successUrl: `${storeUrl}/${locale}/checkout/success`,
-          cancelUrl: `${storeUrl}/${locale}/checkout`,
+          successUrl: `${storeUrl}${localizePath(locale, "/checkout/success")}`,
+          cancelUrl: `${storeUrl}${localizePath(locale, "/checkout")}`,
         }),
       });
       if (!res.ok) {

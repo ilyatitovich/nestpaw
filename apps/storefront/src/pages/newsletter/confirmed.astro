@@ -1,19 +1,14 @@
 ---
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import {
-  type Locale,
-  locales,
+  defaultLocale, type Locale,
   localizePath,
   storeName,
   t,
-} from "../../../i18n/ui";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
+} from "../../i18n/ui";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 
-export function getStaticPaths() {
-  return locales.map((locale) => ({ params: { locale } }));
-}
-
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 
 const breadcrumbs = [
   { label: t(locale, "nav.home"), href: localizePath(locale, "/") },

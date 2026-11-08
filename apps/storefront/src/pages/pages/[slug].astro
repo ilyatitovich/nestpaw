@@ -1,32 +1,28 @@
 ---
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
-import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { apiGet } from "../../../lib/api";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import {
+  defaultLocale,
+  type Locale,
+  localizePath,
+  t,
+  translatedPaths,
+} from "../../i18n/ui";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { apiGet } from "../../lib/api";
+import { cmsPagePaths } from "../../lib/static-paths";
 
 export function getStaticPaths() {
-  const slugs = [
-    "about",
-    "privacy",
-    "cookies",
-    "shipping",
-    "returns",
-    "terms",
-    "contact",
-    "home",
-  ];
-  return locales.flatMap((locale) =>
-    slugs.map((slug) => ({ params: { locale, slug } })),
-  );
+  return cmsPagePaths();
 }
 
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const slug = Astro.params.slug!;
 
 type Page = {
   translations: {
     locale: string;
     title: string;
+    slug: string;
     body: string;
     seoDescription?: string;
   }[];
@@ -41,6 +37,7 @@ try {
       {
         locale,
         title: slug === "cookies" ? "Cookie policy" : slug,
+        slug,
         body:
           slug === "privacy"
             ? "We process order data to fulfill purchases."
@@ -66,6 +63,7 @@ const breadcrumbs = [
   title={tr?.title ?? slug}
   description={tr?.seoDescription ?? tr?.body?.slice(0, 160)}
   canonicalPath={`/pages/${slug}`}
+  alternates={translatedPaths("pages", page.translations)}
 >
   <div class="container page-shell prose">
     <Breadcrumbs

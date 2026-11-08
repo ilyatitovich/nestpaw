@@ -1468,7 +1468,7 @@ async function main() {
         type: "hero",
         headline: "Care that feels like home",
         image: IMG.heroDog,
-        cta: { label: "Shop for dogs", href: "/en/collections/dogs" },
+        cta: { label: "Shop for dogs", href: "/collections/dogs" },
       },
       { type: "featured_collection", collectionSlug: "dogs" },
     ],
@@ -1588,14 +1588,14 @@ async function main() {
       title: "Main",
       items: {
         create: [
-          { title: "Dogs", url: "/en/collections/dogs", position: 0 },
-          { title: "Cats", url: "/en/collections/cats", position: 1 },
+          { title: "Dogs", url: "/collections/dogs", position: 0 },
+          { title: "Cats", url: "/collections/cats", position: 1 },
           {
             title: "Small pets",
-            url: "/en/collections/small-pets",
+            url: "/collections/small-pets",
             position: 2,
           },
-          { title: "About", url: "/en/pages/about", position: 3 },
+          { title: "About", url: "/pages/about", position: 3 },
         ],
       },
     },

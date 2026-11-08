@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { localizePath } from "../i18n/ui";
 import { setCustomerAccessToken } from "../lib/customer-auth";
 import {
   type Cart,
@@ -173,7 +174,7 @@ export default function CartClient({
             const slug = line.variant.product.translations.find(
               (t) => t.locale === locale,
             )?.slug;
-            const href = slug ? `/${locale}/products/${slug}` : undefined;
+            const href = slug ? localizePath(locale, `/products/${slug}`) : undefined;
 
             return (
               <article className="cart-line" key={line.id}>

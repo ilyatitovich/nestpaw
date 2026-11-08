@@ -1,39 +1,26 @@
 ---
 import type { TipTapDoc } from "@online-store/rich-text";
-import AddToCart from "../../../components/AddToCart";
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
-import ProductCard from "../../../components/ProductCard";
-import ProductDetails from "../../../components/ProductDetails.astro";
-import ProductGallery from "../../../components/ProductGallery.astro";
-import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { API_URL, apiGet } from "../../../lib/api";
+import AddToCart from "../../components/AddToCart";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import ProductCard from "../../components/ProductCard";
+import ProductDetails from "../../components/ProductDetails.astro";
+import ProductGallery from "../../components/ProductGallery.astro";
+import {
+  defaultLocale,
+  type Locale,
+  localizePath,
+  t,
+  translatedPaths,
+} from "../../i18n/ui";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { API_URL, apiGet } from "../../lib/api";
+import { productPaths } from "../../lib/static-paths";
 
-export async function getStaticPaths() {
-  const paths: { params: { locale: string; slug: string } }[] = [];
-  for (const locale of locales) {
-    try {
-      const data = await apiGet<{
-        items: { translations: { locale: string; slug: string }[] }[];
-      }>(`/products?locale=${locale}&take=100`);
-      for (const p of data.items) {
-        const tr = p.translations.find((x) => x.locale === locale);
-        if (tr) paths.push({ params: { locale, slug: tr.slug } });
-      }
-    } catch {
-      // API may be offline during build
-    }
-  }
-  if (!paths.length) {
-    return [
-      { params: { locale: "en", slug: "meadow-adult-dry-food" } },
-      { params: { locale: "de", slug: "wiesen-adult-trockenfutter" } },
-    ];
-  }
-  return paths;
+export function getStaticPaths() {
+  return productPaths("en");
 }
 
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const slug = Astro.params.slug!;
 
 type CollectionNode = {
@@ -197,7 +184,7 @@ const specs: { label: string; value: string }[] = [
 ].filter((x): x is { label: string; value: string } => x != null);
 
 const shareUrl = new URL(
-  `/${locale}/products/${slug}`,
+  localizePath(locale, `/products/${slug}`),
   Astro.site ?? "http://localhost:4321",
 ).href;
 
@@ -232,6 +219,7 @@ if (product) {
       title={tr.seoTitle ?? tr.title}
       description={tr.seoDescription ?? tr.description.slice(0, 160)}
       canonicalPath={`/products/${slug}`}
+      alternates={translatedPaths("products", product.translations)}
       ogImage={img?.url}
       jsonLd={[
         {
@@ -262,7 +250,7 @@ if (product) {
               "href" in item && item.href
                 ? new URL(item.href, Astro.site ?? "http://localhost:4321").href
                 : new URL(
-                    `/${locale}/products/${slug}`,
+                    localizePath(locale, `/products/${slug}`),
                     Astro.site ?? "http://localhost:4321",
                   ).href,
           })),

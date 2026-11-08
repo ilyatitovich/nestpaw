@@ -1,15 +1,11 @@
 ---
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import CartClient from "../../components/CartClient";
-import { type Locale, locales, localizePath, t } from "../../i18n/ui";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { API_URL } from "../../lib/api";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import CartClient from "../components/CartClient";
+import { defaultLocale, type Locale, localizePath, t } from "../i18n/ui";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { API_URL } from "../lib/api";
 
-export function getStaticPaths() {
-  return locales.map((locale) => ({ params: { locale } }));
-}
-
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 
 const breadcrumbs = [
   { label: t(locale, "nav.home"), href: localizePath(locale, "/") },

@@ -131,8 +131,8 @@ test.describe("commerce smoke", () => {
           locale: "en",
           currency: "EUR",
           acceptTerms: true,
-          successUrl: `${STORE}/en/checkout/success`,
-          cancelUrl: `${STORE}/en/cart`,
+          successUrl: `${STORE}/checkout/success`,
+          cancelUrl: `${STORE}/cart`,
         },
       });
       expect(checkout.ok()).toBeTruthy();
@@ -167,12 +167,12 @@ test.describe("commerce smoke", () => {
     );
 
     test("Nestpaw home and dogs browse", async ({ page }) => {
-      await page.goto(`${STORE}/en/`);
+      await page.goto(`${STORE}/`);
       await expect(page.locator(".site-header__brand")).toContainText(
         "Nestpaw",
       );
       await expect(page.locator(".hero__brand")).toContainText("Nestpaw");
-      await page.goto(`${STORE}/en/collections/dogs`);
+      await page.goto(`${STORE}/collections/dogs`);
       await expect(page.locator(".section__title").first()).toContainText(
         "Dogs",
       );
@@ -180,7 +180,7 @@ test.describe("commerce smoke", () => {
     });
 
     test("PDP add to cart path", async ({ page }) => {
-      await page.goto(`${STORE}/en/shop`);
+      await page.goto(`${STORE}/shop`);
       const first = page.locator(".product-card").first();
       await expect(first).toBeVisible();
       await first.click();
@@ -197,7 +197,7 @@ test.describe("commerce smoke", () => {
       }
 
       await page.getByRole("button", { name: /add to cart/i }).click();
-      await expect(page).toHaveURL(/\/en\/cart/);
+      await expect(page).toHaveURL(/\/cart\/?$/);
     });
   });
 });

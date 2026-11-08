@@ -10,6 +10,7 @@ import {
 import { type OrderStatus } from "@prisma/client";
 import * as Sentry from "@sentry/node";
 import { type Queue } from "bullmq";
+import { type WrapperType } from "../../common/wrapper-type.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { PaymentsService } from "../payments/payments.service.js";
 import {
@@ -25,7 +26,7 @@ export class OrdersService {
     private prisma: PrismaService,
     @InjectQueue("notifications") private notifications: Queue,
     @Inject(forwardRef(() => PaymentsService))
-    private payments: PaymentsService,
+    private payments: WrapperType<PaymentsService>,
   ) {}
 
   list(params: { status?: string; take?: number; skip?: number }) {

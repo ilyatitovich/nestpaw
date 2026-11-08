@@ -102,7 +102,7 @@ export class NotificationsService {
       from: this.from(),
       to: cart.email,
       subject: `${this.storeName()} — You left something behind`,
-      text: `You still have items in your cart (${titles}).\n\nContinue checkout: ${storefront}/en/cart`,
+      text: `You still have items in your cart (${titles}).\n\nContinue checkout: ${storefront}/cart`,
     });
 
     await this.prisma.cart.update({

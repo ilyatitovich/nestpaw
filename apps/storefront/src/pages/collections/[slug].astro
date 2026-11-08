@@ -1,60 +1,22 @@
 ---
-import Breadcrumbs from "../../../components/Breadcrumbs.astro";
-import ProductFilters from "../../../components/ProductFilters";
-import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import { API_URL, apiGet } from "../../../lib/api";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import ProductFilters from "../../components/ProductFilters";
+import {
+  defaultLocale,
+  type Locale,
+  localizePath,
+  t,
+  translatedPaths,
+} from "../../i18n/ui";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { API_URL, apiGet } from "../../lib/api";
+import { collectionPaths } from "../../lib/static-paths";
 
-export async function getStaticPaths() {
-  const seen = new Set<string>();
-  const paths: { params: { locale: string; slug: string } }[] = [];
-  const push = (locale: string, slug: string) => {
-    const key = `${locale}:${slug}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    paths.push({ params: { locale, slug } });
-  };
-  for (const locale of locales) {
-    try {
-      const collections = await apiGet<
-        {
-          translations: { locale: string; slug: string }[];
-          children?: { translations: { locale: string; slug: string }[] }[];
-        }[]
-      >(`/collections?locale=${locale}`);
-      for (const c of collections) {
-        const tr =
-          c.translations.find((x) => x.locale === locale) ?? c.translations[0];
-        if (tr?.slug) push(locale, tr.slug);
-        for (const child of c.children ?? []) {
-          const ctr =
-            child.translations.find((x) => x.locale === locale) ??
-            child.translations[0];
-          if (ctr?.slug) push(locale, ctr.slug);
-        }
-      }
-    } catch {
-      // API offline during build
-    }
-  }
-  if (!paths.length) {
-    for (const locale of locales) {
-      for (const slug of [
-        "dogs",
-        "cats",
-        "small-pets",
-        "hunde",
-        "katzen",
-        "kleintiere",
-      ]) {
-        push(locale, slug);
-      }
-    }
-  }
-  return paths;
+export function getStaticPaths() {
+  return collectionPaths("en");
 }
 
-const locale = Astro.params.locale as Locale;
+const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
 const slug = Astro.params.slug!;
 
 type Collection = {
@@ -124,6 +86,7 @@ if (!products.length) {
   title={tr?.title ?? slug}
   description={tr?.description || t(locale, "home.lead")}
   canonicalPath={`/collections/${slug}`}
+  alternates={translatedPaths("collections", collection?.translations)}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -132,19 +95,19 @@ if (!products.length) {
         "@type": "ListItem",
         position: 1,
         name: t(locale, "nav.home"),
-        item: `/${locale}/`,
+        item: localizePath(locale, "/"),
       },
       {
         "@type": "ListItem",
         position: 2,
         name: t(locale, "shop.title"),
-        item: `/${locale}/shop`,
+        item: localizePath(locale, "/shop"),
       },
       {
         "@type": "ListItem",
         position: 3,
         name: tr?.title ?? slug,
-        item: `/${locale}/collections/${slug}`,
+        item: localizePath(locale, `/collections/${slug}`),
       },
     ],
   }}

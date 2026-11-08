@@ -1,0 +1,10 @@
+---
+import { cmsPagePaths } from "../../../lib/static-paths";
+import Page from "../../pages/[slug].astro";
+
+export function getStaticPaths() {
+  return cmsPagePaths();
+}
+---
+
+<Page />

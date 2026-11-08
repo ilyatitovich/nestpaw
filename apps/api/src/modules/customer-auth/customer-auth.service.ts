@@ -7,7 +7,7 @@ import { type Request, type Response } from "express";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { NewsletterService } from "../newsletter/newsletter.service.js";
 import { TurnstileService } from "../newsletter/turnstile.service.js";
-import { storefrontBaseUrl } from "./customer-auth.util.js";
+import { storefrontBaseUrl, storefrontPath } from "./customer-auth.util.js";
 import {
   CustomerOAuthService,
   newCodeVerifier,
@@ -113,7 +113,7 @@ export class CustomerAuthService {
     res.clearCookie(OAUTH_COOKIE, { path: OAUTH_COOKIE_PATH });
 
     const locale = this.parseOAuthCookie(raw)?.locale || "en";
-    const returnTo = `${storefrontBaseUrl()}/${locale}/account`;
+    const returnTo = `${storefrontBaseUrl()}${storefrontPath(locale, "/account")}`;
 
     if (query.error || !query.code || !query.state) {
       return `${returnTo}?authError=oauth_denied`;

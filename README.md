@@ -11,7 +11,7 @@ Commerce monorepo for **Nestpaw**, a DACH specialty shop for dogs, cats, and sma
 ## Demo credentials
 
 - **Admin:** http://localhost:5173 — `admin@example.com` / `ChangeMe123!`
-- **Storefront:** http://localhost:4321/en/
+- **Storefront:** http://localhost:4321/
 - **API docs:** http://localhost:3001/docs
 - **Discount:** `WELCOME10` (10%)
 - **Free shipping:** €49 threshold enforced server-side

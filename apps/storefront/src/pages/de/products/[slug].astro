@@ -1,0 +1,10 @@
+---
+import { productPaths } from "../../../lib/static-paths";
+import Page from "../../products/[slug].astro";
+
+export function getStaticPaths() {
+  return productPaths("de");
+}
+---
+
+<Page />

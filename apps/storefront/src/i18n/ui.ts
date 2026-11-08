@@ -591,5 +591,20 @@ export function t(locale: string, key: keyof (typeof ui)["en"]) {
 
 export function localizePath(locale: string, path: string) {
   const clean = path.startsWith("/") ? path : `/${path}`;
-  return `/${locale}${clean === "/" ? "" : clean}`;
+  const suffix = clean === "/" ? "" : clean;
+  if (!locale || locale === defaultLocale) return suffix || "/";
+  return `/${locale}${suffix}`;
+}
+
+/** Unprefixed paths for the same page in each locale. Missing locales fall back to the current path. */
+export function translatedPaths(
+  segment: "products" | "collections" | "pages",
+  translations: { locale: string; slug: string }[] | undefined,
+): Partial<Record<Locale, string>> {
+  const paths: Partial<Record<Locale, string>> = {};
+  for (const code of locales) {
+    const slug = translations?.find((item) => item.locale === code)?.slug;
+    if (slug) paths[code] = `/${segment}/${slug}`;
+  }
+  return paths;
 }

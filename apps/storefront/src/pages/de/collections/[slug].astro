@@ -1,0 +1,10 @@
+---
+import { collectionPaths } from "../../../lib/static-paths";
+import Page from "../../collections/[slug].astro";
+
+export function getStaticPaths() {
+  return collectionPaths("de");
+}
+---
+
+<Page />

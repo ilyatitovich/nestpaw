@@ -71,6 +71,13 @@ export function newFamilyId(): string {
   return randomBytes(16).toString("hex");
 }
 
+/** English is the default storefront locale and has no /en prefix. */
+export function storefrontPath(locale: string, path: string): string {
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  if (!locale || locale === "en") return clean;
+  return `/${locale}${clean}`;
+}
+
 export function storefrontBaseUrl(): string {
   return (process.env.PUBLIC_STORE_URL ?? "http://localhost:4321").replace(
     /\/$/,

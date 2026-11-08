@@ -11,6 +11,10 @@ import MenuIcon from "./icons/MenuIcon.astro";
 
 interface Props {
   locale: Locale | string;
+  /** Unprefixed path of the current page, e.g. `/shop`. */
+  canonicalPath?: string;
+  /** Unprefixed path per locale when slugs differ, e.g. products and collections. */
+  alternates?: Partial<Record<Locale, string>>;
 }
 
 type NavChild = {
@@ -26,7 +30,7 @@ type NavCategory = {
   children: NavChild[];
 };
 
-const { locale } = Astro.props;
+const { locale, canonicalPath = "/", alternates } = Astro.props;
 
 const activeLocale = (
   locales.includes(locale as Locale) ? locale : "en"
@@ -100,8 +104,18 @@ try {
 }
 
 const localeOptions = [
-  { code: "en" as const, flag: "🇬🇧", href: "/en/", label: "English" },
-  { code: "de" as const, flag: "🇩🇪", href: "/de/", label: "Deutsch" },
+  {
+    code: "en" as const,
+    flag: "🇬🇧",
+    href: localizePath("en", alternates?.en ?? canonicalPath),
+    label: "English",
+  },
+  {
+    code: "de" as const,
+    flag: "🇩🇪",
+    href: localizePath("de", alternates?.de ?? canonicalPath),
+    label: "Deutsch",
+  },
 ];
 
 const currentLocale =
@@ -209,6 +223,7 @@ const mobileNavId = "site-mobile-nav";
                     { "is-active": option.code === activeLocale },
                   ]}
                   href={option.href}
+                  data-locale-switch
                   aria-current={
                     option.code === activeLocale ? "true" : undefined
                   }
@@ -335,6 +350,16 @@ const mobileNavId = "site-mobile-nav";
 <script>
   document.querySelectorAll("[data-locale-menu]").forEach((menu) => {
     if (!(menu instanceof HTMLDetailsElement)) return;
+
+    menu.querySelectorAll("[data-locale-switch]").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (!(link instanceof HTMLAnchorElement)) return;
+        const url = new URL(link.href, window.location.origin);
+        url.search = window.location.search;
+        url.hash = window.location.hash;
+        link.href = `${url.pathname}${url.search}${url.hash}`;
+      });
+    });
 
     document.addEventListener("click", (event) => {
       const target = event.target;

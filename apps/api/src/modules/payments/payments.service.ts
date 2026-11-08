@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import * as Sentry from "@sentry/node";
 import Stripe from "stripe";
+import { type WrapperType } from "../../common/wrapper-type.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { OrdersService } from "../orders/orders.service.js";
 import { buildStripeLineItems } from "./build-stripe-line-items.js";
@@ -21,7 +22,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     @Inject(forwardRef(() => OrdersService))
-    private orders: OrdersService,
+    private orders: WrapperType<OrdersService>,
   ) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (key && !key.includes("xxx")) {

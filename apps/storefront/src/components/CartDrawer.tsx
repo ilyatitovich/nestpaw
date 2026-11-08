@@ -15,6 +15,7 @@ import {
   lineVariantLabel,
   patchCartLine,
 } from "../lib/cart";
+import { localizePath } from "../i18n/ui";
 import type { ProductCardProduct } from "./ProductCard";
 
 type Props = {
@@ -69,7 +70,7 @@ function productHref(
   const slug =
     translations.find((t) => t.locale === locale)?.slug ??
     translations.find((t) => t.slug)?.slug;
-  return slug ? `/${locale}/products/${slug}` : undefined;
+  return slug ? localizePath(locale, `/products/${slug}`) : undefined;
 }
 
 function CartGlyph({ className }: { className?: string }) {
@@ -583,7 +584,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                         {activeUpsell.slug ? (
                           <a
                             className="cart-drawer__upsell-media"
-                            href={`/${locale}/products/${activeUpsell.slug}`}
+                            href={localizePath(locale, `/products/${activeUpsell.slug}`)}
                             aria-label={activeUpsell.title}
                           >
                             {activeUpsell.image ? (
@@ -609,7 +610,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                           {activeUpsell.slug ? (
                             <a
                               className="cart-drawer__upsell-name"
-                              href={`/${locale}/products/${activeUpsell.slug}`}
+                              href={localizePath(locale, `/products/${activeUpsell.slug}`)}
                             >
                               {activeUpsell.title}
                             </a>
@@ -682,7 +683,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                     ) : null}
                     <a
                       className="btn btn--primary cart-drawer__checkout"
-                      href={`/${locale}/checkout`}
+                      href={localizePath(locale, "/checkout")}
                     >
                       <span>{labels.checkout}</span>
                       <span aria-hidden="true">·</span>
@@ -690,7 +691,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                     </a>
                     <a
                       className="cart-drawer__view"
-                      href={`/${locale}/cart`}
+                      href={localizePath(locale, "/cart")}
                     >
                       {labels.viewCart}
                     </a>

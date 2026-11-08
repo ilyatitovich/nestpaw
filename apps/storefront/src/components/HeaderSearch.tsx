@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { localizePath } from "../i18n/ui";
 import { createPortal } from "react-dom";
 
 type Product = {
@@ -149,14 +150,14 @@ export default function HeaderSearch({ apiUrl, locale, labels }: Props) {
   function goToSearchPage(query = q) {
     const trimmed = query.trim();
     if (!trimmed) return;
-    window.location.href = `/${locale}/search?q=${encodeURIComponent(trimmed)}`;
+    window.location.href = `${localizePath(locale, "/search")}?q=${encodeURIComponent(trimmed)}`;
   }
 
   function productHref(product: Product) {
     const tr =
       product.translations.find((x) => x.locale === locale) ??
       product.translations[0];
-    return `/${locale}/products/${tr?.slug ?? ""}`;
+    return localizePath(locale, `/products/${tr?.slug ?? ""}`);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
