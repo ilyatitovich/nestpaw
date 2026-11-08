@@ -10,9 +10,8 @@ const { locale, part } = Astro.props;
 const activeLocale = (
   locales.includes(locale as Locale) ? locale : "en"
 ) as Locale;
-const cartHref = localizePath(activeLocale, "/cart");
+const homeHref = localizePath(activeLocale, "/");
 const year = new Date().getFullYear();
-const brandLabel = `${storeName}, ${t(activeLocale, "checkout.editCart")}`;
 
 const legalLinks = [
   {
@@ -32,11 +31,10 @@ const legalLinks = [
 
 {
   part === "header" ? (
-    <header class="auth-chrome">
+    <header class="site-header">
       <div class="container auth-chrome__bar">
-        <a class="site-header__brand" href={cartHref}>
-          <span aria-hidden="true">{storeName}</span>
-          <span class="visually-hidden">{brandLabel}</span>
+        <a class="site-header__brand" href={homeHref}>
+          {storeName}
         </a>
       </div>
     </header>
