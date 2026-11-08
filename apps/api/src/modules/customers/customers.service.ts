@@ -1,6 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { CustomerProfileUpdateSchema } from "@online-store/shared-types";
+import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  CustomerProfileUpdateSchema,
+  LocaleSchema,
+} from "@online-store/shared-types";
+import { z } from "zod";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { NewsletterService } from "../newsletter/newsletter.service.js";
 
 const customerPublicSelect = {
   id: true,
@@ -14,9 +19,16 @@ const customerPublicSelect = {
   updatedAt: true,
 } as const;
 
+const NewsletterOptInSchema = z.object({
+  locale: LocaleSchema.default("en"),
+});
+
 @Injectable()
 export class CustomersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private newsletter: NewsletterService,
+  ) {}
 
   list() {
     return this.prisma.customer.findMany({
@@ -65,6 +77,16 @@ export class CustomersService {
       },
       select: customerPublicSelect,
     });
+  }
+
+  async optInNewsletter(customerId: string, input: unknown) {
+    const data = NewsletterOptInSchema.parse(input ?? {});
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { email: true },
+    });
+    if (!customer) throw new NotFoundException("Customer not found");
+    return this.newsletter.subscribeVerifiedEmail(customer.email, data.locale);
   }
 
   async addWishlist(customerId: string, productId: string) {

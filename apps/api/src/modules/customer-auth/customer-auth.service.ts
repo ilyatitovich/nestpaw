@@ -1,12 +1,22 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import {
   CustomerOtpRequestSchema,
   CustomerOtpVerifySchema,
 } from "@online-store/shared-types";
 import { type Request, type Response } from "express";
 import { PrismaService } from "../../prisma/prisma.service.js";
+import { NewsletterService } from "../newsletter/newsletter.service.js";
 import { TurnstileService } from "../newsletter/turnstile.service.js";
-import { storefrontBaseUrl } from "./customer-auth.util.js";
+import {
+  normalizeEmail,
+  otpIntentMismatch,
+  storefrontBaseUrl,
+} from "./customer-auth.util.js";
 import {
   CustomerOAuthService,
   newCodeVerifier,
@@ -27,6 +37,7 @@ export class CustomerAuthService {
     private oauth: CustomerOAuthService,
     private sessions: CustomerSessionService,
     private turnstile: TurnstileService,
+    private newsletter: NewsletterService,
   ) {}
 
   accountsEnabled() {
@@ -51,7 +62,27 @@ export class CustomerAuthService {
       throw new ForbiddenException("Bot verification failed");
     }
 
-    // Always return ok after validation to avoid account enumeration.
+    const emailNormalized = normalizeEmail(data.email);
+    const existing = await this.prisma.customer.findUnique({
+      where: { emailNormalized },
+      select: { id: true },
+    });
+    const mismatch = otpIntentMismatch(data.intent, Boolean(existing));
+    if (mismatch === "account_not_found") {
+      throw new NotFoundException({
+        statusCode: 404,
+        message: "No account found for this email",
+        code: "account_not_found",
+      });
+    }
+    if (mismatch === "account_exists") {
+      throw new ConflictException({
+        statusCode: 409,
+        message: "An account already exists for this email",
+        code: "account_exists",
+      });
+    }
+
     try {
       await this.otp.request({
         email: data.email,
@@ -75,6 +106,11 @@ export class CustomerAuthService {
       emailNormalized,
       data.email,
     );
+    if (data.marketingOptIn) {
+      await this.newsletter
+        .subscribeVerifiedEmail(customer.email, data.locale)
+        .catch(() => undefined);
+    }
     return this.sessions.issueSession(customer.id, customer.email, res);
   }
 

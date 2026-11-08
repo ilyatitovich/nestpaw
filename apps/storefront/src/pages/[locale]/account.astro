@@ -1,6 +1,6 @@
 ---
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import AccountClient from "../../components/AccountClient";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import { type Locale, locales, localizePath, t } from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { API_URL } from "../../lib/api";
@@ -33,7 +33,7 @@ const breadcrumbs = [
       />
     </div>
     <h1 class="section__title account-page__title">
-      {t(locale, "account.login")}
+      {t(locale, "account.signIn")}
     </h1>
     <AccountClient
       client:only="react"
@@ -43,6 +43,7 @@ const breadcrumbs = [
       termsHref={localizePath(locale, "/pages/terms")}
       privacyHref={localizePath(locale, "/pages/privacy")}
       labels={{
+        login: t(locale, "account.login"),
         orders: t(locale, "account.orders"),
         logout: t(locale, "account.logout"),
         noOrders: t(locale, "account.noOrders"),
@@ -50,14 +51,18 @@ const breadcrumbs = [
         continue: t(locale, "account.continue"),
         code: t(locale, "account.code"),
         verify: t(locale, "account.verify"),
+        verifySignUp: t(locale, "account.verifySignUp"),
         resend: t(locale, "account.resend"),
         resendIn: t(locale, "account.resendIn"),
+        changeEmail: t(locale, "account.changeEmail"),
         google: t(locale, "account.google"),
         apple: t(locale, "account.apple"),
         or: t(locale, "account.or"),
         signedInAs: t(locale, "account.signedInAs"),
         sendCode: t(locale, "account.sendCode"),
+        sendCodeSignUp: t(locale, "account.sendCodeSignUp"),
         codeSent: t(locale, "account.codeSent"),
+        codeSentSignUp: t(locale, "account.codeSentSignUp"),
         codeHint: t(locale, "account.codeHint"),
         nameFirst: t(locale, "account.nameFirst"),
         nameLast: t(locale, "account.nameLast"),
@@ -74,6 +79,10 @@ const breadcrumbs = [
         errorNetwork: t(locale, "account.errorNetwork"),
         errorValidation: t(locale, "account.errorValidation"),
         errorNameRequired: t(locale, "account.errorNameRequired"),
+        errorAccountNotFound: t(locale, "account.errorAccountNotFound"),
+        errorAccountExists: t(locale, "account.errorAccountExists"),
+        switchToSignUp: t(locale, "account.switchToSignUp"),
+        switchToSignIn: t(locale, "account.switchToSignIn"),
         termsBefore: t(locale, "account.termsBefore"),
         terms: t(locale, "account.terms"),
         termsAnd: t(locale, "account.termsAnd"),
@@ -82,8 +91,15 @@ const breadcrumbs = [
         marketingOptIn: t(locale, "account.marketingOptIn"),
         termsRequired: t(locale, "account.termsRequired"),
         lead: t(locale, "account.lead"),
+        leadSignUp: t(locale, "account.leadSignUp"),
+        signIn: t(locale, "account.signIn"),
+        signUp: t(locale, "account.signUp"),
         lastUsed: t(locale, "account.lastUsed"),
         loading: t(locale, "account.loading"),
+        sendingCode: t(locale, "account.sendingCode"),
+        verifying: t(locale, "account.verifying"),
+        saving: t(locale, "account.saving"),
+        redirecting: t(locale, "account.redirecting"),
       }}
     >
       <div slot="fallback">

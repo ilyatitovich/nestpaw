@@ -1,8 +1,5 @@
 import type { FormEvent } from "react";
-import type {
-  FieldErrors,
-  FormNotice,
-} from "../../lib/account-validation";
+import type { FieldErrors, FormNotice } from "../../lib/account-validation";
 import {
   type AccountLabels,
   type AccountOrder,
@@ -54,7 +51,6 @@ export default function SignedInPanel({
   onSaveProfile,
   onLogout,
 }: Props) {
-
   return (
     <div className="account-panel account-panel--signed-in">
       <p className="account-panel__signed-in">
@@ -62,11 +58,7 @@ export default function SignedInPanel({
       </p>
 
       {needsName ? (
-        <form
-          className="account-form"
-          onSubmit={onSaveProfile}
-          noValidate
-        >
+        <form className="account-form" onSubmit={onSaveProfile} noValidate>
           <div className="account-field">
             <label htmlFor={firstNameId}>{labels.nameFirst}</label>
             <input
@@ -82,10 +74,7 @@ export default function SignedInPanel({
                 fieldErrors.firstName ? firstNameErrorId : undefined
               }
             />
-            <FieldError
-              id={firstNameErrorId}
-              message={fieldErrors.firstName}
-            />
+            <FieldError id={firstNameErrorId} message={fieldErrors.firstName} />
           </div>
           <div className="account-field">
             <label htmlFor={lastNameId}>{labels.nameLast}</label>
@@ -104,8 +93,13 @@ export default function SignedInPanel({
             />
             <FieldError id={lastNameErrorId} message={fieldErrors.lastName} />
           </div>
-          <button className="btn btn--primary" type="submit" disabled={busy}>
-            {labels.saveProfile}
+          <button
+            className="btn btn--primary"
+            type="submit"
+            disabled={busy}
+            aria-busy={busy || undefined}
+          >
+            {busy ? labels.saving : labels.saveProfile}
           </button>
         </form>
       ) : null}

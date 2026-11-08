@@ -62,6 +62,14 @@ export class NewsletterService {
     }
   }
 
+  /**
+   * Subscribe after the customer already proved email ownership (OTP/OAuth).
+   * Skips Turnstile; still double-opt-in via confirmation email.
+   */
+  async subscribeVerifiedEmail(emailRaw: string, locale: string) {
+    return this.enqueueSubscription(this.normalizeEmail(emailRaw), locale);
+  }
+
   async subscribe(input: unknown, ip: string) {
     const data = SubscribeNewsletterSchema.parse(input);
 
@@ -77,7 +85,13 @@ export class NewsletterService {
 
     await this.assertSubscribeRateLimit(ip);
 
-    const email = this.normalizeEmail(data.email);
+    return this.enqueueSubscription(
+      this.normalizeEmail(data.email),
+      data.locale,
+    );
+  }
+
+  private async enqueueSubscription(email: string, locale: string) {
     const existing = await this.prisma.newsletterSubscriber.findUnique({
       where: { email },
     });
@@ -95,14 +109,14 @@ export class NewsletterService {
       where: { email },
       create: {
         email,
-        locale: data.locale,
+        locale,
         status: "pending",
         confirmTokenHash,
         unsubscribeTokenHash,
         source: "storefront",
       },
       update: {
-        locale: data.locale,
+        locale,
         status: "pending",
         confirmTokenHash,
         unsubscribeTokenHash,
@@ -117,7 +131,7 @@ export class NewsletterService {
       {
         subscriberId: subscriber.id,
         confirmUrl,
-        locale: data.locale,
+        locale,
       },
       { removeOnComplete: 100, removeOnFail: 50 },
     );

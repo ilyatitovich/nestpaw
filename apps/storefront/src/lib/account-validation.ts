@@ -1,12 +1,18 @@
-import type { AccountLabels } from "./customer-account";
+import type { AccountLabels, AuthMode } from "./customer-account";
 
 export type AuthField = "email" | "code" | "terms" | "firstName" | "lastName";
 
 export type FieldErrors = Partial<Record<AuthField, string>>;
 
+export type FormNoticeAction = {
+  label: string;
+  mode: AuthMode;
+};
+
 export type FormNotice = {
   tone: "error" | "success";
   text: string;
+  action?: FormNoticeAction;
 };
 
 export type AuthApiFailure = {
@@ -17,6 +23,8 @@ export type AuthApiFailure = {
     | "turnstile"
     | "rate_limit"
     | "invalid_code"
+    | "account_not_found"
+    | "account_exists"
     | "network"
     | "generic";
 };
@@ -75,12 +83,15 @@ export function validateEmailStep(input: {
   acceptedTerms: boolean;
   turnstileToken: string;
   labels: AccountLabels;
+  requireTerms: boolean;
 }): { ok: true } | { ok: false; errors: FieldErrors; notice?: FormNotice } {
   const errors: FieldErrors = {};
   const emailError = validateEmail(input.email, input.labels);
-  const termsError = validateTerms(input.acceptedTerms, input.labels);
   if (emailError) errors.email = emailError;
-  if (termsError) errors.terms = termsError;
+  if (input.requireTerms) {
+    const termsError = validateTerms(input.acceptedTerms, input.labels);
+    if (termsError) errors.terms = termsError;
+  }
 
   if (!input.turnstileToken) {
     return {
@@ -135,6 +146,10 @@ export function authFailureMessage(
       return labels.errorRateLimit;
     case "invalid_code":
       return labels.errorInvalidCode;
+    case "account_not_found":
+      return labels.errorAccountNotFound;
+    case "account_exists":
+      return labels.errorAccountExists;
     case "network":
       return labels.errorNetwork;
     case "validation":
@@ -144,7 +159,35 @@ export function authFailureMessage(
   }
 }
 
-export function classifyAuthStatus(status: number): AuthApiFailure["kind"] {
+export function authFailureNotice(
+  failure: AuthApiFailure,
+  labels: AccountLabels,
+): FormNotice {
+  const text = authFailureMessage(failure, labels);
+  if (failure.kind === "account_not_found") {
+    return {
+      tone: "error",
+      text,
+      action: { label: labels.switchToSignUp, mode: "sign_up" },
+    };
+  }
+  if (failure.kind === "account_exists") {
+    return {
+      tone: "error",
+      text,
+      action: { label: labels.switchToSignIn, mode: "sign_in" },
+    };
+  }
+  return { tone: "error", text };
+}
+
+export function classifyAuthStatus(
+  status: number,
+  code?: string,
+): AuthApiFailure["kind"] {
+  if (code === "account_not_found" || status === 404)
+    return "account_not_found";
+  if (code === "account_exists" || status === 409) return "account_exists";
   if (status === 401) return "invalid_code";
   if (status === 403) return "turnstile";
   if (status === 429) return "rate_limit";
@@ -152,12 +195,17 @@ export function classifyAuthStatus(status: number): AuthApiFailure["kind"] {
   return "generic";
 }
 
-export async function readAuthFailure(
-  res: Response,
-): Promise<AuthApiFailure> {
+export async function readAuthFailure(res: Response): Promise<AuthApiFailure> {
+  let code: string | undefined;
+  try {
+    const body = (await res.json()) as { code?: string };
+    if (typeof body.code === "string") code = body.code;
+  } catch {
+    // ignore non-JSON bodies
+  }
   return {
     ok: false,
     status: res.status,
-    kind: classifyAuthStatus(res.status),
+    kind: classifyAuthStatus(res.status, code),
   };
 }

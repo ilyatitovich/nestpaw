@@ -1,12 +1,13 @@
 import type { FormEvent, RefObject } from "react";
 import type { FieldErrors } from "../../lib/account-validation";
-import type { AccountLabels } from "../../lib/customer-account";
+import type { AccountLabels, AuthMode } from "../../lib/customer-account";
 import FieldError from "./FieldError";
 import LastUsedBadge from "./LastUsedBadge";
 import TurnstileWidget, { type TurnstileApi } from "./TurnstileWidget";
 
 type Props = {
   labels: AccountLabels;
+  authMode: AuthMode;
   emailId: string;
   termsId: string;
   marketingId: string;
@@ -31,6 +32,7 @@ type Props = {
 
 export default function EmailSignInForm({
   labels,
+  authMode,
   emailId,
   termsId,
   marketingId,
@@ -54,6 +56,9 @@ export default function EmailSignInForm({
 }: Props) {
   const emailInvalid = Boolean(fieldErrors.email);
   const termsInvalid = Boolean(fieldErrors.terms);
+  const showConsents = authMode === "sign_up";
+  const submitLabel =
+    authMode === "sign_up" ? labels.sendCodeSignUp : labels.sendCode;
 
   return (
     <form
@@ -78,58 +83,62 @@ export default function EmailSignInForm({
           onChange={(e) => onEmailChange(e.target.value)}
           onBlur={onEmailBlur}
           required
-          autoComplete="email"
+          autoComplete="username"
           enterKeyHint="next"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          disabled={busy}
           aria-invalid={emailInvalid || undefined}
           aria-describedby={emailInvalid ? emailErrorId : undefined}
         />
         <FieldError id={emailErrorId} message={fieldErrors.email} />
       </div>
 
-      <fieldset
-        className={
-          termsInvalid ? "account-consents is-invalid" : "account-consents"
-        }
-      >
-        <legend className="visually-hidden">{labels.terms}</legend>
-        <label className="account-check" htmlFor={termsId}>
-          <input
-            id={termsId}
-            name="terms"
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => onAcceptedTermsChange(e.target.checked)}
-            required
-            aria-invalid={termsInvalid || undefined}
-            aria-describedby={termsInvalid ? termsErrorId : undefined}
-          />
-          <span>
-            {labels.termsBefore}
-            <a href={termsHref} target="_blank" rel="noopener noreferrer">
-              {labels.terms}
-            </a>
-            {labels.termsAnd}
-            <a href={privacyHref} target="_blank" rel="noopener noreferrer">
-              {labels.privacy}
-            </a>
-            {labels.termsAfter}
-          </span>
-        </label>
-        <FieldError id={termsErrorId} message={fieldErrors.terms} />
-        <label className="account-check" htmlFor={marketingId}>
-          <input
-            id={marketingId}
-            name="marketing"
-            type="checkbox"
-            checked={marketingOptIn}
-            onChange={(e) => onMarketingOptInChange(e.target.checked)}
-          />
-          <span>{labels.marketingOptIn}</span>
-        </label>
-      </fieldset>
+      {showConsents ? (
+        <fieldset
+          className={
+            termsInvalid ? "account-consents is-invalid" : "account-consents"
+          }
+          disabled={busy}
+        >
+          <legend className="visually-hidden">{labels.terms}</legend>
+          <label className="account-check" htmlFor={termsId}>
+            <input
+              id={termsId}
+              name="terms"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => onAcceptedTermsChange(e.target.checked)}
+              required
+              aria-invalid={termsInvalid || undefined}
+              aria-describedby={termsInvalid ? termsErrorId : undefined}
+            />
+            <span>
+              {labels.termsBefore}
+              <a href={termsHref} target="_blank" rel="noopener noreferrer">
+                {labels.terms}
+              </a>
+              {labels.termsAnd}
+              <a href={privacyHref} target="_blank" rel="noopener noreferrer">
+                {labels.privacy}
+              </a>
+              {labels.termsAfter}
+            </span>
+          </label>
+          <FieldError id={termsErrorId} message={fieldErrors.terms} />
+          <label className="account-check" htmlFor={marketingId}>
+            <input
+              id={marketingId}
+              name="marketing"
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(e) => onMarketingOptInChange(e.target.checked)}
+            />
+            <span>{labels.marketingOptIn}</span>
+          </label>
+        </fieldset>
+      ) : null}
 
       <TurnstileWidget siteKey={turnstileSiteKey} apiRef={turnstileApiRef} />
 
@@ -137,8 +146,9 @@ export default function EmailSignInForm({
         className="btn btn--primary account-form__submit"
         type="submit"
         disabled={busy}
+        aria-busy={busy || undefined}
       >
-        {labels.sendCode}
+        {busy ? labels.sendingCode : submitLabel}
       </button>
     </form>
   );

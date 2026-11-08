@@ -9,9 +9,10 @@ import {
 } from "../lib/account-snapshot";
 import {
   type AuthField,
+  authFailureMessage,
+  authFailureNotice,
   type FieldErrors,
   type FormNotice,
-  authFailureMessage,
   firstErrorField,
   validateEmail,
   validateEmailStep,
@@ -24,11 +25,18 @@ import {
 import {
   type AccountLabels,
   type AccountOrder,
+  type AuthMode,
   type AuthStep,
-  type OAuthProvider,
   consumeAuthErrorMessage,
+  consumeMarketingOptIn,
   fetchCustomerMe,
   logoutCustomer,
+  type OAuthProvider,
+  optInCustomerNewsletter,
+  persistAuthMode,
+  persistMarketingOptIn,
+  readAuthModeFromUrl,
+  readPersistedAuthMode,
   refreshCustomerSession,
   rememberAuthMethod,
   requestCustomerOtp,
@@ -36,10 +44,7 @@ import {
   verifyCustomerOtp,
 } from "../lib/customer-account";
 import { getCustomerAccessToken } from "../lib/customer-auth";
-import {
-  type AuthMethod,
-  getLastAuthMethod,
-} from "../lib/last-auth-method";
+import { type AuthMethod, getLastAuthMethod } from "../lib/last-auth-method";
 import AccountMessage from "./account/AccountMessage";
 import EmailSignInForm from "./account/EmailSignInForm";
 import OAuthButtons from "./account/OAuthButtons";
@@ -62,9 +67,7 @@ function readOptimisticSession(): {
       email: snap?.email ?? null,
       firstName: snap?.firstName ?? "",
       lastName: snap?.lastName ?? "",
-      needsName: snap
-        ? !snap.firstName || !snap.lastName
-        : false,
+      needsName: snap ? !snap.firstName || !snap.lastName : false,
       orders: snap?.orders ?? [],
     };
   }
@@ -76,6 +79,11 @@ function readOptimisticSession(): {
     needsName: false,
     orders: [],
   };
+}
+
+function initialAuthMode(): AuthMode {
+  if (typeof window === "undefined") return "sign_in";
+  return readAuthModeFromUrl() ?? readPersistedAuthMode() ?? "sign_in";
 }
 
 type Props = {
@@ -110,6 +118,7 @@ export default function AccountClient({
   const marketingId = `${baseId}-marketing`;
   const codeHintId = `${baseId}-code-hint`;
   const noticeId = `${baseId}-notice`;
+  const modeTablistId = `${baseId}-mode`;
   const lastUsedDescribedBy = `${baseId}-last-used`;
   const emailErrorId = `${baseId}-email-error`;
   const termsErrorId = `${baseId}-terms-error`;
@@ -120,6 +129,7 @@ export default function AccountClient({
   const lastNameErrorId = `${baseId}-last-error`;
 
   const [step, setStep] = useState<AuthStep>("email");
+  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -127,11 +137,12 @@ export default function AccountClient({
   const [notice, setNotice] = useState<FormNotice | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
+  const [oauthPending, setOauthPending] = useState<OAuthProvider | null>(null);
   const [initialSession] = useState(readOptimisticSession);
   const [sessionStatus, setSessionStatus] = useState<"guest" | "member">(
     initialSession.sessionStatus,
   );
-  const [token, setToken] = useState<string | null>(null);
+  const [, setToken] = useState<string | null>(null);
   const [orders, setOrders] = useState<AccountOrder[]>(initialSession.orders);
   const [customerEmail, setCustomerEmail] = useState<string | null>(
     initialSession.email,
@@ -148,10 +159,21 @@ export default function AccountClient({
     setLastUsed(getLastAuthMethod());
   }, []);
 
+  useEffect(() => {
+    persistAuthMode(authMode);
+    const title = document.querySelector(".account-page__title");
+    if (title) {
+      title.textContent =
+        authMode === "sign_up" ? labels.signUp : labels.signIn;
+    }
+  }, [authMode, labels.signIn, labels.signUp]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
     const authError = consumeAuthErrorMessage(labels);
     if (authError) setNotice({ tone: "error", text: authError });
+
+    const pendingMarketing = consumeMarketingOptIn();
 
     let cancelled = false;
     void (async () => {
@@ -162,6 +184,13 @@ export default function AccountClient({
           const ok = await applyCustomer(accessToken);
           if (!cancelled) {
             setSessionStatus(ok ? "member" : "guest");
+          }
+          if (ok && pendingMarketing) {
+            void optInCustomerNewsletter({
+              apiUrl,
+              accessToken,
+              locale,
+            });
           }
           return;
         }
@@ -236,39 +265,64 @@ export default function AccountClient({
     focusField(ids[field]);
   }
 
+  function switchAuthMode(mode: AuthMode) {
+    setAuthMode(mode);
+    setFieldErrors({});
+    setNotice(null);
+    setAcceptedTerms(false);
+    if (mode === "sign_in") setMarketingOptIn(false);
+    setStep("email");
+    setCode("");
+    turnstileApiRef.current?.reset();
+    const next = new URL(window.location.href);
+    if (mode === "sign_up") next.searchParams.set("mode", "sign_up");
+    else next.searchParams.delete("mode");
+    window.history.replaceState({}, "", `${next.pathname}${next.search}`);
+  }
+
   function onOAuthSelect(
     e: React.MouseEvent<HTMLAnchorElement>,
     provider: OAuthProvider,
   ) {
-    const termsError = validateTerms(acceptedTerms, labels);
-    if (termsError) {
+    if (busy || oauthPending) {
       e.preventDefault();
-      const errors = { terms: termsError };
-      setFieldErrors(errors);
-      setNotice({ tone: "error", text: termsError });
-      focusField(termsId);
       return;
     }
-    clearFieldError("terms");
+    if (authMode === "sign_up") {
+      const termsError = validateTerms(acceptedTerms, labels);
+      if (termsError) {
+        e.preventDefault();
+        const errors = { terms: termsError };
+        setFieldErrors(errors);
+        setNotice({ tone: "error", text: termsError });
+        focusField(termsId);
+        return;
+      }
+      clearFieldError("terms");
+      persistMarketingOptIn(marketingOptIn);
+    } else {
+      persistMarketingOptIn(false);
+    }
     setNotice(null);
+    setOauthPending(provider);
+    setBusy(true);
     remember(provider);
   }
 
-  async function onRequestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setNotice(null);
+  async function sendOtpCode(): Promise<boolean> {
     const turnstileToken = turnstileApiRef.current?.getToken() ?? "";
     const result = validateEmailStep({
       email,
       acceptedTerms,
       turnstileToken,
       labels,
+      requireTerms: authMode === "sign_up",
     });
     if (!result.ok) {
       setFieldErrors(result.errors);
       if (result.notice) setNotice(result.notice);
       focusFirstError(result.errors, EMAIL_FOCUS_ORDER);
-      return;
+      return false;
     }
 
     setFieldErrors({});
@@ -279,18 +333,59 @@ export default function AccountClient({
         email,
         locale,
         turnstileToken,
+        intent: authMode,
       });
       if (!response.ok) {
-        setNotice({
-          tone: "error",
-          text: authFailureMessage(response, labels),
-        });
+        setNotice(authFailureNotice(response, labels));
         turnstileApiRef.current?.reset();
-        return;
+        return false;
       }
       setStep("code");
       setResendIn(60);
-      setNotice({ tone: "success", text: labels.codeSent });
+      setNotice({
+        tone: "success",
+        text: authMode === "sign_up" ? labels.codeSentSignUp : labels.codeSent,
+      });
+      return true;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRequestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setNotice(null);
+    await sendOtpCode();
+  }
+
+  async function onResendOtp() {
+    if (busy || resendIn > 0) return;
+    setNotice(null);
+    const turnstileToken = turnstileApiRef.current?.getToken() ?? "";
+    if (!turnstileToken) {
+      setNotice({ tone: "error", text: labels.errorTurnstile });
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await requestCustomerOtp({
+        apiUrl,
+        email,
+        locale,
+        turnstileToken,
+        intent: authMode,
+      });
+      if (!response.ok) {
+        setNotice(authFailureNotice(response, labels));
+        turnstileApiRef.current?.reset();
+        return;
+      }
+      setResendIn(60);
+      setNotice({
+        tone: "success",
+        text: authMode === "sign_up" ? labels.codeSentSignUp : labels.codeSent,
+      });
+      turnstileApiRef.current?.reset();
     } finally {
       setBusy(false);
     }
@@ -309,7 +404,13 @@ export default function AccountClient({
     setFieldErrors({});
     setBusy(true);
     try {
-      const response = await verifyCustomerOtp({ apiUrl, email, code });
+      const response = await verifyCustomerOtp({
+        apiUrl,
+        email,
+        code,
+        locale,
+        marketingOptIn: authMode === "sign_up" ? marketingOptIn : false,
+      });
       if (!response.ok) {
         setFieldErrors(
           response.kind === "invalid_code"
@@ -343,6 +444,7 @@ export default function AccountClient({
     setMarketingOptIn(false);
     setFieldErrors({});
     setNotice(null);
+    setOauthPending(null);
     setSessionStatus("guest");
   }
 
@@ -435,6 +537,7 @@ export default function AccountClient({
   }
 
   const preferEmail = lastUsed === "email";
+  const controlsBusy = busy || Boolean(oauthPending);
   const oauth = (
     <OAuthButtons
       apiUrl={apiUrl}
@@ -444,12 +547,16 @@ export default function AccountClient({
       lastUsedDescribedBy={lastUsedDescribedBy}
       googleLabel={labels.google}
       appleLabel={labels.apple}
+      redirectingLabel={labels.redirecting}
+      busy={controlsBusy}
+      pendingProvider={oauthPending}
       onSelect={onOAuthSelect}
     />
   );
   const emailForm = (
     <EmailSignInForm
       labels={labels}
+      authMode={authMode}
       emailId={emailId}
       termsId={termsId}
       marketingId={marketingId}
@@ -459,7 +566,7 @@ export default function AccountClient({
       acceptedTerms={acceptedTerms}
       marketingOptIn={marketingOptIn}
       preferEmail={preferEmail}
-      busy={busy}
+      busy={controlsBusy}
       fieldErrors={fieldErrors}
       termsHref={termsHref}
       privacyHref={privacyHref}
@@ -500,7 +607,47 @@ export default function AccountClient({
 
   return (
     <div className="account-panel">
-      <p className="account-panel__lead">{labels.lead}</p>
+      {step === "email" ? (
+        <div
+          className="account-mode-toggle"
+          role="tablist"
+          aria-label={labels.login}
+          id={modeTablistId}
+        >
+          <button
+            type="button"
+            role="tab"
+            className={
+              authMode === "sign_in"
+                ? "account-mode-toggle__btn is-active"
+                : "account-mode-toggle__btn"
+            }
+            aria-selected={authMode === "sign_in"}
+            disabled={controlsBusy}
+            onClick={() => switchAuthMode("sign_in")}
+          >
+            {labels.signIn}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={
+              authMode === "sign_up"
+                ? "account-mode-toggle__btn is-active"
+                : "account-mode-toggle__btn"
+            }
+            aria-selected={authMode === "sign_up"}
+            disabled={controlsBusy}
+            onClick={() => switchAuthMode("sign_up")}
+          >
+            {labels.signUp}
+          </button>
+        </div>
+      ) : null}
+
+      <p className="account-panel__lead">
+        {authMode === "sign_up" ? labels.leadSignUp : labels.lead}
+      </p>
 
       {lastUsed ? (
         <span id={lastUsedDescribedBy} className="visually-hidden">
@@ -525,15 +672,18 @@ export default function AccountClient({
       ) : (
         <OtpVerifyForm
           labels={labels}
+          authMode={authMode}
           codeId={codeId}
           codeHintId={codeHintId}
           codeErrorId={codeErrorId}
           email={email}
           code={code}
-          busy={busy}
+          busy={controlsBusy}
           resendIn={resendIn}
           fieldErrors={fieldErrors}
           codeInputRef={codeInputRef}
+          turnstileSiteKey={turnstileSiteKey}
+          turnstileApiRef={turnstileApiRef}
           onCodeChange={(value) => {
             setCode(value);
             clearFieldError("code");
@@ -552,16 +702,22 @@ export default function AccountClient({
             );
           }}
           onSubmit={onVerifyOtp}
+          onResend={onResendOtp}
           onBack={() => {
             setStep("email");
             setCode("");
             setFieldErrors({});
             setNotice(null);
+            turnstileApiRef.current?.reset();
           }}
         />
       )}
 
-      <AccountMessage id={noticeId} notice={notice} />
+      <AccountMessage
+        id={noticeId}
+        notice={notice}
+        onAction={(mode) => switchAuthMode(mode)}
+      />
     </div>
   );
 }

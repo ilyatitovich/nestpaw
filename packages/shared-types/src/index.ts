@@ -218,16 +218,22 @@ export type CreateNewsletterCampaignInput = z.infer<
   typeof CreateNewsletterCampaignSchema
 >;
 
+export const CustomerAuthIntentSchema = z.enum(["sign_in", "sign_up"]);
+export type CustomerAuthIntent = z.infer<typeof CustomerAuthIntentSchema>;
+
 export const CustomerOtpRequestSchema = z.object({
   email: z.string().email().max(320),
   turnstileToken: z.string().min(1).max(2048),
   locale: LocaleSchema.default("en"),
+  intent: CustomerAuthIntentSchema.default("sign_in"),
 });
 export type CustomerOtpRequestInput = z.infer<typeof CustomerOtpRequestSchema>;
 
 export const CustomerOtpVerifySchema = z.object({
   email: z.string().email().max(320),
   code: z.string().regex(/^\d{6}$/),
+  marketingOptIn: z.boolean().optional().default(false),
+  locale: LocaleSchema.default("en"),
 });
 export type CustomerOtpVerifyInput = z.infer<typeof CustomerOtpVerifySchema>;
 

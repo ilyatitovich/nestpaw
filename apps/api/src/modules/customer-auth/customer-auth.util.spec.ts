@@ -4,6 +4,7 @@ import {
   generateOtpCode,
   hashOtpCode,
   normalizeEmail,
+  otpIntentMismatch,
   parseTtlDays,
   safeEqualHex,
 } from "./customer-auth.util.js";
@@ -11,6 +12,13 @@ import {
 describe("customer-auth.util", () => {
   it("normalizes email", () => {
     assert.equal(normalizeEmail("  Foo@Example.COM "), "foo@example.com");
+  });
+
+  it("gates OTP intent against account existence", () => {
+    assert.equal(otpIntentMismatch("sign_in", false), "account_not_found");
+    assert.equal(otpIntentMismatch("sign_in", true), null);
+    assert.equal(otpIntentMismatch("sign_up", true), "account_exists");
+    assert.equal(otpIntentMismatch("sign_up", false), null);
   });
 
   it("hashes OTP deterministically with pepper", () => {

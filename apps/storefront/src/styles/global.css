@@ -2866,6 +2866,44 @@ html[data-account-session="guest"] .account-page__title {
   line-height: 1.5;
 }
 
+.account-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgb(18 53 47 / 4%);
+}
+
+.account-mode-toggle__btn {
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account-mode-toggle__btn.is-active {
+  background: #fff;
+  color: var(--color-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.account-mode-toggle__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.account-mode-toggle__btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .account-panel--loading {
   gap: var(--space-3);
 }
@@ -2987,6 +3025,25 @@ html[data-account-session="guest"] .account-fallback--member {
 .account-oauth__btn:hover {
   border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-border));
   background: #fbfcfc;
+}
+
+.account-oauth__btn.is-disabled,
+.account-oauth__btn[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.account-oauth__btn.is-busy {
+  opacity: 1;
+  pointer-events: none;
+  border-color: var(--color-brand);
+  background: rgb(18 53 47 / 6%);
+}
+
+.btn[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.85;
 }
 
 .account-oauth__btn.is-last-used {
@@ -3164,7 +3221,13 @@ html[data-account-session="guest"] .account-fallback--member {
   min-height: 3rem;
 }
 
+.account-form__change-email {
+  width: 100%;
+}
+
 .account-message {
+  display: grid;
+  gap: 0.65rem;
   margin: 0;
   padding: 0.75rem 0.9rem;
   border-radius: var(--radius-sm);
@@ -3172,6 +3235,28 @@ html[data-account-session="guest"] .account-fallback--member {
   color: var(--color-brand);
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+.account-message__text {
+  margin: 0;
+}
+
+.account-message__action {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.account-message__action:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-brand) 45%, transparent);
+  outline-offset: 2px;
 }
 
 .account-message--success {

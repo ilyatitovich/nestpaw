@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
+import { NewsletterModule } from "../newsletter/newsletter.module.js";
 import { TurnstileService } from "../newsletter/turnstile.service.js";
 import { NotificationsModule } from "../notifications/notifications.module.js";
 import { CustomerAuthController } from "./customer-auth.controller.js";
@@ -9,7 +10,7 @@ import { CustomerOtpService } from "./customer-otp.service.js";
 import { CustomerSessionService } from "./customer-session.service.js";
 
 @Module({
-  imports: [JwtModule.register({}), NotificationsModule],
+  imports: [JwtModule.register({}), NotificationsModule, NewsletterModule],
   controllers: [CustomerAuthController],
   providers: [
     CustomerAuthService,

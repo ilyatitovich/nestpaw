@@ -35,6 +35,16 @@ export class CustomersController {
     return this.customers.updateProfile(customer.id, body);
   }
 
+  @Public()
+  @UseGuards(CustomerJwtGuard)
+  @Post("customers/me/newsletter")
+  optInNewsletter(
+    @CurrentCustomer() customer: AuthCustomer,
+    @Body() body: unknown,
+  ) {
+    return this.customers.optInNewsletter(customer.id, body);
+  }
+
   @Roles("owner", "staff")
   @Get("admin/customers")
   list() {

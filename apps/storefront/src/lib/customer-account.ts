@@ -1,7 +1,4 @@
-import {
-  type AuthApiFailure,
-  readAuthFailure,
-} from "./account-validation";
+import { type AuthApiFailure, readAuthFailure } from "./account-validation";
 import { setCustomerAccessToken } from "./customer-auth";
 import { type AuthMethod, setLastAuthMethod } from "./last-auth-method";
 
@@ -22,9 +19,11 @@ export type AccountCustomer = {
 };
 
 export type AuthStep = "email" | "code";
+export type AuthMode = "sign_in" | "sign_up";
 export type OAuthProvider = Extract<AuthMethod, "google" | "apple">;
 
 export type AccountLabels = {
+  login: string;
   orders: string;
   logout: string;
   noOrders: string;
@@ -32,14 +31,18 @@ export type AccountLabels = {
   continue: string;
   code: string;
   verify: string;
+  verifySignUp: string;
   resend: string;
   resendIn: string;
+  changeEmail: string;
   google: string;
   apple: string;
   or: string;
   signedInAs: string;
   sendCode: string;
+  sendCodeSignUp: string;
   codeSent: string;
+  codeSentSignUp: string;
   codeHint: string;
   nameFirst: string;
   nameLast: string;
@@ -54,8 +57,15 @@ export type AccountLabels = {
   marketingOptIn: string;
   termsRequired: string;
   lead: string;
+  leadSignUp: string;
+  signIn: string;
+  signUp: string;
   lastUsed: string;
   loading: string;
+  sendingCode: string;
+  verifying: string;
+  saving: string;
+  redirecting: string;
   errorEmailRequired: string;
   errorEmailInvalid: string;
   errorCodeRequired: string;
@@ -66,11 +76,16 @@ export type AccountLabels = {
   errorNetwork: string;
   errorValidation: string;
   errorNameRequired: string;
+  errorAccountNotFound: string;
+  errorAccountExists: string;
+  switchToSignUp: string;
+  switchToSignIn: string;
 };
 
 const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
 const TURNSTILE_SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js";
+const AUTH_MODE_STORAGE_KEY = "nestpaw:auth-mode";
 
 export function orderedOAuthProviders(
   lastUsed: AuthMethod | null,
@@ -99,12 +114,58 @@ export function rememberAuthMethod(method: AuthMethod) {
   return method;
 }
 
+export function readAuthModeFromUrl(): AuthMode | null {
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get("mode");
+  if (mode === "sign_up" || mode === "sign_in") return mode;
+  return null;
+}
+
+export function persistAuthMode(mode: AuthMode) {
+  try {
+    sessionStorage.setItem(AUTH_MODE_STORAGE_KEY, mode);
+  } catch {
+    // private mode
+  }
+}
+
+export function readPersistedAuthMode(): AuthMode | null {
+  try {
+    const mode = sessionStorage.getItem(AUTH_MODE_STORAGE_KEY);
+    if (mode === "sign_up" || mode === "sign_in") return mode;
+  } catch {
+    // private mode
+  }
+  return null;
+}
+
+export function persistMarketingOptIn(value: boolean) {
+  try {
+    if (value) sessionStorage.setItem("nestpaw:auth-marketing", "1");
+    else sessionStorage.removeItem("nestpaw:auth-marketing");
+  } catch {
+    // private mode
+  }
+}
+
+export function consumeMarketingOptIn(): boolean {
+  try {
+    const value = sessionStorage.getItem("nestpaw:auth-marketing") === "1";
+    sessionStorage.removeItem("nestpaw:auth-marketing");
+    return value;
+  } catch {
+    return false;
+  }
+}
+
 /** Read + clear `?authError=` from the current URL. */
 export function consumeAuthErrorMessage(labels: AccountLabels): string | null {
   const params = new URLSearchParams(window.location.search);
   const error = params.get("authError");
   if (!error) return null;
-  window.history.replaceState({}, "", window.location.pathname);
+  const next = new URL(window.location.href);
+  next.searchParams.delete("authError");
+  window.history.replaceState({}, "", `${next.pathname}${next.search}`);
   return error === "oauth_denied" ? labels.oauthDenied : labels.errorGeneric;
 }
 
@@ -163,6 +224,7 @@ export async function requestCustomerOtp(params: {
   email: string;
   locale: string;
   turnstileToken: string;
+  intent: AuthMode;
 }): Promise<{ ok: true } | AuthApiFailure> {
   try {
     const res = await fetch(`${params.apiUrl}/customers/auth/otp/request`, {
@@ -173,6 +235,7 @@ export async function requestCustomerOtp(params: {
         email: params.email.trim(),
         locale: params.locale,
         turnstileToken: params.turnstileToken,
+        intent: params.intent,
       }),
     });
     if (!res.ok) return readAuthFailure(res);
@@ -186,6 +249,8 @@ export async function verifyCustomerOtp(params: {
   apiUrl: string;
   email: string;
   code: string;
+  locale: string;
+  marketingOptIn?: boolean;
 }): Promise<{ ok: true; accessToken: string } | AuthApiFailure> {
   try {
     const res = await fetch(`${params.apiUrl}/customers/auth/otp/verify`, {
@@ -195,6 +260,8 @@ export async function verifyCustomerOtp(params: {
       body: JSON.stringify({
         email: params.email.trim(),
         code: params.code,
+        locale: params.locale,
+        marketingOptIn: params.marketingOptIn ?? false,
       }),
     });
     if (!res.ok) return readAuthFailure(res);
@@ -232,6 +299,28 @@ export async function updateCustomerProfile(params: {
         firstName: params.firstName.trim(),
         lastName: params.lastName.trim(),
       }),
+    });
+    if (!res.ok) return readAuthFailure(res);
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 0, kind: "network" };
+  }
+}
+
+export async function optInCustomerNewsletter(params: {
+  apiUrl: string;
+  accessToken: string;
+  locale: string;
+}): Promise<{ ok: true } | AuthApiFailure> {
+  try {
+    const res = await fetch(`${params.apiUrl}/customers/me/newsletter`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${params.accessToken}`,
+      },
+      body: JSON.stringify({ locale: params.locale }),
     });
     if (!res.ok) return readAuthFailure(res);
     return { ok: true };

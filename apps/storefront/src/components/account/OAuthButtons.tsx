@@ -16,6 +16,9 @@ type Props = {
   lastUsedDescribedBy?: string;
   googleLabel: string;
   appleLabel: string;
+  redirectingLabel: string;
+  busy: boolean;
+  pendingProvider: OAuthProvider | null;
   onSelect: (e: MouseEvent<HTMLAnchorElement>, provider: OAuthProvider) => void;
 };
 
@@ -32,32 +35,50 @@ export default function OAuthButtons({
   lastUsedDescribedBy,
   googleLabel,
   appleLabel,
+  redirectingLabel,
+  busy,
+  pendingProvider,
   onSelect,
 }: Props) {
   const labels = { google: googleLabel, apple: appleLabel };
 
   return (
-    <div className="account-oauth">
+    <div className="account-oauth" aria-busy={busy || undefined}>
       {orderedOAuthProviders(lastUsed).map((provider) => {
         const isLast = lastUsed === provider;
+        const isPending = pendingProvider === provider;
         const Icon = icons[provider];
+        const disabled = busy;
         return (
           <a
             key={provider}
-            className={
-              isLast
-                ? `account-oauth__btn account-oauth__btn--${provider} is-last-used`
-                : `account-oauth__btn account-oauth__btn--${provider}`
-            }
+            className={[
+              `account-oauth__btn account-oauth__btn--${provider}`,
+              isLast ? "is-last-used" : "",
+              isPending ? "is-busy" : "",
+              disabled && !isPending ? "is-disabled" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             href={oauthStartUrl(apiUrl, provider, locale)}
-            onClick={(e) => onSelect(e, provider)}
-            aria-describedby={
-              isLast ? lastUsedDescribedBy : undefined
-            }
+            onClick={(e) => {
+              if (disabled) {
+                e.preventDefault();
+                return;
+              }
+              onSelect(e, provider);
+            }}
+            aria-disabled={disabled || undefined}
+            aria-busy={isPending || undefined}
+            aria-describedby={isLast ? lastUsedDescribedBy : undefined}
           >
             <Icon />
-            <span className="account-oauth__label">{labels[provider]}</span>
-            {isLast ? <LastUsedBadge label={lastUsedLabel} /> : null}
+            <span className="account-oauth__label">
+              {isPending ? redirectingLabel : labels[provider]}
+            </span>
+            {isLast && !isPending ? (
+              <LastUsedBadge label={lastUsedLabel} />
+            ) : null}
           </a>
         );
       })}
