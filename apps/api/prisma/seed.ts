@@ -90,6 +90,10 @@ const EXTRA_GALLERY = [
   "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80",
 ];
 
+/** Short public sample clip for PDP video gallery testing */
+const SAMPLE_VIDEO =
+  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+
 const IMG_POOL = [
   ...new Set([
     ...Object.values(IMG).filter((url) => !url.includes("w=1600")),
@@ -98,10 +102,15 @@ const IMG_POOL = [
 ];
 
 function mediaForProduct(primary: string, alt: string) {
-  const extras = IMG_POOL.filter((url) => url !== primary).slice(0, 10);
-  return [primary, ...extras].map((url, position) => ({
+  const extras = IMG_POOL.filter((url) => url !== primary).slice(0, 9);
+  return [primary, SAMPLE_VIDEO, ...extras].map((url, position) => ({
     url,
-    alt: position === 0 ? alt : `${alt} (${position + 1})`,
+    alt:
+      position === 0
+        ? alt
+        : url === SAMPLE_VIDEO
+          ? `${alt} (video)`
+          : `${alt} (${position + 1})`,
     position,
   }));
 }

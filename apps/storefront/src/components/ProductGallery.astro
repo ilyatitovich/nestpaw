@@ -39,6 +39,10 @@ const {
 
 const hasMedia = media.length > 0;
 const hasMultiple = media.length > 1;
+
+function isVideoUrl(url: string) {
+  return /\.(mp4|webm|ogg)(\?|$)/i.test(url);
+}
 ---
 
 {
@@ -55,19 +59,33 @@ const hasMultiple = media.length > 1;
           {media.map((item, index) => (
             <button
               type="button"
-              class:list={["pdp__thumb", index === 0 && "is-active"]}
+              class:list={[
+                "pdp__thumb",
+                index === 0 && "is-active",
+                isVideoUrl(item.url) && "pdp__thumb--video",
+              ]}
               aria-label={gotoLabel.replace("{n}", String(index + 1))}
               aria-current={index === 0 ? "true" : undefined}
               data-pdp-thumb={index}
             >
-              <img
-                src={item.url}
-                alt=""
-                width="88"
-                height="88"
-                loading="lazy"
-                decoding="async"
-              />
+              {isVideoUrl(item.url) ? (
+                <video
+                  src={item.url}
+                  muted
+                  playsinline
+                  preload="metadata"
+                  aria-hidden="true"
+                />
+              ) : (
+                <img
+                  src={item.url}
+                  alt=""
+                  width="88"
+                  height="88"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
             </button>
           ))}
         </div>
@@ -105,15 +123,27 @@ const hasMultiple = media.length > 1;
                       aria-roledescription="slide"
                       aria-label={`${index + 1} / ${media.length}`}
                     >
-                      <img
-                        src={item.url}
-                        alt={item.alt || title}
-                        width="800"
-                        height="800"
-                        fetchpriority={index === 0 ? "high" : "low"}
-                        loading={index === 0 ? "eager" : "lazy"}
-                        decoding={index === 0 ? "sync" : "async"}
-                      />
+                      {isVideoUrl(item.url) ? (
+                        <video
+                          class="pdp__video"
+                          src={item.url}
+                          muted
+                          loop
+                          playsinline
+                          preload={index === 0 ? "auto" : "metadata"}
+                          aria-label={item.alt || title}
+                        />
+                      ) : (
+                        <img
+                          src={item.url}
+                          alt={item.alt || title}
+                          width="800"
+                          height="800"
+                          fetchpriority={index === 0 ? "high" : "low"}
+                          loading={index === 0 ? "eager" : "lazy"}
+                          decoding={index === 0 ? "sync" : "async"}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -170,6 +200,17 @@ const hasMultiple = media.length > 1;
                 ))}
               </div>
             </>
+          ) : isVideoUrl(media[0].url) ? (
+            <video
+              class="pdp__video"
+              src={media[0].url}
+              muted
+              loop
+              playsinline
+              autoplay
+              preload="auto"
+              aria-label={media[0].alt || title}
+            />
           ) : (
             <img
               src={media[0].url}
@@ -213,19 +254,33 @@ const hasMultiple = media.length > 1;
               {media.map((item, index) => (
                 <button
                   type="button"
-                  class:list={["pdp__thumb", index === 0 && "is-active"]}
+                  class:list={[
+                    "pdp__thumb",
+                    index === 0 && "is-active",
+                    isVideoUrl(item.url) && "pdp__thumb--video",
+                  ]}
                   aria-label={gotoLabel.replace("{n}", String(index + 1))}
                   aria-current={index === 0 ? "true" : undefined}
                   data-pdp-thumb={index}
                 >
-                  <img
-                    src={item.url}
-                    alt=""
-                    width="88"
-                    height="88"
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  {isVideoUrl(item.url) ? (
+                    <video
+                      src={item.url}
+                      muted
+                      playsinline
+                      preload="metadata"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt=""
+                      width="88"
+                      height="88"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
                 </button>
               ))}
             </div>
@@ -244,14 +299,26 @@ const hasMultiple = media.length > 1;
                           aria-roledescription="slide"
                           aria-label={`${index + 1} / ${media.length}`}
                         >
-                          <img
-                            src={item.url}
-                            alt={item.alt || title}
-                            width="1200"
-                            height="1200"
-                            loading="lazy"
-                            decoding="async"
-                          />
+                          {isVideoUrl(item.url) ? (
+                            <video
+                              class="pdp__video"
+                              src={item.url}
+                              muted
+                              loop
+                              playsinline
+                              preload="metadata"
+                              aria-label={item.alt || title}
+                            />
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt={item.alt || title}
+                              width="1200"
+                              height="1200"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
@@ -308,6 +375,17 @@ const hasMultiple = media.length > 1;
                     ))}
                   </div>
                 </>
+              ) : isVideoUrl(media[0].url) ? (
+                <video
+                  class="pdp__video"
+                  src={media[0].url}
+                  muted
+                  loop
+                  playsinline
+                  autoplay
+                  preload="auto"
+                  aria-label={media[0].alt || title}
+                />
               ) : (
                 <img
                   src={media[0].url}
@@ -335,8 +413,9 @@ const hasMultiple = media.length > 1;
 
       function wireCarousel(root: HTMLElement): GalleryEmbla | null {
         // Only the direct stage — never the nested lightbox copy inside <dialog>.
-        const stage = root.querySelector(":scope > .pdp__stage");
-        if (!(stage instanceof HTMLElement)) return null;
+        const stageNode = root.querySelector(":scope > .pdp__stage");
+        if (!(stageNode instanceof HTMLElement)) return null;
+        const stage: HTMLElement = stageNode;
         const viewport = stage.querySelector("[data-pdp-viewport]");
         if (!(viewport instanceof HTMLElement)) return null;
         const thumbsRoot = root.querySelector(":scope > .pdp__thumbs");
@@ -362,6 +441,9 @@ const hasMultiple = media.length > 1;
 
         function syncUi() {
           const selected = emblaApi.selectedScrollSnap();
+          const slides = [
+            ...stage.querySelectorAll<HTMLElement>(".pdp__slide"),
+          ];
 
           for (const [index, dot] of dots.entries()) {
             const active = index === selected;
@@ -382,6 +464,17 @@ const hasMultiple = media.length > 1;
               });
             } else {
               thumb.removeAttribute("aria-current");
+            }
+          }
+
+          for (const [index, slide] of slides.entries()) {
+            const video = slide.querySelector("video");
+            if (!(video instanceof HTMLVideoElement)) continue;
+            if (index === selected) {
+              void video.play().catch(() => {});
+            } else {
+              video.pause();
+              video.currentTime = 0;
             }
           }
         }
@@ -525,6 +618,9 @@ const hasMultiple = media.length > 1;
         );
 
         dialog.addEventListener("close", () => {
+          for (const video of root.querySelectorAll("video")) {
+            video.pause();
+          }
           const index = lightboxEmbla?.selectedScrollSnap() ?? 0;
           galleryEmbla?.scrollTo(index, true);
         });
