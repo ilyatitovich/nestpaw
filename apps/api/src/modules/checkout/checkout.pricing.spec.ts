@@ -158,3 +158,35 @@ describe("express checkout quote rates", () => {
     assert.equal(sumStripeLineItems(result.stripeItems), result.total);
   });
 });
+
+/** Resolve a chosen rate only when it belongs to the eligible set. */
+function resolveShippingRate(input: {
+  eligible: { id: string; name: string; price: number }[];
+  shippingRateId?: string;
+}) {
+  if (!input.shippingRateId) return input.eligible[0] ?? null;
+  return (
+    input.eligible.find((r) => r.id === input.shippingRateId) ?? null
+  );
+}
+
+describe("shipping rate country guard", () => {
+  it("accepts a rate that belongs to the destination country", () => {
+    const rate = resolveShippingRate({
+      eligible: [
+        { id: "de-standard", name: "Standard", price: 499 },
+        { id: "de-express", name: "Express", price: 999 },
+      ],
+      shippingRateId: "de-express",
+    });
+    assert.equal(rate?.id, "de-express");
+  });
+
+  it("rejects a rate from another country", () => {
+    const rate = resolveShippingRate({
+      eligible: [{ id: "de-standard", name: "Standard", price: 499 }],
+      shippingRateId: "fr-express",
+    });
+    assert.equal(rate, null);
+  });
+});

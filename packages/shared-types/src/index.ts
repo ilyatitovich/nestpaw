@@ -125,11 +125,22 @@ export const CheckoutAddressSchema = z.object({
   state: z.string().max(100).optional(),
 });
 
+/** Billing address when it differs from shipping (no email required). */
+export const CheckoutBillingAddressSchema = CheckoutAddressSchema.omit({
+  email: true,
+});
+export type CheckoutBillingAddress = z.infer<
+  typeof CheckoutBillingAddressSchema
+>;
+
+/** Embedded Payment Element checkout → PaymentIntent. */
 export const CreateCheckoutSchema = z.object({
   shippingAddress: CheckoutAddressSchema,
-  shippingRateId: z.string().cuid().optional(),
+  billingAddress: CheckoutBillingAddressSchema.optional(),
+  shippingRateId: z.string().cuid(),
   successUrl: z.string().url(),
-  cancelUrl: z.string().url(),
+  /** Kept optional for older clients; unused by the PaymentIntent path. */
+  cancelUrl: z.string().url().optional(),
   locale: LocaleSchema.default("en"),
   currency: CheckoutCurrencySchema.default("EUR").optional(),
   acceptTerms: z.literal(true),

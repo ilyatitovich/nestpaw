@@ -391,6 +391,8 @@ model Order {
   stripeSessionId       String?          @unique
   stripePaymentIntentId String?
   shippingAddress       Json
+  /// When null, invoice uses shippingAddress
+  billingAddress        Json?
   shippingRateId        String?
   idempotencyKey        String?          @unique
   invoiceNumber         Int?             @unique

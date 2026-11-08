@@ -43,7 +43,7 @@ Product and hero photos are hotlinked from [Unsplash](https://unsplash.com/licen
 ### Still thin / verify before real traffic
 
 - TLS/reverse proxy not bundled (compose exposes via `expose`, not public ports)
-- Stripe Payment Method types come from Dashboard (enable Klarna/PayPal/SEPA for hosted Checkout; Link/PayPal/Apple Pay/Google Pay for Express Checkout Element; set `PUBLIC_STRIPE_PUBLISHABLE_KEY`)
+- Stripe Payment Method types come from Dashboard (card + Klarna/PayPal/SEPA for the embedded Payment Element; Link/PayPal/Apple Pay/Google Pay for Express Checkout Element; set `PUBLIC_STRIPE_PUBLISHABLE_KEY`)
 - Apple Pay needs HTTPS + a registered payment-method domain (will not appear on `http://localhost`)
 - Full DB integration tests for concurrent `markPaid` are covered by e2e mock path + unit invariants; add `stripe-mock` if you harden further
 - Static Astro PDP stock/price still bake at build time
@@ -82,11 +82,11 @@ pnpm db:seed
 ## Docs
 
 - [Architecture](docs/architecture.md)
-- [ADRs](docs/adr/) (incl. [0010 express checkout](docs/adr/0010-express-checkout.md))
+- [ADRs](docs/adr/) (incl. [0010 express checkout](docs/adr/0010-express-checkout.md), [0011 embedded checkout](docs/adr/0011-embedded-checkout.md))
 - [Backup/restore](docs/runbooks/backup-restore.md)
 - [Production deploy](docs/runbooks/production-deploy.md)
 - [Stuck orders](docs/runbooks/stuck-orders.md)
 
 ## Modules
 
-Catalog (variants + metafields + nested collections + facets), inventory, cart, Stripe checkout (hosted Sessions + Express Checkout Element for Link/PayPal/Apple Pay/Google Pay), orders/invoices/shipments, discounts, shipping, tax classes, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (email OTP + Google/Apple OAuth), returns, subscriptions, abandoned cart, multi-currency rates (display; checkout EUR-only).
+Catalog (variants + metafields + nested collections + facets), inventory, cart, Stripe checkout (3-step embedded Payment Element + Express Checkout Element for Link/PayPal/Apple Pay/Google Pay), orders/invoices/shipments, discounts, shipping, tax classes, media, CMS pages/menus, analytics events, notifications, admin RBAC (`owner`/`staff`), reviews, customer accounts (email OTP + Google/Apple OAuth), returns, subscriptions, abandoned cart, multi-currency rates (display; checkout EUR-only).

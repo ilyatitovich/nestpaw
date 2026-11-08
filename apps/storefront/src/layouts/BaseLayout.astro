@@ -1,5 +1,6 @@
 ---
 import AuthChrome from "@/components/AuthChrome.astro";
+import CheckoutChrome from "@/components/CheckoutChrome.astro";
 import CookieConsent from "@/components/CookieConsent.astro";
 import NewsletterSignup from "@/components/NewsletterSignup.astro";
 import PromoBanner from "@/components/PromoBanner.astro";
@@ -21,8 +22,8 @@ interface Props {
   alternates?: Partial<Record<Locale, string>>;
   ogImage?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
-  /** full = store chrome; account = guest auth shell, full chrome after sign-in */
-  chrome?: "full" | "account";
+  /** full = store chrome; account = guest auth shell; checkout = brand and legal links only */
+  chrome?: "full" | "account" | "checkout";
 }
 
 const {
@@ -36,6 +37,7 @@ const {
   chrome = "full",
 } = Astro.props;
 const isAccountChrome = chrome === "account";
+const isCheckoutChrome = chrome === "checkout";
 
 const site =
   Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
@@ -173,7 +175,7 @@ const hasAnalytics =
       ) : null
     }
   </head>
-  <body class:list={[isAccountChrome && "page--account"]}>
+  <body class:list={[isAccountChrome && "page--account", isCheckoutChrome && "page--checkout"]}>
     <div class="page">
       {
         isAccountChrome ? (
@@ -211,6 +213,8 @@ const hasAnalytics =
               })();
             </script>
           </>
+        ) : isCheckoutChrome ? (
+          <CheckoutChrome locale={locale} part="header" />
         ) : (
           <div class="site-chrome" data-site-chrome>
             <PromoBanner locale={locale} />
@@ -251,6 +255,8 @@ const hasAnalytics =
               })();
             </script>
           </>
+        ) : isCheckoutChrome ? (
+          <CheckoutChrome locale={locale} part="footer" />
         ) : (
           <>
             <NewsletterSignup locale={locale} />

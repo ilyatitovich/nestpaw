@@ -112,6 +112,14 @@ test.describe("commerce smoke", () => {
       });
       expect(add.ok()).toBeTruthy();
 
+      const quote = await request.get(`${API}/checkout/quote?country=DE`, {
+        headers: { "X-Cart-Token": cartToken },
+      });
+      expect(quote.ok()).toBeTruthy();
+      const quoteBody = await quote.json();
+      expect(Array.isArray(quoteBody.shippingRates)).toBeTruthy();
+      expect(quoteBody.shippingRates.length).toBeGreaterThan(0);
+
       const checkout = await request.post(`${API}/checkout`, {
         headers: {
           "Content-Type": "application/json",
@@ -128,20 +136,21 @@ test.describe("commerce smoke", () => {
             postalCode: "10115",
             country: "DE",
           },
+          shippingRateId: quoteBody.shippingRates[0].id,
           locale: "en",
           currency: "EUR",
           acceptTerms: true,
           successUrl: `${STORE}/checkout/success`,
-          cancelUrl: `${STORE}/cart`,
         },
       });
       expect(checkout.ok()).toBeTruthy();
-      const { orderId, checkoutUrl } = await checkout.json();
+      const { orderId, clientSecret, totals } = await checkout.json();
       expect(orderId).toBeTruthy();
-      expect(checkoutUrl).toContain("cs_test_mock_");
+      expect(clientSecret).toContain("pi_test_mock_");
+      expect(totals.total).toBe(quoteBody.total);
 
       const mock = await request.post(`${API}/payments/mock-complete`, {
-        data: { sessionId: `cs_test_mock_${orderId}` },
+        data: { paymentIntentId: `pi_test_mock_${orderId}` },
       });
       expect(mock.ok()).toBeTruthy();
       const mockBody = await mock.json();

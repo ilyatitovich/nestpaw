@@ -1,0 +1,60 @@
+---
+import { type Locale, locales, localizePath, storeName, t } from "@/i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+  part: "header" | "footer";
+}
+
+const { locale, part } = Astro.props;
+const activeLocale = (
+  locales.includes(locale as Locale) ? locale : "en"
+) as Locale;
+const cartHref = localizePath(activeLocale, "/cart");
+const year = new Date().getFullYear();
+const brandLabel = `${storeName}, ${t(activeLocale, "checkout.editCart")}`;
+
+const legalLinks = [
+  {
+    href: localizePath(activeLocale, "/pages/terms"),
+    label: t(activeLocale, "footer.terms"),
+  },
+  {
+    href: localizePath(activeLocale, "/pages/privacy"),
+    label: t(activeLocale, "footer.privacy"),
+  },
+  {
+    href: localizePath(activeLocale, "/pages/returns"),
+    label: t(activeLocale, "footer.returns"),
+  },
+] as const;
+---
+
+{
+  part === "header" ? (
+    <header class="auth-chrome">
+      <div class="container auth-chrome__bar">
+        <a class="site-header__brand" href={cartHref}>
+          <span aria-hidden="true">{storeName}</span>
+          <span class="visually-hidden">{brandLabel}</span>
+        </a>
+      </div>
+    </header>
+  ) : (
+    <footer class="auth-chrome-footer">
+      <div class="container auth-chrome-footer__inner">
+        <p class="auth-chrome-footer__copy">
+          {t(activeLocale, "footer.copyright").replace("{year}", String(year))}
+        </p>
+        <nav
+          class="auth-chrome-footer__links"
+          aria-label={t(activeLocale, "account.legalNav")}
+        >
+          {legalLinks.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  )
+}

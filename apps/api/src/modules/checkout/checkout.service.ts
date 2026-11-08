@@ -112,9 +112,17 @@ export class CheckoutService {
       (sum, l) => sum + l.variant.weightGrams * l.quantity,
       0,
     );
-    const rate = shippingRateId
-      ? await this.shipping.getRate(shippingRateId)
-      : await this.shipping.quote(country, weight);
+    const eligible = await this.shipping.ratesForCountry(country, weight);
+    let rate = eligible[0] ?? null;
+    if (shippingRateId) {
+      const match = eligible.find((r) => r.id === shippingRateId);
+      if (!match) {
+        throw new BadRequestException(
+          "Shipping rate is not available for this country",
+        );
+      }
+      rate = match;
+    }
     const shippingTotal = freeShipping ? 0 : (rate?.price ?? 0);
 
     // Gross (tax-inclusive) pricing: total is sum of gross lines, not net+VAT
@@ -165,6 +173,7 @@ export class CheckoutService {
     };
   }
 
+  /** Standard checkout: create order + PaymentIntent, return clientSecret. */
   async create(
     token: string | undefined,
     input: unknown,
@@ -178,18 +187,34 @@ export class CheckoutService {
     }
 
     assertAllowedCheckoutUrl(data.successUrl, "successUrl");
-    assertAllowedCheckoutUrl(data.cancelUrl, "cancelUrl");
     const country = assertCheckoutCountry(data.shippingAddress.country);
+    const billingAddress = data.billingAddress
+      ? {
+          ...data.billingAddress,
+          country: assertCheckoutCountry(data.billingAddress.country),
+        }
+      : undefined;
 
     if (idempotencyKey) {
       const existing = await this.prisma.order.findUnique({
         where: { idempotencyKey },
       });
-      if (existing?.stripeSessionId) {
-        const session = await this.payments.retrieveSession(
-          existing.stripeSessionId,
+      if (existing?.stripePaymentIntentId) {
+        const intent = await this.payments.retrievePaymentIntent(
+          existing.stripePaymentIntentId,
         );
-        return { orderId: existing.id, checkoutUrl: session.url };
+        return {
+          orderId: existing.id,
+          clientSecret: intent.client_secret,
+          totals: {
+            subtotal: existing.subtotal,
+            discountTotal: existing.discountTotal,
+            shippingTotal: existing.shippingTotal,
+            taxTotal: existing.taxTotal,
+            total: existing.total,
+            currency: "EUR" as const,
+          },
+        };
       }
     }
 
@@ -197,6 +222,7 @@ export class CheckoutService {
     const { order, totals } = await this.createPendingOrder({
       cart,
       shippingAddress: { ...data.shippingAddress, country },
+      billingAddress,
       shippingRateId: data.shippingRateId,
       locale: data.locale,
       idempotencyKey,
@@ -204,44 +230,28 @@ export class CheckoutService {
       note: "Checkout started",
     });
 
-    const session = await this.payments.createCheckoutSession({
+    const intent = await this.payments.createPaymentIntent({
       orderId: order.id,
       amount: totals.total,
       currency: "EUR",
       email: data.shippingAddress.email,
-      successUrl: data.successUrl,
-      cancelUrl: data.cancelUrl,
-      lineItems: cart.lines.map((l) => {
-        const t =
-          l.variant.product.translations.find(
-            (x) => x.locale === data.locale,
-          ) ?? l.variant.product.translations[0];
-        return {
-          name: t?.title ?? l.variant.sku,
-          amount: l.variant.price,
-          quantity: l.quantity,
-        };
-      }),
-      shippingAmount: totals.shippingTotal,
-      taxAmount: 0,
-      discountAmount: totals.discountTotal,
     });
 
     await this.prisma.order.update({
       where: { id: order.id },
-      data: { stripeSessionId: session.id },
+      data: { stripePaymentIntentId: intent.id },
     });
 
     return {
       orderId: order.id,
-      checkoutUrl: session.url,
+      clientSecret: intent.client_secret,
       totals: {
         subtotal: totals.subtotal,
         discountTotal: totals.discountTotal,
         shippingTotal: totals.shippingTotal,
         taxTotal: totals.taxTotal,
         total: totals.total,
-        currency: "EUR",
+        currency: "EUR" as const,
       },
     };
   }
@@ -336,14 +346,33 @@ export class CheckoutService {
       country: string;
       state?: string;
     };
+    billingAddress?: {
+      firstName: string;
+      lastName: string;
+      phone?: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      postalCode: string;
+      country: string;
+      state?: string;
+    };
     shippingRateId?: string;
     locale: string;
     idempotencyKey?: string;
     customerId?: string;
     note: string;
   }) {
-    const { cart, shippingAddress, shippingRateId, locale, idempotencyKey, customerId, note } =
-      params;
+    const {
+      cart,
+      shippingAddress,
+      billingAddress,
+      shippingRateId,
+      locale,
+      idempotencyKey,
+      customerId,
+      note,
+    } = params;
 
     const totals = await this.computeTotals(
       cart,
@@ -376,6 +405,7 @@ export class CheckoutService {
         total: totals.total,
         discountCode: cart.discountCode,
         shippingAddress,
+        billingAddress: billingAddress ?? undefined,
         shippingRateId: totals.rate?.id,
         idempotencyKey,
         lines: {

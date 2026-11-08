@@ -10,4 +10,6 @@ Use Stripe Checkout Sessions + signed webhooks. Mock checkout when `STRIPE_SECRE
 
 ## Consequences
 
-Custom Elements checkout deferred. Idempotency via `Idempotency-Key` + `StripeEvent` dedupe. Webhook only marks paid when `payment_status=paid`; also handles `async_payment_*` and `expired`. Stock-fail after charge auto-refunds (see ADR 0007).
+Idempotency via `Idempotency-Key` + `StripeEvent` dedupe. Webhook only marks paid when `payment_status=paid`; also handles `async_payment_*` and `expired`. Stock-fail after charge auto-refunds (see ADR 0007).
+
+**Superseded for new storefront checkouts by ADR 0011** (Payment Element + PaymentIntent). Checkout Session creation remains for in-flight sessions and webhook compatibility.

@@ -1,29 +1,19 @@
 ---
-import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import CheckoutClient from "@/components/CheckoutClient";
 import { defaultLocale, type Locale, localizePath, t } from "@/i18n/ui";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { API_URL } from "@/lib/api";
 
 const locale = (Astro.currentLocale ?? defaultLocale) as Locale;
-
-const breadcrumbs = [
-  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
-  { label: t(locale, "cart.title"), href: localizePath(locale, "/cart") },
-  { label: t(locale, "checkout.title") },
-];
 ---
 
 <BaseLayout
   locale={locale}
   title={t(locale, "checkout.title")}
   canonicalPath="/checkout"
+  chrome="checkout"
 >
   <div class="container page-shell">
-    <Breadcrumbs
-      items={breadcrumbs}
-      label={t(locale, "product.breadcrumb")}
-    />
     <h1 class="section__title">{t(locale, "checkout.title")}</h1>
     <CheckoutClient
       client:load
@@ -33,7 +23,11 @@ const breadcrumbs = [
       cartHref={localizePath(locale, "/cart")}
       stripePublishableKey={import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""}
       labels={{
+        contact: t(locale, "checkout.contact"),
+        delivery: t(locale, "checkout.delivery"),
         shipping: t(locale, "checkout.shipping"),
+        shippingMethod: t(locale, "checkout.shippingMethod"),
+        payment: t(locale, "checkout.payment"),
         orderSummary: t(locale, "checkout.orderSummary"),
         paySecurely: t(locale, "checkout.paySecurely"),
         secureNote: t(locale, "checkout.secureNote"),
@@ -64,6 +58,18 @@ const breadcrumbs = [
         termsRequired: t(locale, "checkout.termsRequired"),
         expressTitle: t(locale, "checkout.expressTitle"),
         expressOr: t(locale, "checkout.expressOr"),
+        continue: t(locale, "checkout.continueStep"),
+        returnTo: t(locale, "checkout.returnTo"),
+        edit: t(locale, "checkout.edit"),
+        freeShipping: t(locale, "checkout.freeShipping"),
+        savedAddresses: t(locale, "checkout.savedAddresses"),
+        newAddress: t(locale, "checkout.newAddress"),
+        billingDifferent: t(locale, "checkout.billingDifferent"),
+        billingAddress: t(locale, "checkout.billingAddress"),
+        paymentUnavailable: t(locale, "checkout.paymentUnavailable"),
+        shippingRequired: t(locale, "checkout.shippingRequired"),
+        showSummary: t(locale, "checkout.showSummary"),
+        hideSummary: t(locale, "checkout.hideSummary"),
         errorRequired: t(locale, "checkout.errorRequired"),
         errorEmailInvalid: t(locale, "checkout.errorEmailInvalid"),
         errorNameInvalid: t(locale, "checkout.errorNameInvalid"),

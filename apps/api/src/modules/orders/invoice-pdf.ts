@@ -12,6 +12,7 @@ export function buildInvoicePdf(order: {
   refundedTotal: number;
   paidAt: Date | null;
   shippingAddress: unknown;
+  billingAddress?: unknown;
   lines: {
     title: string;
     sku: string;
@@ -23,9 +24,13 @@ export function buildInvoicePdf(order: {
 }): Buffer {
   const money = (cents: number) =>
     `${(cents / 100).toFixed(2)} ${order.currency}`;
+  const billSource =
+    order.billingAddress && typeof order.billingAddress === "object"
+      ? order.billingAddress
+      : order.shippingAddress;
   const addr =
-    order.shippingAddress && typeof order.shippingAddress === "object"
-      ? (order.shippingAddress as Record<string, string>)
+    billSource && typeof billSource === "object"
+      ? (billSource as Record<string, string>)
       : {};
   const lines = [
     `Invoice #${order.invoiceNumber}`,
