@@ -23,15 +23,24 @@ export class CatalogController {
     @Query("locale") locale?: string,
     @Query("q") q?: string,
     @Query("collection") collection?: string,
+    @Query("ids") ids?: string,
     @Query("take") take?: string,
     @Query("skip") skip?: string,
   ) {
+    const idList = ids
+      ? ids
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
+          .slice(0, 50)
+      : undefined;
     return this.catalog.listProducts({
       locale,
       q,
       collection,
+      ids: idList,
       status: "active",
-      take: take ? Number(take) : undefined,
+      take: take ? Number(take) : idList?.length,
       skip: skip ? Number(skip) : undefined,
     });
   }

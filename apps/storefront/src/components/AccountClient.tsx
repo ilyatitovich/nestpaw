@@ -46,13 +46,14 @@ import {
 } from "../lib/customer-account";
 import { getCustomerAccessToken } from "../lib/customer-auth";
 import { type AuthMethod, getLastAuthMethod } from "../lib/last-auth-method";
-import { readWishlistIds } from "../lib/wishlist";
+import { fetchWishlistProducts } from "../lib/wishlist";
 import AccountMessage from "./account/AccountMessage";
 import EmailSignInForm from "./account/EmailSignInForm";
 import OAuthButtons from "./account/OAuthButtons";
 import OtpVerifyForm from "./account/OtpVerifyForm";
 import SignedInPanel from "./account/SignedInPanel";
 import type { TurnstileApi } from "./account/TurnstileWidget";
+import type { ProductCardProduct } from "./ProductCard";
 
 function readOptimisticSession(): {
   sessionStatus: "guest" | "member";
@@ -151,7 +152,12 @@ export default function AccountClient({
   const [firstName, setFirstName] = useState(initialSession.firstName);
   const [lastName, setLastName] = useState(initialSession.lastName);
   const [addresses, setAddresses] = useState<AccountAddress[]>([]);
-  const [wishlistCount, setWishlistCount] = useState(0);
+  const [wishlistProducts, setWishlistProducts] = useState<
+    ProductCardProduct[]
+  >([]);
+  const [wishlistStatus, setWishlistStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
   const [resendIn, setResendIn] = useState(0);
   const [lastUsed, setLastUsed] = useState<AuthMethod | null>(null);
   const turnstileApiRef = useRef<TurnstileApi | null>(null);
@@ -159,8 +165,34 @@ export default function AccountClient({
 
   useEffect(() => {
     setLastUsed(getLastAuthMethod());
-    setWishlistCount(readWishlistIds().length);
   }, []);
+
+  useEffect(() => {
+    if (sessionStatus !== "member") {
+      setWishlistProducts([]);
+      setWishlistStatus("idle");
+      return;
+    }
+
+    let cancelled = false;
+    setWishlistStatus("loading");
+    void (async () => {
+      try {
+        const products = await fetchWishlistProducts({ apiUrl, locale });
+        if (cancelled) return;
+        setWishlistProducts(products);
+        setWishlistStatus("ready");
+      } catch {
+        if (cancelled) return;
+        setWishlistProducts([]);
+        setWishlistStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionStatus, apiUrl, locale]);
 
   useEffect(() => {
     persistAuthMode(authMode);
@@ -243,7 +275,6 @@ export default function AccountClient({
     setAddresses(nextAddresses);
     setFirstName(nextFirst);
     setLastName(nextLast);
-    setWishlistCount(readWishlistIds().length);
     writeAccountSnapshot({
       email: customer.email,
       firstName: nextFirst,
@@ -513,7 +544,9 @@ export default function AccountClient({
         customerEmail={customerEmail}
         orders={orders}
         addresses={addresses}
-        wishlistCount={wishlistCount}
+        wishlistProducts={wishlistProducts}
+        wishlistStatus={wishlistStatus}
+        apiUrl={apiUrl}
         firstName={firstName}
         lastName={lastName}
         firstNameId={firstNameId}
@@ -557,6 +590,12 @@ export default function AccountClient({
         }}
         onSaveProfile={onSaveProfile}
         onLogout={onLogout}
+        onWishlistChange={(productId, saved) => {
+          if (saved) return;
+          setWishlistProducts((prev) =>
+            prev.filter((product) => product.id !== productId),
+          );
+        }}
       />
     );
   }

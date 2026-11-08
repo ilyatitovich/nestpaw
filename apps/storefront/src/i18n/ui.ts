@@ -147,6 +147,8 @@ export const ui = {
     "account.wishlist": "Wishlist",
     "account.wishlistEmpty": "No saved items yet.",
     "account.wishlistCount": "{n} saved items",
+    "account.wishlistLoading": "Loading saved items…",
+    "account.wishlistError": "Could not load your wishlist. Try again.",
     "account.addresses": "Addresses",
     "account.noAddresses":
       "Addresses you use at checkout will appear here.",
@@ -380,6 +382,9 @@ export const ui = {
     "account.wishlist": "Wunschliste",
     "account.wishlistEmpty": "Noch keine gespeicherten Artikel.",
     "account.wishlistCount": "{n} gespeicherte Artikel",
+    "account.wishlistLoading": "Gespeicherte Artikel werden geladen…",
+    "account.wishlistError":
+      "Wunschliste konnte nicht geladen werden. Bitte erneut versuchen.",
     "account.addresses": "Adressen",
     "account.noAddresses":
       "Adressen, die Sie an der Kasse verwenden, erscheinen hier.",

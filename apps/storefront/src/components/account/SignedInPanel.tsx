@@ -14,8 +14,10 @@ import {
   formatAddressLines,
   formatOrderTotal,
 } from "../../lib/customer-account";
+import { localizePath } from "../../i18n/ui";
 import AccountMessage from "./AccountMessage";
 import FieldError from "./FieldError";
+import ProductCard, { type ProductCardProduct } from "../ProductCard";
 
 type AccountTab = "orders" | "profile" | "wishlist" | "addresses";
 
@@ -23,10 +25,12 @@ type Props = {
   labels: AccountLabels;
   locale: string;
   shopHref: string;
+  apiUrl: string;
   customerEmail: string | null;
   orders: AccountOrder[];
   addresses: AccountAddress[];
-  wishlistCount: number;
+  wishlistProducts: ProductCardProduct[];
+  wishlistStatus: "idle" | "loading" | "ready" | "error";
   firstName: string;
   lastName: string;
   firstNameId: string;
@@ -42,22 +46,21 @@ type Props = {
   onLastNameBlur: () => void;
   onSaveProfile: (e: FormEvent<HTMLFormElement>) => void;
   onLogout: () => void;
+  onWishlistChange: (productId: string, saved: boolean) => void;
 };
 
 const TABS: AccountTab[] = ["orders", "profile", "wishlist", "addresses"];
-
-function wishlistCountLabel(template: string, count: number) {
-  return template.replace("{n}", String(count));
-}
 
 export default function SignedInPanel({
   labels,
   locale,
   shopHref,
+  apiUrl,
   customerEmail,
   orders,
   addresses,
-  wishlistCount,
+  wishlistProducts,
+  wishlistStatus,
   firstName,
   lastName,
   firstNameId,
@@ -73,6 +76,7 @@ export default function SignedInPanel({
   onLastNameBlur,
   onSaveProfile,
   onLogout,
+  onWishlistChange,
 }: Props) {
   const baseId = useId();
   const [activeTab, setActiveTab] = useState<AccountTab>("orders");
@@ -294,16 +298,59 @@ export default function SignedInPanel({
           <h2 className="account-section__title visually-hidden">
             {labels.wishlist}
           </h2>
-          <div className="account-section__empty">
-            <p className="account-section__empty-text">
-              {wishlistCount > 0
-                ? wishlistCountLabel(labels.wishlistCount, wishlistCount)
-                : labels.wishlistEmpty}
+          {wishlistStatus === "loading" || wishlistStatus === "idle" ? (
+            <p className="account-section__empty-text" aria-live="polite">
+              {labels.wishlistLoading}
             </p>
-            <a className="btn btn--ghost" href={shopHref}>
-              {labels.continueShopping}
-            </a>
-          </div>
+          ) : null}
+          {wishlistStatus === "error" ? (
+            <div className="account-section__empty">
+              <p className="account-section__empty-text">
+                {labels.wishlistError}
+              </p>
+              <a className="btn btn--ghost" href={shopHref}>
+                {labels.continueShopping}
+              </a>
+            </div>
+          ) : null}
+          {wishlistStatus === "ready" && !wishlistProducts.length ? (
+            <div className="account-section__empty">
+              <p className="account-section__empty-text">
+                {labels.wishlistEmpty}
+              </p>
+              <a className="btn btn--ghost" href={shopHref}>
+                {labels.continueShopping}
+              </a>
+            </div>
+          ) : null}
+          {wishlistStatus === "ready" && wishlistProducts.length ? (
+            <div className="product-grid">
+              {wishlistProducts.map((product) => {
+                const tr =
+                  product.translations.find((x) => x.locale === locale) ??
+                  product.translations[0];
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    locale={locale}
+                    apiUrl={apiUrl}
+                    href={localizePath(locale, `/products/${tr?.slug ?? ""}`)}
+                    heading="h3"
+                    labels={{
+                      from: labels.productFrom,
+                      sale: labels.productSale,
+                      add: labels.productAdd,
+                      wishlist: labels.productWishlist,
+                      wishlistAdded: labels.productWishlistAdded,
+                      addError: labels.productAddError,
+                    }}
+                    onWishlistChange={onWishlistChange}
+                  />
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div

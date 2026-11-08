@@ -38,6 +38,7 @@ type Props = {
   labels: Labels;
   href: string;
   heading?: "h2" | "h3";
+  onWishlistChange?: (productId: string, saved: boolean) => void;
 };
 
 function formatEuro(cents: number) {
@@ -93,6 +94,7 @@ export default function ProductCard({
   labels,
   href,
   heading = "h2",
+  onWishlistChange,
 }: Props) {
   const tr =
     product.translations.find((x) => x.locale === locale) ??
@@ -175,7 +177,11 @@ export default function ProductCard({
           className="product-card__wishlist"
           aria-pressed={wishSaved}
           aria-label={wishSaved ? labels.wishlistAdded : labels.wishlist}
-          onClick={() => setWishSaved(toggleWishlistId(product.id))}
+          onClick={() => {
+            const saved = toggleWishlistId(product.id);
+            setWishSaved(saved);
+            onWishlistChange?.(product.id, saved);
+          }}
         >
           <HeartIcon filled={wishSaved} />
         </button>

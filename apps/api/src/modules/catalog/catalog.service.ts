@@ -22,11 +22,15 @@ export class CatalogService {
     status?: string;
     q?: string;
     collection?: string;
+    ids?: string[];
     take?: number;
     skip?: number;
     admin?: boolean;
   }) {
-    const take = Math.min(params.take ?? 24, 100);
+    const take = Math.min(
+      params.take ?? (params.ids?.length ? params.ids.length : 24),
+      100,
+    );
     const skip = params.skip ?? 0;
     const where: Prisma.ProductWhereInput = {
       deletedAt: null,
@@ -35,6 +39,7 @@ export class CatalogService {
         : params.admin
           ? {}
           : { status: "active" }),
+      ...(params.ids?.length ? { id: { in: params.ids } } : {}),
       ...(params.q
         ? {
             translations: {

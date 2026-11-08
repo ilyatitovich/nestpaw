@@ -66,6 +66,14 @@ export type AccountLabels = {
   wishlist: string;
   wishlistEmpty: string;
   wishlistCount: string;
+  wishlistLoading: string;
+  wishlistError: string;
+  productFrom: string;
+  productSale: string;
+  productAdd: string;
+  productWishlist: string;
+  productWishlistAdded: string;
+  productAddError: string;
   addresses: string;
   noAddresses: string;
   defaultAddress: string;
