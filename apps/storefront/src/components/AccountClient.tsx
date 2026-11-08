@@ -20,13 +20,11 @@ import {
   validateOtpCode,
   validateOtpStep,
   validateProfileStep,
-  validateTerms,
 } from "../lib/account-validation";
 import {
   type AccountAddress,
   type AccountLabels,
   type AccountOrder,
-  type AuthMode,
   type AuthStep,
   clearAccountTabFromUrl,
   consumeAuthErrorMessage,
@@ -35,10 +33,7 @@ import {
   logoutCustomer,
   type OAuthProvider,
   optInCustomerNewsletter,
-  persistAuthMode,
   persistMarketingOptIn,
-  readAuthModeFromUrl,
-  readPersistedAuthMode,
   refreshCustomerSession,
   rememberAuthMethod,
   requestCustomerOtp,
@@ -55,6 +50,9 @@ import OtpVerifyForm from "./account/OtpVerifyForm";
 import SignedInPanel from "./account/SignedInPanel";
 import type { TurnstileApi } from "./account/TurnstileWidget";
 import type { ProductCardProduct } from "./ProductCard";
+
+const AUTH_MEDIA_SRC =
+  "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1600&q=80";
 
 function readOptimisticSession(): {
   sessionStatus: "guest" | "member";
@@ -82,11 +80,6 @@ function readOptimisticSession(): {
   };
 }
 
-function initialAuthMode(): AuthMode {
-  if (typeof window === "undefined") return "sign_in";
-  return readAuthModeFromUrl() ?? readPersistedAuthMode() ?? "sign_in";
-}
-
 type Props = {
   apiUrl: string;
   locale: string;
@@ -94,10 +87,12 @@ type Props = {
   termsHref: string;
   privacyHref: string;
   shopHref: string;
+  homeHref: string;
+  storeName: string;
   labels: AccountLabels;
 };
 
-const EMAIL_FOCUS_ORDER: AuthField[] = ["email", "terms"];
+const EMAIL_FOCUS_ORDER: AuthField[] = ["email"];
 const OTP_FOCUS_ORDER: AuthField[] = ["code"];
 const PROFILE_FOCUS_ORDER: AuthField[] = ["firstName", "lastName"];
 
@@ -112,19 +107,18 @@ export default function AccountClient({
   termsHref,
   privacyHref,
   shopHref,
+  homeHref,
+  storeName,
   labels,
 }: Props) {
   const baseId = useId();
   const emailId = `${baseId}-email`;
   const codeId = `${baseId}-code`;
-  const termsId = `${baseId}-terms`;
   const marketingId = `${baseId}-marketing`;
   const codeHintId = `${baseId}-code-hint`;
   const noticeId = `${baseId}-notice`;
-  const modeTablistId = `${baseId}-mode`;
   const lastUsedDescribedBy = `${baseId}-last-used`;
   const emailErrorId = `${baseId}-email-error`;
-  const termsErrorId = `${baseId}-terms-error`;
   const codeErrorId = `${baseId}-code-error`;
   const firstNameId = `${baseId}-first`;
   const lastNameId = `${baseId}-last`;
@@ -132,10 +126,8 @@ export default function AccountClient({
   const lastNameErrorId = `${baseId}-last-error`;
 
   const [step, setStep] = useState<AuthStep>("email");
-  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [notice, setNotice] = useState<FormNotice | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -194,24 +186,6 @@ export default function AccountClient({
       cancelled = true;
     };
   }, [sessionStatus, apiUrl, locale]);
-
-  useEffect(() => {
-    persistAuthMode(authMode);
-    const title = document.querySelector(".account-page__title");
-    if (!title) return;
-    if (sessionStatus === "member") {
-      title.textContent = labels.login;
-      return;
-    }
-    title.textContent =
-      authMode === "sign_up" ? labels.signUp : labels.signIn;
-  }, [
-    authMode,
-    sessionStatus,
-    labels.login,
-    labels.signIn,
-    labels.signUp,
-  ]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
@@ -301,29 +275,16 @@ export default function AccountClient({
   function focusFirstError(errors: FieldErrors, order: AuthField[]) {
     const field = firstErrorField(errors, order);
     if (!field) return;
-    const ids: Record<AuthField, string> = {
+    if (field === "code") {
+      codeInputRef.current?.focus();
+      return;
+    }
+    const ids: Record<Exclude<AuthField, "code">, string> = {
       email: emailId,
-      terms: termsId,
-      code: codeId,
       firstName: firstNameId,
       lastName: lastNameId,
     };
     focusField(ids[field]);
-  }
-
-  function switchAuthMode(mode: AuthMode) {
-    setAuthMode(mode);
-    setFieldErrors({});
-    setNotice(null);
-    setAcceptedTerms(false);
-    if (mode === "sign_in") setMarketingOptIn(false);
-    setStep("email");
-    setCode("");
-    turnstileApiRef.current?.reset();
-    const next = new URL(window.location.href);
-    if (mode === "sign_up") next.searchParams.set("mode", "sign_up");
-    else next.searchParams.delete("mode");
-    window.history.replaceState({}, "", `${next.pathname}${next.search}`);
   }
 
   function onOAuthSelect(
@@ -334,35 +295,24 @@ export default function AccountClient({
       e.preventDefault();
       return;
     }
-    if (authMode === "sign_up") {
-      const termsError = validateTerms(acceptedTerms, labels);
-      if (termsError) {
-        e.preventDefault();
-        const errors = { terms: termsError };
-        setFieldErrors(errors);
-        setNotice({ tone: "error", text: termsError });
-        focusField(termsId);
-        return;
-      }
-      clearFieldError("terms");
-      persistMarketingOptIn(marketingOptIn);
-    } else {
-      persistMarketingOptIn(false);
-    }
+    persistMarketingOptIn(marketingOptIn);
     setNotice(null);
     setOauthPending(provider);
     setBusy(true);
     remember(provider);
   }
 
+  function onShopSelect() {
+    if (busy || oauthPending) return;
+    setNotice({ tone: "error", text: labels.shopUnavailable });
+  }
+
   async function sendOtpCode(): Promise<boolean> {
     const turnstileToken = turnstileApiRef.current?.getToken() ?? "";
     const result = validateEmailStep({
       email,
-      acceptedTerms,
       turnstileToken,
       labels,
-      requireTerms: authMode === "sign_up",
     });
     if (!result.ok) {
       setFieldErrors(result.errors);
@@ -379,7 +329,6 @@ export default function AccountClient({
         email,
         locale,
         turnstileToken,
-        intent: authMode,
       });
       if (!response.ok) {
         setNotice(authFailureNotice(response, labels));
@@ -390,7 +339,7 @@ export default function AccountClient({
       setResendIn(60);
       setNotice({
         tone: "success",
-        text: authMode === "sign_up" ? labels.codeSentSignUp : labels.codeSent,
+        text: labels.codeSent,
       });
       return true;
     } finally {
@@ -419,7 +368,6 @@ export default function AccountClient({
         email,
         locale,
         turnstileToken,
-        intent: authMode,
       });
       if (!response.ok) {
         setNotice(authFailureNotice(response, labels));
@@ -429,7 +377,7 @@ export default function AccountClient({
       setResendIn(60);
       setNotice({
         tone: "success",
-        text: authMode === "sign_up" ? labels.codeSentSignUp : labels.codeSent,
+        text: labels.codeSent,
       });
       turnstileApiRef.current?.reset();
     } finally {
@@ -455,7 +403,7 @@ export default function AccountClient({
         email,
         code,
         locale,
-        marketingOptIn: authMode === "sign_up" ? marketingOptIn : false,
+        marketingOptIn,
       });
       if (!response.ok) {
         setFieldErrors(
@@ -467,7 +415,9 @@ export default function AccountClient({
           tone: "error",
           text: authFailureMessage(response, labels),
         });
-        if (response.kind === "invalid_code") focusField(codeId);
+        if (response.kind === "invalid_code") {
+          codeInputRef.current?.focus();
+        }
         return;
       }
       remember("email");
@@ -490,7 +440,6 @@ export default function AccountClient({
     setLastName("");
     setStep("email");
     setCode("");
-    setAcceptedTerms(false);
     setMarketingOptIn(false);
     setFieldErrors({});
     setNotice(null);
@@ -539,66 +488,69 @@ export default function AccountClient({
 
   if (sessionStatus === "member") {
     return (
-      <SignedInPanel
-        labels={labels}
-        locale={locale}
-        shopHref={shopHref}
-        customerEmail={customerEmail}
-        orders={orders}
-        addresses={addresses}
-        wishlistProducts={wishlistProducts}
-        wishlistStatus={wishlistStatus}
-        apiUrl={apiUrl}
-        firstName={firstName}
-        lastName={lastName}
-        firstNameId={firstNameId}
-        lastNameId={lastNameId}
-        firstNameErrorId={firstNameErrorId}
-        lastNameErrorId={lastNameErrorId}
-        busy={busy}
-        notice={notice}
-        fieldErrors={fieldErrors}
-        onFirstNameChange={(value) => {
-          setFirstName(value);
-          clearFieldError("firstName");
-        }}
-        onLastNameChange={(value) => {
-          setLastName(value);
-          clearFieldError("lastName");
-        }}
-        onFirstNameBlur={() => {
-          const error = validateName(firstName, labels);
-          setFieldErrors((prev) =>
-            error
-              ? { ...prev, firstName: error }
-              : (() => {
-                  const next = { ...prev };
-                  delete next.firstName;
-                  return next;
-                })(),
-          );
-        }}
-        onLastNameBlur={() => {
-          const error = validateName(lastName, labels);
-          setFieldErrors((prev) =>
-            error
-              ? { ...prev, lastName: error }
-              : (() => {
-                  const next = { ...prev };
-                  delete next.lastName;
-                  return next;
-                })(),
-          );
-        }}
-        onSaveProfile={onSaveProfile}
-        onLogout={onLogout}
-        onWishlistChange={(productId, saved) => {
-          if (saved) return;
-          setWishlistProducts((prev) =>
-            prev.filter((product) => product.id !== productId),
-          );
-        }}
-      />
+      <div className="container page-shell account-page__member">
+        <h1 className="section__title account-page__title">{labels.login}</h1>
+        <SignedInPanel
+          labels={labels}
+          locale={locale}
+          shopHref={shopHref}
+          customerEmail={customerEmail}
+          orders={orders}
+          addresses={addresses}
+          wishlistProducts={wishlistProducts}
+          wishlistStatus={wishlistStatus}
+          apiUrl={apiUrl}
+          firstName={firstName}
+          lastName={lastName}
+          firstNameId={firstNameId}
+          lastNameId={lastNameId}
+          firstNameErrorId={firstNameErrorId}
+          lastNameErrorId={lastNameErrorId}
+          busy={busy}
+          notice={notice}
+          fieldErrors={fieldErrors}
+          onFirstNameChange={(value) => {
+            setFirstName(value);
+            clearFieldError("firstName");
+          }}
+          onLastNameChange={(value) => {
+            setLastName(value);
+            clearFieldError("lastName");
+          }}
+          onFirstNameBlur={() => {
+            const error = validateName(firstName, labels);
+            setFieldErrors((prev) =>
+              error
+                ? { ...prev, firstName: error }
+                : (() => {
+                    const next = { ...prev };
+                    delete next.firstName;
+                    return next;
+                  })(),
+            );
+          }}
+          onLastNameBlur={() => {
+            const error = validateName(lastName, labels);
+            setFieldErrors((prev) =>
+              error
+                ? { ...prev, lastName: error }
+                : (() => {
+                    const next = { ...prev };
+                    delete next.lastName;
+                    return next;
+                  })(),
+            );
+          }}
+          onSaveProfile={onSaveProfile}
+          onLogout={onLogout}
+          onWishlistChange={(productId, saved) => {
+            if (saved) return;
+            setWishlistProducts((prev) =>
+              prev.filter((product) => product.id !== productId),
+            );
+          }}
+        />
+      </div>
     );
   }
 
@@ -613,29 +565,26 @@ export default function AccountClient({
       lastUsedDescribedBy={lastUsedDescribedBy}
       googleLabel={labels.google}
       appleLabel={labels.apple}
+      shopLabel={labels.shop}
       redirectingLabel={labels.redirecting}
       busy={controlsBusy}
       pendingProvider={oauthPending}
       onSelect={onOAuthSelect}
+      onShopSelect={onShopSelect}
     />
   );
   const emailForm = (
     <EmailSignInForm
       labels={labels}
-      authMode={authMode}
       emailId={emailId}
-      termsId={termsId}
       marketingId={marketingId}
       emailErrorId={emailErrorId}
-      termsErrorId={termsErrorId}
       email={email}
-      acceptedTerms={acceptedTerms}
       marketingOptIn={marketingOptIn}
       preferEmail={preferEmail}
       busy={controlsBusy}
       fieldErrors={fieldErrors}
       termsHref={termsHref}
-      privacyHref={privacyHref}
       turnstileSiteKey={turnstileSiteKey}
       turnstileApiRef={turnstileApiRef}
       onEmailChange={(value) => {
@@ -654,13 +603,6 @@ export default function AccountClient({
               })(),
         );
       }}
-      onAcceptedTermsChange={(value) => {
-        setAcceptedTerms(value);
-        if (value) {
-          clearFieldError("terms");
-          if (notice?.text === labels.termsRequired) setNotice(null);
-        }
-      }}
       onMarketingOptInChange={setMarketingOptIn}
       onSubmit={onRequestOtp}
     />
@@ -672,118 +614,90 @@ export default function AccountClient({
   );
 
   return (
-    <div className="account-auth">
-      <div className="account-panel">
-        {step === "email" ? (
-          <div
-            className="account-mode-toggle"
-            role="tablist"
-            aria-label={labels.login}
-            id={modeTablistId}
-          >
-            <button
-              type="button"
-              role="tab"
-              className={
-                authMode === "sign_in"
-                  ? "account-mode-toggle__btn is-active"
-                  : "account-mode-toggle__btn"
-              }
-              aria-selected={authMode === "sign_in"}
-              disabled={controlsBusy}
-              onClick={() => switchAuthMode("sign_in")}
-            >
-              {labels.signIn}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              className={
-                authMode === "sign_up"
-                  ? "account-mode-toggle__btn is-active"
-                  : "account-mode-toggle__btn"
-              }
-              aria-selected={authMode === "sign_up"}
-              disabled={controlsBusy}
-              onClick={() => switchAuthMode("sign_up")}
-            >
-              {labels.signUp}
-            </button>
+    <div className="account-auth-shell">
+      <div className="account-auth-shell__pane">
+        <a className="account-auth-shell__brand" href={homeHref}>
+          {storeName}
+        </a>
+
+        <div className="account-auth">
+          <div className="account-panel">
+            {step === "email" ? (
+              <>
+                <div className="account-panel__intro">
+                  <h1 className="account-panel__title">{labels.signIn}</h1>
+                  <p className="account-panel__lead">{labels.lead}</p>
+                </div>
+
+                {lastUsed ? (
+                  <span id={lastUsedDescribedBy} className="visually-hidden">
+                    {labels.lastUsed}
+                  </span>
+                ) : null}
+
+                {oauth}
+                {divider}
+                {emailForm}
+              </>
+            ) : (
+              <OtpVerifyForm
+                labels={labels}
+                codeId={codeId}
+                codeHintId={codeHintId}
+                codeErrorId={codeErrorId}
+                email={email}
+                code={code}
+                busy={controlsBusy}
+                resendIn={resendIn}
+                fieldErrors={fieldErrors}
+                codeInputRef={codeInputRef}
+                turnstileSiteKey={turnstileSiteKey}
+                turnstileApiRef={turnstileApiRef}
+                onCodeChange={(value) => {
+                  setCode(value);
+                  clearFieldError("code");
+                  if (notice?.tone === "error") setNotice(null);
+                }}
+                onCodeBlur={() => {
+                  const error = validateOtpCode(code, labels);
+                  setFieldErrors((prev) =>
+                    error
+                      ? { ...prev, code: error }
+                      : (() => {
+                          const next = { ...prev };
+                          delete next.code;
+                          return next;
+                        })(),
+                  );
+                }}
+                onSubmit={onVerifyOtp}
+                onResend={onResendOtp}
+                onBack={() => {
+                  setStep("email");
+                  setCode("");
+                  setFieldErrors({});
+                  setNotice(null);
+                  turnstileApiRef.current?.reset();
+                }}
+              />
+            )}
+
+            <AccountMessage id={noticeId} notice={notice} />
           </div>
-        ) : null}
+        </div>
 
-        <p className="account-panel__lead">
-          {authMode === "sign_up" ? labels.leadSignUp : labels.lead}
-        </p>
+        <a className="account-auth-shell__privacy" href={privacyHref}>
+          {labels.privacy}
+        </a>
+      </div>
 
-        {lastUsed ? (
-          <span id={lastUsedDescribedBy} className="visually-hidden">
-            {labels.lastUsed}
-          </span>
-        ) : null}
-
-        {step === "email" ? (
-          preferEmail ? (
-            <>
-              {emailForm}
-              {divider}
-              {oauth}
-            </>
-          ) : (
-            <>
-              {oauth}
-              {divider}
-              {emailForm}
-            </>
-          )
-        ) : (
-          <OtpVerifyForm
-            labels={labels}
-            authMode={authMode}
-            codeId={codeId}
-            codeHintId={codeHintId}
-            codeErrorId={codeErrorId}
-            email={email}
-            code={code}
-            busy={controlsBusy}
-            resendIn={resendIn}
-            fieldErrors={fieldErrors}
-            codeInputRef={codeInputRef}
-            turnstileSiteKey={turnstileSiteKey}
-            turnstileApiRef={turnstileApiRef}
-            onCodeChange={(value) => {
-              setCode(value);
-              clearFieldError("code");
-              if (notice?.tone === "error") setNotice(null);
-            }}
-            onCodeBlur={() => {
-              const error = validateOtpCode(code, labels);
-              setFieldErrors((prev) =>
-                error
-                  ? { ...prev, code: error }
-                  : (() => {
-                      const next = { ...prev };
-                      delete next.code;
-                      return next;
-                    })(),
-              );
-            }}
-            onSubmit={onVerifyOtp}
-            onResend={onResendOtp}
-            onBack={() => {
-              setStep("email");
-              setCode("");
-              setFieldErrors({});
-              setNotice(null);
-              turnstileApiRef.current?.reset();
-            }}
-          />
-        )}
-
-        <AccountMessage
-          id={noticeId}
-          notice={notice}
-          onAction={(mode) => switchAuthMode(mode)}
+      <div className="account-auth-shell__media" aria-hidden="true">
+        <img
+          src={AUTH_MEDIA_SRC}
+          alt=""
+          width={1600}
+          height={2000}
+          decoding="async"
         />
       </div>
     </div>

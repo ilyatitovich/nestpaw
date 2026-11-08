@@ -6,7 +6,7 @@ import {
 } from "../../lib/customer-account";
 import type { AuthMethod } from "../../lib/last-auth-method";
 import LastUsedBadge from "./LastUsedBadge";
-import { AppleIcon, GoogleIcon } from "./OAuthIcons";
+import { AppleIcon, GoogleIcon, ShopIcon } from "./OAuthIcons";
 
 type Props = {
   apiUrl: string;
@@ -16,10 +16,12 @@ type Props = {
   lastUsedDescribedBy?: string;
   googleLabel: string;
   appleLabel: string;
+  shopLabel: string;
   redirectingLabel: string;
   busy: boolean;
   pendingProvider: OAuthProvider | null;
   onSelect: (e: MouseEvent<HTMLAnchorElement>, provider: OAuthProvider) => void;
+  onShopSelect: () => void;
 };
 
 const icons = {
@@ -35,15 +37,27 @@ export default function OAuthButtons({
   lastUsedDescribedBy,
   googleLabel,
   appleLabel,
+  shopLabel,
   redirectingLabel,
   busy,
   pendingProvider,
   onSelect,
+  onShopSelect,
 }: Props) {
   const labels = { google: googleLabel, apple: appleLabel };
 
   return (
     <div className="account-oauth" aria-busy={busy || undefined}>
+      <button
+        type="button"
+        className="account-oauth__btn account-oauth__btn--shop"
+        disabled={busy}
+        onClick={onShopSelect}
+      >
+        <ShopIcon />
+        <span className="account-oauth__label">{shopLabel}</span>
+      </button>
+
       {orderedOAuthProviders(lastUsed).map((provider) => {
         const isLast = lastUsed === provider;
         const isPending = pendingProvider === provider;

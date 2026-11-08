@@ -34,7 +34,6 @@ export type AccountCustomer = {
 };
 
 export type AuthStep = "email" | "code";
-export type AuthMode = "sign_in" | "sign_up";
 export type OAuthProvider = Extract<AuthMethod, "google" | "apple">;
 export const ACCOUNT_TABS = [
   "orders",
@@ -53,20 +52,21 @@ export type AccountLabels = {
   email: string;
   continue: string;
   code: string;
+  enterCode: string;
   verify: string;
-  verifySignUp: string;
   resend: string;
   resendIn: string;
   changeEmail: string;
+  codeSentTo: string;
+  change: string;
   google: string;
   apple: string;
+  shop: string;
+  shopUnavailable: string;
   or: string;
   signedInAs: string;
   sendCode: string;
-  sendCodeSignUp: string;
   codeSent: string;
-  codeSentSignUp: string;
-  codeHint: string;
   nameFirst: string;
   nameLast: string;
   saveProfile: string;
@@ -90,17 +90,13 @@ export type AccountLabels = {
   sectionsNav: string;
   errorGeneric: string;
   oauthDenied: string;
-  termsBefore: string;
+  termsAgreeBefore: string;
   terms: string;
-  termsAnd: string;
+  termsAgreeAfter: string;
   privacy: string;
-  termsAfter: string;
   marketingOptIn: string;
-  termsRequired: string;
   lead: string;
-  leadSignUp: string;
   signIn: string;
-  signUp: string;
   lastUsed: string;
   loading: string;
   sendingCode: string;
@@ -120,8 +116,6 @@ export type AccountLabels = {
   errorNameInvalid: string;
   errorAccountNotFound: string;
   errorAccountExists: string;
-  switchToSignUp: string;
-  switchToSignIn: string;
 };
 
 export function formatAddressLines(address: AccountAddress): string[] {
@@ -138,7 +132,6 @@ export function formatAddressLines(address: AccountAddress): string[] {
 const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
 const TURNSTILE_SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js";
-const AUTH_MODE_STORAGE_KEY = "nestpaw:auth-mode";
 
 export function orderedOAuthProviders(
   lastUsed: AuthMethod | null,
@@ -167,14 +160,9 @@ export function rememberAuthMethod(method: AuthMethod) {
   return method;
 }
 
-export function readAuthModeFromUrl(): AuthMode | null {
-  const params = new URLSearchParams(window.location.search);
-  const mode = params.get("mode");
-  if (mode === "sign_up" || mode === "sign_in") return mode;
-  return null;
-}
-
-export function isAccountTab(value: string | null | undefined): value is AccountTab {
+export function isAccountTab(
+  value: string | null | undefined,
+): value is AccountTab {
   return Boolean(value && (ACCOUNT_TABS as readonly string[]).includes(value));
 }
 
@@ -200,24 +188,6 @@ export function clearAccountTabFromUrl() {
   if (!next.searchParams.has("tab")) return;
   next.searchParams.delete("tab");
   window.history.replaceState({}, "", `${next.pathname}${next.search}`);
-}
-
-export function persistAuthMode(mode: AuthMode) {
-  try {
-    sessionStorage.setItem(AUTH_MODE_STORAGE_KEY, mode);
-  } catch {
-    // private mode
-  }
-}
-
-export function readPersistedAuthMode(): AuthMode | null {
-  try {
-    const mode = sessionStorage.getItem(AUTH_MODE_STORAGE_KEY);
-    if (mode === "sign_up" || mode === "sign_in") return mode;
-  } catch {
-    // private mode
-  }
-  return null;
 }
 
 export function persistMarketingOptIn(value: boolean) {
@@ -305,7 +275,6 @@ export async function requestCustomerOtp(params: {
   email: string;
   locale: string;
   turnstileToken: string;
-  intent: AuthMode;
 }): Promise<{ ok: true } | AuthApiFailure> {
   try {
     const res = await fetch(`${params.apiUrl}/customers/auth/otp/request`, {
@@ -316,7 +285,6 @@ export async function requestCustomerOtp(params: {
         email: params.email.trim(),
         locale: params.locale,
         turnstileToken: params.turnstileToken,
-        intent: params.intent,
       }),
     });
     if (!res.ok) return readAuthFailure(res);

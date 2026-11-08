@@ -10,18 +10,6 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-export type CustomerAuthIntent = "sign_in" | "sign_up";
-
-/** Returns an error code when OTP intent does not match account existence. */
-export function otpIntentMismatch(
-  intent: CustomerAuthIntent,
-  accountExists: boolean,
-): "account_not_found" | "account_exists" | null {
-  if (intent === "sign_in" && !accountExists) return "account_not_found";
-  if (intent === "sign_up" && accountExists) return "account_exists";
-  return null;
-}
-
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }

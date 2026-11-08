@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { ForbiddenException, Injectable } from "@nestjs/common";
 import {
   CustomerOtpRequestSchema,
   CustomerOtpVerifySchema,
@@ -12,11 +7,7 @@ import { type Request, type Response } from "express";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { NewsletterService } from "../newsletter/newsletter.service.js";
 import { TurnstileService } from "../newsletter/turnstile.service.js";
-import {
-  normalizeEmail,
-  otpIntentMismatch,
-  storefrontBaseUrl,
-} from "./customer-auth.util.js";
+import { storefrontBaseUrl } from "./customer-auth.util.js";
 import {
   CustomerOAuthService,
   newCodeVerifier,
@@ -60,27 +51,6 @@ export class CustomerAuthService {
     const valid = await this.turnstile.verify(data.turnstileToken, ip);
     if (!valid) {
       throw new ForbiddenException("Bot verification failed");
-    }
-
-    const emailNormalized = normalizeEmail(data.email);
-    const existing = await this.prisma.customer.findUnique({
-      where: { emailNormalized },
-      select: { id: true },
-    });
-    const mismatch = otpIntentMismatch(data.intent, Boolean(existing));
-    if (mismatch === "account_not_found") {
-      throw new NotFoundException({
-        statusCode: 404,
-        message: "No account found for this email",
-        code: "account_not_found",
-      });
-    }
-    if (mismatch === "account_exists") {
-      throw new ConflictException({
-        statusCode: 409,
-        message: "An account already exists for this email",
-        code: "account_exists",
-      });
     }
 
     try {

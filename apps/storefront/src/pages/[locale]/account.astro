@@ -1,7 +1,13 @@
 ---
 import AccountClient from "../../components/AccountClient";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
-import { type Locale, locales, localizePath, t } from "../../i18n/ui";
+import {
+  type Locale,
+  locales,
+  localizePath,
+  storeName,
+  t,
+} from "../../i18n/ui";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { API_URL } from "../../lib/api";
 
@@ -13,9 +19,10 @@ const locale = Astro.params.locale as Locale;
 const turnstileSiteKey =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
 const shopHref = localizePath(locale, "/shop");
+const homeHref = localizePath(locale, "/");
 
 const breadcrumbs = [
-  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "nav.home"), href: homeHref },
   { label: t(locale, "account.login") },
 ];
 ---
@@ -26,16 +33,13 @@ const breadcrumbs = [
   canonicalPath="/account"
   chrome="account"
 >
-  <div class="container page-shell account-page">
-    <div data-account-chrome="member" hidden inert>
+  <div class="account-page">
+    <div class="container page-shell" data-account-chrome="member" hidden inert>
       <Breadcrumbs
         items={breadcrumbs}
         label={t(locale, "product.breadcrumb")}
       />
     </div>
-    <h1 class="section__title account-page__title">
-      {t(locale, "account.login")}
-    </h1>
     <AccountClient
       client:only="react"
       apiUrl={API_URL}
@@ -44,6 +48,8 @@ const breadcrumbs = [
       termsHref={localizePath(locale, "/pages/terms")}
       privacyHref={localizePath(locale, "/pages/privacy")}
       shopHref={shopHref}
+      homeHref={homeHref}
+      storeName={storeName}
       labels={{
         login: t(locale, "account.login"),
         orders: t(locale, "account.orders"),
@@ -52,20 +58,21 @@ const breadcrumbs = [
         email: t(locale, "account.email"),
         continue: t(locale, "account.continue"),
         code: t(locale, "account.code"),
+        enterCode: t(locale, "account.enterCode"),
         verify: t(locale, "account.verify"),
-        verifySignUp: t(locale, "account.verifySignUp"),
         resend: t(locale, "account.resend"),
         resendIn: t(locale, "account.resendIn"),
         changeEmail: t(locale, "account.changeEmail"),
+        codeSentTo: t(locale, "account.codeSentTo"),
+        change: t(locale, "account.change"),
         google: t(locale, "account.google"),
         apple: t(locale, "account.apple"),
+        shop: t(locale, "account.shop"),
+        shopUnavailable: t(locale, "account.shopUnavailable"),
         or: t(locale, "account.or"),
         signedInAs: t(locale, "account.signedInAs"),
         sendCode: t(locale, "account.sendCode"),
-        sendCodeSignUp: t(locale, "account.sendCodeSignUp"),
         codeSent: t(locale, "account.codeSent"),
-        codeSentSignUp: t(locale, "account.codeSentSignUp"),
-        codeHint: t(locale, "account.codeHint"),
         nameFirst: t(locale, "account.nameFirst"),
         nameLast: t(locale, "account.nameLast"),
         saveProfile: t(locale, "account.saveProfile"),
@@ -102,19 +109,13 @@ const breadcrumbs = [
         errorNameInvalid: t(locale, "account.errorNameInvalid"),
         errorAccountNotFound: t(locale, "account.errorAccountNotFound"),
         errorAccountExists: t(locale, "account.errorAccountExists"),
-        switchToSignUp: t(locale, "account.switchToSignUp"),
-        switchToSignIn: t(locale, "account.switchToSignIn"),
-        termsBefore: t(locale, "account.termsBefore"),
+        termsAgreeBefore: t(locale, "account.termsAgreeBefore"),
         terms: t(locale, "account.terms"),
-        termsAnd: t(locale, "account.termsAnd"),
+        termsAgreeAfter: t(locale, "account.termsAgreeAfter"),
         privacy: t(locale, "account.privacy"),
-        termsAfter: t(locale, "account.termsAfter"),
         marketingOptIn: t(locale, "account.marketingOptIn"),
-        termsRequired: t(locale, "account.termsRequired"),
         lead: t(locale, "account.lead"),
-        leadSignUp: t(locale, "account.leadSignUp"),
         signIn: t(locale, "account.signIn"),
-        signUp: t(locale, "account.signUp"),
         lastUsed: t(locale, "account.lastUsed"),
         loading: t(locale, "account.loading"),
         sendingCode: t(locale, "account.sendingCode"),
@@ -125,7 +126,7 @@ const breadcrumbs = [
     >
       <div slot="fallback">
         <div
-          class="account-hub account-fallback account-fallback--member"
+          class="container page-shell account-hub account-fallback account-fallback--member"
           hidden
           aria-busy="true"
         >
@@ -168,12 +169,20 @@ const breadcrumbs = [
           </div>
         </div>
         <div
-          class="account-auth account-fallback account-fallback--guest"
+          class="account-auth-shell account-fallback account-fallback--guest"
           aria-busy="true"
         >
-          <div class="account-panel">
-            <p class="account-panel__lead">{t(locale, "account.lead")}</p>
-            <div class="account-fallback__guest-body"></div>
+          <div class="account-auth-shell__pane">
+            <span class="account-auth-shell__brand">{storeName}</span>
+            <div class="account-auth">
+              <div class="account-panel">
+                <div class="account-panel__intro">
+                  <p class="account-panel__title">{t(locale, "account.signIn")}</p>
+                  <p class="account-panel__lead">{t(locale, "account.lead")}</p>
+                </div>
+                <div class="account-fallback__guest-body"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -41,3 +41,18 @@ export function AppleIcon() {
     </svg>
   );
 }
+
+export function ShopIcon() {
+  return (
+    <svg
+      className="account-oauth__icon"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      aria-hidden="true"
+      fill="currentColor"
+    >
+      <path d="M6.8 7.2 8.2 3.5h7.6l1.4 3.7H20a1 1 0 0 1 1 1.05l-.7 11.1A2.2 2.2 0 0 1 18.1 23H5.9a2.2 2.2 0 0 1-2.2-2.15L3 8.25A1 1 0 0 1 4 7.2h2.8zm1.55 0h7.3l-.7-1.9H9.05l-.7 1.9zM8 11.2a1.1 1.1 0 0 0 2.2 0v-1H8v1zm5.8 0a1.1 1.1 0 0 0 2.2 0v-1h-2.2v1z" />
+    </svg>
+  );
+}

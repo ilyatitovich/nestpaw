@@ -3417,13 +3417,30 @@ a.cart-line__title:hover {
 
 .page--account .page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Override SSR [hidden] when a session hint paints member chrome early. */
-html[data-account-session="member"] [data-account-chrome="guest"] {
+.page--account .page__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.page--account .account-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Guest auth uses in-pane brand + privacy; hide outer AuthChrome always. */
+.page--account [data-account-chrome="guest"] {
   display: none !important;
 }
 
+/* Override SSR [hidden] when a session hint paints member chrome early. */
 html[data-account-session="member"] [data-account-chrome="member"] {
   display: block !important;
 }
@@ -3432,9 +3449,81 @@ html[data-account-session="member"] [data-account-chrome="member"] {
   text-align: start;
 }
 
+.account-page__member {
+  padding-block: var(--space-6);
+}
+
+.account-auth-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: min(100vh, 100dvh);
+  background: #fff;
+}
+
+.account-auth-shell__pane {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-5) var(--space-6);
+  min-height: min(100vh, 100dvh);
+}
+
+.account-auth-shell__brand {
+  justify-self: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.account-auth-shell__privacy {
+  justify-self: center;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.account-auth-shell__privacy:hover {
+  color: var(--color-ink);
+}
+
+.account-auth-shell__media {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-brand) 8%, #f3eee8);
+}
+
+.account-auth-shell__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .account-auth {
-  max-width: 28rem;
+  width: 100%;
+  max-width: 24rem;
   margin-inline: auto;
+  align-self: center;
+}
+
+@media (min-width: 900px) {
+  .account-auth-shell {
+    grid-template-columns: minmax(22rem, 1fr) minmax(22rem, 1fr);
+  }
+
+  .account-auth-shell__media {
+    display: block;
+  }
+
+  .account-auth-shell__pane {
+    padding-inline: clamp(1.5rem, 5vw, 4rem);
+  }
 }
 
 .auth-chrome {
@@ -3552,11 +3641,26 @@ html[data-account-session="member"] [data-account-chrome="member"] {
 .account-panel {
   display: grid;
   gap: var(--space-5);
-  padding: var(--space-5);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: rgb(255 255 255 / 88%);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   accent-color: var(--color-brand);
+}
+
+.account-panel__intro {
+  display: grid;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.account-panel__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
 }
 
 .account-hub {
@@ -3722,7 +3826,9 @@ html[data-account-session="member"] [data-account-chrome="member"] {
 .account-panel__lead {
   margin: 0;
   color: var(--color-ink-muted);
+  font-size: 0.95rem;
   line-height: 1.5;
+  text-align: center;
 }
 
 .account-mode-toggle {
@@ -3911,6 +4017,28 @@ html[data-account-session="guest"] .account-page__title {
   flex-shrink: 0;
 }
 
+.account-oauth__btn--shop {
+  justify-content: center;
+  border-color: #5a31f4;
+  background: #5a31f4;
+  color: #fff;
+}
+
+.account-oauth__btn--shop:hover {
+  border-color: #4b24d6;
+  background: #4b24d6;
+}
+
+.account-oauth__btn--shop:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.account-oauth__btn--shop .account-oauth__label {
+  flex: 0 1 auto;
+  text-align: center;
+}
+
 .account-last-used {
   display: inline-flex;
   align-items: center;
@@ -4028,6 +4156,137 @@ html[data-account-session="guest"] .account-page__title {
   font-size: 1.25rem;
   letter-spacing: 0.35em;
   text-align: center;
+}
+
+.account-otp-step {
+  display: grid;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.account-otp-step__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+
+.account-otp-step__hint {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.account-otp-step__change {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.account-otp-step__change:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.account-otp-boxes {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 2.75rem));
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.account-otp-box {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--color-ink);
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.account-otp-box:focus {
+  outline: none;
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.account-otp-box[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.account-email-submit {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+.account-email-submit:focus-within {
+  border-color: var(--color-ink);
+  box-shadow: 0 0 0 1px var(--color-ink);
+}
+
+.account-email-submit input {
+  min-width: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+
+.account-email-submit__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  padding: 0 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.account-email-submit__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.account-legal-agree {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: start;
+}
+
+.account-legal-agree a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .account-consents {

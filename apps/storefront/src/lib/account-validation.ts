@@ -1,18 +1,12 @@
-import type { AccountLabels, AuthMode } from "./customer-account";
+import type { AccountLabels } from "./customer-account";
 
-export type AuthField = "email" | "code" | "terms" | "firstName" | "lastName";
+export type AuthField = "email" | "code" | "firstName" | "lastName";
 
 export type FieldErrors = Partial<Record<AuthField, string>>;
-
-export type FormNoticeAction = {
-  label: string;
-  mode: AuthMode;
-};
 
 export type FormNotice = {
   tone: "error" | "success";
   text: string;
-  action?: FormNoticeAction;
 };
 
 export type AuthApiFailure = {
@@ -45,9 +39,7 @@ const PERSON_NAME_RE = /^[\p{L}]+(?:[\s'.-][\p{L}]+)*$/u;
 
 export function isValidName(value: string) {
   const name = value.trim();
-  return (
-    name.length >= 1 && name.length <= 100 && PERSON_NAME_RE.test(name)
-  );
+  return name.length >= 1 && name.length <= 100 && PERSON_NAME_RE.test(name);
 }
 
 export function validateEmail(
@@ -69,13 +61,6 @@ export function validateOtpCode(
   return undefined;
 }
 
-export function validateTerms(
-  accepted: boolean,
-  labels: AccountLabels,
-): string | undefined {
-  return accepted ? undefined : labels.termsRequired;
-}
-
 export function validateName(
   value: string,
   labels: AccountLabels,
@@ -88,18 +73,12 @@ export function validateName(
 
 export function validateEmailStep(input: {
   email: string;
-  acceptedTerms: boolean;
   turnstileToken: string;
   labels: AccountLabels;
-  requireTerms: boolean;
 }): { ok: true } | { ok: false; errors: FieldErrors; notice?: FormNotice } {
   const errors: FieldErrors = {};
   const emailError = validateEmail(input.email, input.labels);
   if (emailError) errors.email = emailError;
-  if (input.requireTerms) {
-    const termsError = validateTerms(input.acceptedTerms, input.labels);
-    if (termsError) errors.terms = termsError;
-  }
 
   if (!input.turnstileToken) {
     return {
@@ -171,22 +150,7 @@ export function authFailureNotice(
   failure: AuthApiFailure,
   labels: AccountLabels,
 ): FormNotice {
-  const text = authFailureMessage(failure, labels);
-  if (failure.kind === "account_not_found") {
-    return {
-      tone: "error",
-      text,
-      action: { label: labels.switchToSignUp, mode: "sign_up" },
-    };
-  }
-  if (failure.kind === "account_exists") {
-    return {
-      tone: "error",
-      text,
-      action: { label: labels.switchToSignIn, mode: "sign_in" },
-    };
-  }
-  return { tone: "error", text };
+  return { tone: "error", text: authFailureMessage(failure, labels) };
 }
 
 export function classifyAuthStatus(
