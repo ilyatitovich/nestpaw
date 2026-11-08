@@ -1,0 +1,75 @@
+---
+import { type Locale, locales, localizePath, storeName, t } from "../i18n/ui";
+
+interface Props {
+  locale: Locale | string;
+  part: "header" | "footer";
+}
+
+const { locale, part } = Astro.props;
+const activeLocale = (
+  locales.includes(locale as Locale) ? locale : "en"
+) as Locale;
+
+const homeHref = localizePath(activeLocale, "/");
+const year = new Date().getFullYear();
+
+const localeOptions = [
+  { code: "en" as const, label: "EN", href: "/en/account" },
+  { code: "de" as const, label: "DE", href: "/de/account" },
+];
+---
+
+{
+  part === "header" ? (
+    <header class="auth-chrome">
+      <div class="container auth-chrome__bar">
+        <a class="auth-chrome__brand" href={homeHref}>
+          {storeName}
+        </a>
+        <div class="auth-chrome__actions">
+          <a class="auth-chrome__shop" href={homeHref}>
+            {t(activeLocale, "account.continueShopping")}
+          </a>
+          <nav
+            class="auth-chrome__locales"
+            aria-label={t(activeLocale, "account.language")}
+          >
+            {localeOptions.map((option) => (
+              <a
+                class:list={[
+                  "auth-chrome__locale",
+                  option.code === activeLocale && "is-current",
+                ]}
+                href={option.href}
+                lang={option.code}
+                aria-current={option.code === activeLocale ? "page" : undefined}
+              >
+                {option.label}
+              </a>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </header>
+  ) : (
+    <footer class="auth-chrome-footer">
+      <div class="container auth-chrome-footer__inner">
+        <p class="auth-chrome-footer__copy">
+          {t(activeLocale, "footer.copyright").replace("{year}", String(year))}
+        </p>
+        <nav
+          class="auth-chrome-footer__links"
+          aria-label={t(activeLocale, "account.legalNav")}
+        >
+          <a href={localizePath(activeLocale, "/pages/privacy")}>
+            {t(activeLocale, "footer.privacy")}
+          </a>
+          <a href={localizePath(activeLocale, "/pages/terms")}>
+            {t(activeLocale, "footer.terms")}
+          </a>
+        </nav>
+      </div>
+    </footer>
+  )
+}

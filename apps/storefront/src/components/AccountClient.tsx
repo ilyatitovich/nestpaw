@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { setAccountChrome } from "../lib/account-chrome";
 import {
   getCustomerAccessToken,
   setCustomerAccessToken,
@@ -17,6 +18,8 @@ type Props = {
   apiUrl: string;
   locale: string;
   turnstileSiteKey: string;
+  termsHref: string;
+  privacyHref: string;
   labels: {
     orders: string;
     logout: string;
@@ -33,25 +36,93 @@ type Props = {
     signedInAs: string;
     sendCode: string;
     codeSent: string;
+    codeHint: string;
     nameFirst: string;
     nameLast: string;
     saveProfile: string;
     errorGeneric: string;
     oauthDenied: string;
+    stepsLabel: string;
+    stepEmail: string;
+    stepCode: string;
+    termsBefore: string;
+    terms: string;
+    termsAnd: string;
+    privacy: string;
+    termsAfter: string;
+    marketingOptIn: string;
+    termsRequired: string;
+    lead: string;
   };
 };
 
 type Step = "email" | "code";
 
+function GoogleIcon() {
+  return (
+    <svg
+      className="account-oauth__icon"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      aria-hidden="true"
+    >
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg
+      className="account-oauth__icon"
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      aria-hidden="true"
+      fill="currentColor"
+    >
+      <path d="M16.365 1.43c0 1.14-.42 2.2-1.18 3.03-.8.88-2.13 1.56-3.25 1.47-.14-1.1.4-2.27 1.15-3.07.82-.89 2.23-1.55 3.28-1.43zM20.8 17.4c-.58 1.33-.85 1.92-1.59 3.1-1.03 1.6-2.48 3.59-4.28 3.61-1.6.02-2.02-1.05-4.2-1.03-2.18.01-2.64 1.06-4.24 1.04-1.8-.03-3.17-1.82-4.2-3.42C.5 17.1-.7 12.3 1.2 9.05c1.1-1.9 2.85-3.1 4.5-3.1 1.68 0 2.74 1.1 4.13 1.1 1.35 0 2.17-1.11 4.17-1.11 1.49 0 3.06.81 4.16 2.21-3.65 2-3.05 7.2.64 9.25z" />
+    </svg>
+  );
+}
+
 export default function AccountClient({
   apiUrl,
   locale,
   turnstileSiteKey,
+  termsHref,
+  privacyHref,
   labels,
 }: Props) {
+  const baseId = useId();
+  const emailId = `${baseId}-email`;
+  const codeId = `${baseId}-code`;
+  const termsId = `${baseId}-terms`;
+  const marketingId = `${baseId}-marketing`;
+  const codeHintId = `${baseId}-code-hint`;
+  const messageId = `${baseId}-message`;
+
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -60,9 +131,9 @@ export default function AccountClient({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [needsName, setNeedsName] = useState(false);
-  const [providers, setProviders] = useState({ google: false, apple: false });
   const [resendIn, setResendIn] = useState(0);
   const turnstileRef = useRef<HTMLDivElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
@@ -77,19 +148,6 @@ export default function AccountClient({
     }
 
     void (async () => {
-      try {
-        const prov = await fetch(`${apiUrl}/customers/auth/providers`, {
-          credentials: "include",
-        });
-        if (prov.ok) {
-          setProviders(
-            (await prov.json()) as { google: boolean; apple: boolean },
-          );
-        }
-      } catch {
-        // ignore
-      }
-
       try {
         const res = await fetch(`${apiUrl}/customers/auth/refresh`, {
           method: "POST",
@@ -111,6 +169,10 @@ export default function AccountClient({
   }, []);
 
   useEffect(() => {
+    setAccountChrome(token ? "member" : "guest");
+  }, [token]);
+
+  useEffect(() => {
     if (resendIn <= 0) return;
     const id = window.setTimeout(() => setResendIn((n) => n - 1), 1000);
     return () => window.clearTimeout(id);
@@ -128,6 +190,12 @@ export default function AccountClient({
       document.body.appendChild(s);
     }
   }, [step, token]);
+
+  useEffect(() => {
+    if (step === "code") {
+      codeInputRef.current?.focus();
+    }
+  }, [step]);
 
   async function loadMe(accessToken: string) {
     const res = await fetch(`${apiUrl}/customers/me`, {
@@ -166,8 +234,22 @@ export default function AccountClient({
     }
   }
 
+  function requireTerms(): boolean {
+    if (acceptedTerms) return true;
+    setMessage(labels.termsRequired);
+    return false;
+  }
+
+  function onOAuthClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!acceptedTerms) {
+      e.preventDefault();
+      setMessage(labels.termsRequired);
+    }
+  }
+
   async function requestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!requireTerms()) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -239,6 +321,8 @@ export default function AccountClient({
     setCustomerEmail(null);
     setStep("email");
     setCode("");
+    setAcceptedTerms(false);
+    setMarketingOptIn(false);
   }
 
   async function saveProfile(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -266,26 +350,42 @@ export default function AccountClient({
     }
   }
 
+  function goBackToEmail() {
+    setStep("email");
+    setCode("");
+    setMessage(null);
+  }
+
   if (token) {
     return (
-      <div>
-        <p>
+      <div className="account-panel account-panel--signed-in">
+        <p className="account-panel__signed-in">
           {labels.signedInAs} <strong>{customerEmail}</strong>
         </p>
         {needsName ? (
           <form className="account-form" onSubmit={saveProfile}>
-            <input
-              placeholder={labels.nameFirst}
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
-            <input
-              placeholder={labels.nameLast}
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
+            <div className="account-field">
+              <label htmlFor={`${baseId}-first`}>{labels.nameFirst}</label>
+              <input
+                id={`${baseId}-first`}
+                name="given-name"
+                autoComplete="given-name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="account-field">
+              <label htmlFor={`${baseId}-last`}>{labels.nameLast}</label>
+              <input
+                id={`${baseId}-last`}
+                name="family-name"
+                autoComplete="family-name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
             <button className="btn btn--primary" type="submit" disabled={busy}>
               {labels.saveProfile}
             </button>
@@ -294,19 +394,16 @@ export default function AccountClient({
         <button type="button" className="btn btn--ghost" onClick={logout}>
           {labels.logout}
         </button>
-        <h2
-          className="section__title"
-          style={{ fontSize: "1.35rem", marginTop: "2rem" }}
-        >
-          {labels.orders}
-        </h2>
-        {!orders.length ? <p>{labels.noOrders}</p> : null}
+        <h2 className="account-panel__orders-title">{labels.orders}</h2>
+        {!orders.length ? (
+          <p className="account-panel__empty">{labels.noOrders}</p>
+        ) : null}
         <div className="order-list">
           {orders.map((o) => (
             <div className="order-row" key={o.id}>
               <div>
                 <strong>#{o.number}</strong>
-                <div style={{ color: "var(--color-ink-muted)" }}>
+                <div className="order-row__meta">
                   {new Date(o.createdAt).toLocaleDateString()} · {o.status}
                 </div>
               </div>
@@ -316,86 +413,197 @@ export default function AccountClient({
             </div>
           ))}
         </div>
-        {message ? <p>{message}</p> : null}
+        {message ? (
+          <p className="account-message" role="status" aria-live="polite">
+            {message}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="account-form">
-      {providers.google || providers.apple ? (
-        <div style={{ display: "grid", gap: "0.5rem", marginBottom: "1.25rem" }}>
-          {providers.google ? (
-            <a
-              className="btn btn--ghost"
-              href={`${apiUrl}/customers/auth/oauth/google/start?locale=${locale}`}
-            >
-              {labels.google}
-            </a>
-          ) : null}
-          {providers.apple ? (
-            <a
-              className="btn btn--ghost"
-              href={`${apiUrl}/customers/auth/oauth/apple/start?locale=${locale}`}
-            >
-              {labels.apple}
-            </a>
-          ) : null}
-          <p style={{ textAlign: "center", color: "var(--color-ink-muted)" }}>
-            {labels.or}
-          </p>
-        </div>
-      ) : null}
+    <div className="account-panel">
+      <p className="account-panel__lead">{labels.lead}</p>
+
+      <nav className="account-steps" aria-label={labels.stepsLabel}>
+        <ol className="account-steps__list">
+          <li
+            className={
+              step === "email"
+                ? "account-steps__item is-current"
+                : "account-steps__item is-done"
+            }
+            aria-current={step === "email" ? "step" : undefined}
+          >
+            <span className="account-steps__num" aria-hidden="true">
+              1
+            </span>
+            <span className="account-steps__label">{labels.stepEmail}</span>
+          </li>
+          <li
+            className={
+              step === "code"
+                ? "account-steps__item is-current"
+                : "account-steps__item"
+            }
+            aria-current={step === "code" ? "step" : undefined}
+          >
+            <span className="account-steps__num" aria-hidden="true">
+              2
+            </span>
+            <span className="account-steps__label">{labels.stepCode}</span>
+          </li>
+        </ol>
+      </nav>
 
       {step === "email" ? (
-        <form onSubmit={requestOtp}>
-          <input
-            type="email"
-            placeholder={labels.email}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-          <div ref={turnstileRef}>
-            <div
-              className="cf-turnstile"
-              data-sitekey={turnstileSiteKey}
-              data-theme="light"
-              data-size="flexible"
+        <>
+          <div className="account-oauth">
+            <a
+              className="account-oauth__btn account-oauth__btn--google"
+              href={`${apiUrl}/customers/auth/oauth/google/start?locale=${locale}`}
+              onClick={onOAuthClick}
+            >
+              <GoogleIcon />
+              {labels.google}
+            </a>
+            <a
+              className="account-oauth__btn account-oauth__btn--apple"
+              href={`${apiUrl}/customers/auth/oauth/apple/start?locale=${locale}`}
+              onClick={onOAuthClick}
+            >
+              <AppleIcon />
+              {labels.apple}
+            </a>
+          </div>
+
+          <p className="account-divider">
+            <span>{labels.or}</span>
+          </p>
+
+          <form className="account-form" onSubmit={requestOtp} method="post">
+            <div className="account-field">
+              <label htmlFor={emailId}>{labels.email}</label>
+              <input
+                id={emailId}
+                name="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                enterKeyHint="next"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-describedby={message ? messageId : undefined}
+              />
+            </div>
+
+            <fieldset className="account-consents">
+              <legend className="visually-hidden">{labels.terms}</legend>
+              <label className="account-check" htmlFor={termsId}>
+                <input
+                  id={termsId}
+                  name="terms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked && message === labels.termsRequired) {
+                      setMessage(null);
+                    }
+                  }}
+                  required
+                />
+                <span>
+                  {labels.termsBefore}
+                  <a href={termsHref} target="_blank" rel="noopener noreferrer">
+                    {labels.terms}
+                  </a>
+                  {labels.termsAnd}
+                  <a
+                    href={privacyHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {labels.privacy}
+                  </a>
+                  {labels.termsAfter}
+                </span>
+              </label>
+              <label className="account-check" htmlFor={marketingId}>
+                <input
+                  id={marketingId}
+                  name="marketing"
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={(e) => setMarketingOptIn(e.target.checked)}
+                />
+                <span>{labels.marketingOptIn}</span>
+              </label>
+            </fieldset>
+
+            <div ref={turnstileRef} className="account-turnstile">
+              <div
+                className="cf-turnstile"
+                data-sitekey={turnstileSiteKey}
+                data-theme="light"
+                data-size="flexible"
+              />
+            </div>
+
+            <button
+              className="btn btn--primary account-form__submit"
+              type="submit"
+              disabled={busy}
+            >
+              {labels.sendCode}
+            </button>
+          </form>
+        </>
+      ) : (
+        <form className="account-form" onSubmit={verifyOtp} method="post">
+          <div className="account-field">
+            <label htmlFor={codeId}>{labels.code}</label>
+            <p id={codeHintId} className="account-field__hint">
+              {labels.codeHint.replace("{email}", email)}
+            </p>
+            <input
+              ref={codeInputRef}
+              id={codeId}
+              name="otp"
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              maxLength={6}
+              value={code}
+              onChange={(e) =>
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              required
+              autoComplete="one-time-code"
+              enterKeyHint="done"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-describedby={codeHintId}
+              className="account-otp-input"
             />
           </div>
-          <button className="btn btn--primary" type="submit" disabled={busy}>
-            {labels.sendCode}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={verifyOtp}>
-          <p style={{ color: "var(--color-ink-muted)" }}>
-            {labels.codeSent} ({email})
-          </p>
-          <input
-            inputMode="numeric"
-            pattern="\d{6}"
-            maxLength={6}
-            placeholder={labels.code}
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            required
-            autoComplete="one-time-code"
-          />
-          <button className="btn btn--primary" type="submit" disabled={busy}>
+          <button
+            className="btn btn--primary account-form__submit"
+            type="submit"
+            disabled={busy}
+          >
             {labels.verify}
           </button>
           <button
             type="button"
             className="btn btn--ghost"
-            disabled={resendIn > 0 || busy}
-            onClick={() => {
-              setStep("email");
-              setCode("");
-              setMessage(null);
-            }}
+            disabled={busy}
+            onClick={goBackToEmail}
           >
             {resendIn > 0
               ? labels.resendIn.replace("{n}", String(resendIn))
@@ -403,7 +611,17 @@ export default function AccountClient({
           </button>
         </form>
       )}
-      {message ? <p>{message}</p> : null}
+
+      {message ? (
+        <p
+          id={messageId}
+          className="account-message"
+          role="status"
+          aria-live="polite"
+        >
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }

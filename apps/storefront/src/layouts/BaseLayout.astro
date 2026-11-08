@@ -1,4 +1,5 @@
 ---
+import AuthChrome from "../components/AuthChrome.astro";
 import CookieConsent from "../components/CookieConsent.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
 import PromoBanner from "../components/PromoBanner.astro";
@@ -18,6 +19,8 @@ interface Props {
   canonicalPath?: string;
   ogImage?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /** full = store chrome; account = guest auth shell, full chrome after sign-in */
+  chrome?: "full" | "account";
 }
 
 const {
@@ -27,7 +30,9 @@ const {
   canonicalPath = "/",
   ogImage,
   jsonLd,
+  chrome = "full",
 } = Astro.props;
+const isAccountChrome = chrome === "account";
 
 const site =
   Astro.site?.toString().replace(/\/$/, "") ?? "http://localhost:4321";
@@ -144,18 +149,61 @@ const hasAnalytics =
       ) : null
     }
   </head>
-  <body>
+  <body class:list={[isAccountChrome && "page--account"]}>
     <div class="page">
-      <div class="site-chrome" data-site-chrome>
-        <PromoBanner locale={locale} />
-        <SiteHeader locale={locale} />
-      </div>
+      {
+        isAccountChrome ? (
+          <>
+            <div data-account-chrome="guest">
+              <AuthChrome locale={locale} part="header" />
+            </div>
+            <div
+              class="site-chrome"
+              data-site-chrome
+              data-account-chrome="member"
+              hidden
+              inert
+            >
+              <PromoBanner locale={locale} />
+              <SiteHeader locale={locale} />
+            </div>
+          </>
+        ) : (
+          <div class="site-chrome" data-site-chrome>
+            <PromoBanner locale={locale} />
+            <SiteHeader locale={locale} />
+          </div>
+        )
+      }
       <main class="page__main">
         <slot />
       </main>
-      <NewsletterSignup locale={locale} />
-      <SiteFooter locale={locale} />
+      {
+        isAccountChrome ? (
+          <>
+            <div data-account-chrome="guest">
+              <AuthChrome locale={locale} part="footer" />
+            </div>
+            <div data-account-chrome="member" hidden inert>
+              <NewsletterSignup locale={locale} />
+              <SiteFooter locale={locale} />
+            </div>
+          </>
+        ) : (
+          <>
+            <NewsletterSignup locale={locale} />
+            <SiteFooter locale={locale} />
+          </>
+        )
+      }
     </div>
     <CookieConsent locale={locale} />
+    {
+      isAccountChrome ? (
+        <script is:inline>
+          document.documentElement.dataset.accountSession = "guest";
+        </script>
+      ) : null
+    }
   </body>
 </html>

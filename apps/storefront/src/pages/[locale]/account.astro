@@ -19,18 +19,29 @@ const breadcrumbs = [
 ];
 ---
 
-<BaseLayout locale={locale} title={t(locale, "account.login")} canonicalPath="/account">
-  <div class="container page-shell" style="max-width:36rem">
-    <Breadcrumbs
-      items={breadcrumbs}
-      label={t(locale, "product.breadcrumb")}
-    />
-    <h1 class="section__title">{t(locale, "account.login")}</h1>
+<BaseLayout
+  locale={locale}
+  title={t(locale, "account.login")}
+  canonicalPath="/account"
+  chrome="account"
+>
+  <div class="container page-shell account-page">
+    <div data-account-chrome="member" hidden inert>
+      <Breadcrumbs
+        items={breadcrumbs}
+        label={t(locale, "product.breadcrumb")}
+      />
+    </div>
+    <h1 class="section__title account-page__title">
+      {t(locale, "account.login")}
+    </h1>
     <AccountClient
       client:load
       apiUrl={API_URL}
       locale={locale}
       turnstileSiteKey={turnstileSiteKey}
+      termsHref={localizePath(locale, "/pages/terms")}
+      privacyHref={localizePath(locale, "/pages/privacy")}
       labels={{
         orders: t(locale, "account.orders"),
         logout: t(locale, "account.logout"),
@@ -47,11 +58,23 @@ const breadcrumbs = [
         signedInAs: t(locale, "account.signedInAs"),
         sendCode: t(locale, "account.sendCode"),
         codeSent: t(locale, "account.codeSent"),
+        codeHint: t(locale, "account.codeHint"),
         nameFirst: t(locale, "account.nameFirst"),
         nameLast: t(locale, "account.nameLast"),
         saveProfile: t(locale, "account.saveProfile"),
         errorGeneric: t(locale, "account.errorGeneric"),
         oauthDenied: t(locale, "account.oauthDenied"),
+        stepsLabel: t(locale, "account.stepsLabel"),
+        stepEmail: t(locale, "account.stepEmail"),
+        stepCode: t(locale, "account.stepCode"),
+        termsBefore: t(locale, "account.termsBefore"),
+        terms: t(locale, "account.terms"),
+        termsAnd: t(locale, "account.termsAnd"),
+        privacy: t(locale, "account.privacy"),
+        termsAfter: t(locale, "account.termsAfter"),
+        marketingOptIn: t(locale, "account.marketingOptIn"),
+        termsRequired: t(locale, "account.termsRequired"),
+        lead: t(locale, "account.lead"),
       }}
     />
   </div>
