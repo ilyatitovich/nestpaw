@@ -1,0 +1,74 @@
+---
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import CheckoutClient from "../../../components/CheckoutClient";
+import { type Locale, locales, localizePath, t } from "../../../i18n/ui";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { API_URL } from "../../../lib/api";
+
+export function getStaticPaths() {
+  return locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = Astro.params.locale as Locale;
+
+const breadcrumbs = [
+  { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
+  { label: t(locale, "cart.title"), href: localizePath(locale, "/cart") },
+  { label: t(locale, "checkout.title") },
+];
+---
+
+<BaseLayout
+  locale={locale}
+  title={t(locale, "checkout.title")}
+  canonicalPath="/checkout"
+>
+  <div class="container page-shell">
+    <Breadcrumbs
+      items={breadcrumbs}
+      label={t(locale, "product.breadcrumb")}
+    />
+    <h1 class="section__title">{t(locale, "checkout.title")}</h1>
+    <CheckoutClient
+      client:load
+      apiUrl={API_URL}
+      locale={locale}
+      storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
+      cartHref={localizePath(locale, "/cart")}
+      labels={{
+        shipping: t(locale, "checkout.shipping"),
+        orderSummary: t(locale, "checkout.orderSummary"),
+        paySecurely: t(locale, "checkout.paySecurely"),
+        secureNote: t(locale, "checkout.secureNote"),
+        taxesNote: t(locale, "checkout.taxesNote"),
+        emptyRedirect: t(locale, "checkout.emptyRedirect"),
+        editCart: t(locale, "checkout.editCart"),
+        firstName: t(locale, "checkout.firstName"),
+        lastName: t(locale, "checkout.lastName"),
+        email: t(locale, "checkout.email"),
+        line1: t(locale, "checkout.line1"),
+        line2: t(locale, "checkout.line2"),
+        city: t(locale, "checkout.city"),
+        postalCode: t(locale, "checkout.postalCode"),
+        country: t(locale, "checkout.country"),
+        phone: t(locale, "checkout.phone"),
+        countryDE: t(locale, "checkout.countryDE"),
+        countryAT: t(locale, "checkout.countryAT"),
+        countryFR: t(locale, "checkout.countryFR"),
+        countryNL: t(locale, "checkout.countryNL"),
+        countryBE: t(locale, "checkout.countryBE"),
+        subtotal: t(locale, "cart.subtotal"),
+        discountLabel: t(locale, "cart.discountLabel"),
+        total: t(locale, "cart.total"),
+        errorRequired: t(locale, "checkout.errorRequired"),
+        errorEmailInvalid: t(locale, "checkout.errorEmailInvalid"),
+        errorNameInvalid: t(locale, "checkout.errorNameInvalid"),
+        errorPostalInvalid: t(locale, "checkout.errorPostalInvalid"),
+        errorCountryInvalid: t(locale, "checkout.errorCountryInvalid"),
+        errorPhoneInvalid: t(locale, "checkout.errorPhoneInvalid"),
+        errorGeneric: t(locale, "checkout.errorGeneric"),
+        errorLoad: t(locale, "checkout.errorLoad"),
+      }}
+    />
+  </div>
+</BaseLayout>

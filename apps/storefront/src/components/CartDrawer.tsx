@@ -595,11 +595,17 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                   ) : null}
                   <a
                     className="cart-drawer__checkout"
-                    href={`/${locale}/cart`}
+                    href={`/${locale}/checkout`}
                   >
                     <span>{labels.checkout}</span>
                     <span aria-hidden="true">•</span>
                     <span>{checkoutTotal}</span>
+                  </a>
+                  <a
+                    className="cart-drawer__view"
+                    href={`/${locale}/cart`}
+                  >
+                    {labels.viewCart}
                   </a>
                 </footer>
 

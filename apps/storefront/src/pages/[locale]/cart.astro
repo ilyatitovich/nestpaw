@@ -18,7 +18,7 @@ const breadcrumbs = [
 ---
 
 <BaseLayout locale={locale} title={t(locale, "cart.title")} canonicalPath="/cart">
-  <div class="container cart">
+  <div class="container page-shell">
     <Breadcrumbs
       items={breadcrumbs}
       label={t(locale, "product.breadcrumb")}
@@ -28,17 +28,25 @@ const breadcrumbs = [
       client:load
       apiUrl={API_URL}
       locale={locale}
+      shopHref={localizePath(locale, "/")}
+      checkoutHref={localizePath(locale, "/checkout")}
       labels={{
         empty: t(locale, "cart.empty"),
-        checkout: t(locale, "cart.checkout"),
+        continueShopping: t(locale, "cart.continueShopping"),
+        proceedToCheckout: t(locale, "cart.proceedToCheckout"),
         discount: t(locale, "cart.discount"),
         apply: t(locale, "cart.apply"),
-        shipping: t(locale, "cart.shipping"),
         remove: t(locale, "cart.remove"),
         freeShipProgress: t(locale, "cart.freeShipProgress"),
         freeShipUnlocked: t(locale, "cart.freeShipUnlocked"),
+        subtotal: t(locale, "cart.subtotal"),
+        discountLabel: t(locale, "cart.discountLabel"),
+        total: t(locale, "cart.total"),
+        qty: t(locale, "cart.qty"),
+        discountInvalid: t(locale, "cart.discountInvalid"),
+        loadError: t(locale, "cart.loadError"),
+        updateError: t(locale, "cart.updateError"),
       }}
-      storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
     />
   </div>
 </BaseLayout>
