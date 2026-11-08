@@ -136,6 +136,24 @@ export const CreateCheckoutSchema = z.object({
 });
 export type CreateCheckoutInput = z.infer<typeof CreateCheckoutSchema>;
 
+/** Express Checkout Element → PaymentIntent (wallets collect address). */
+export const CreateExpressCheckoutSchema = z.object({
+  shippingAddress: CheckoutAddressSchema,
+  shippingRateId: z.string().cuid().optional(),
+  successUrl: z.string().url(),
+  locale: LocaleSchema.default("en"),
+  currency: CheckoutCurrencySchema.default("EUR").optional(),
+  acceptTerms: z.literal(true),
+});
+export type CreateExpressCheckoutInput = z.infer<
+  typeof CreateExpressCheckoutSchema
+>;
+
+/** Countries allowed for storefront checkout + express wallets. */
+export const CHECKOUT_COUNTRIES = ["DE", "AT", "FR", "NL", "BE"] as const;
+export type CheckoutCountry = (typeof CHECKOUT_COUNTRIES)[number];
+export const CheckoutCountrySchema = z.enum(CHECKOUT_COUNTRIES);
+
 export const FulfillOrderSchema = z.object({
   carrier: z.string().min(1).max(80).optional(),
   trackingNumber: z.string().min(1).max(120).optional(),

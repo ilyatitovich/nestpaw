@@ -126,6 +126,48 @@ export class PaymentsService {
     return stripe.checkout.sessions.retrieve(sessionId);
   }
 
+  async createPaymentIntent(params: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    email: string;
+  }) {
+    const stripe = this.client();
+    if (!stripe) {
+      const mockId = `pi_test_mock_${params.orderId}`;
+      return {
+        id: mockId,
+        client_secret: `${mockId}_secret_mock`,
+      };
+    }
+
+    return stripe.paymentIntents.create({
+      amount: params.amount,
+      currency: params.currency.toLowerCase(),
+      receipt_email: params.email,
+      automatic_payment_methods: { enabled: true },
+      metadata: { orderId: params.orderId },
+    });
+  }
+
+  async retrievePaymentIntent(paymentIntentId: string) {
+    const stripe = this.client();
+    if (!stripe || paymentIntentId.startsWith("pi_test_mock_")) {
+      if (
+        paymentIntentId.startsWith("pi_test_mock_") &&
+        !allowMockPayments()
+      ) {
+        throw new ForbiddenException("Mock payments are disabled");
+      }
+      return {
+        id: paymentIntentId,
+        client_secret: `${paymentIntentId}_secret_mock` as string | null,
+        status: "requires_payment_method" as const,
+      };
+    }
+    return stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
   private paymentIntentId(session: Stripe.Checkout.Session): string | undefined {
     return typeof session.payment_intent === "string"
       ? session.payment_intent
@@ -144,6 +186,20 @@ export class PaymentsService {
     await this.orders.markPaid(orderId, {
       stripeSessionId: session.id,
       stripePaymentIntentId: this.paymentIntentId(session),
+    });
+  }
+
+  private async markPaidFromPaymentIntent(pi: Stripe.PaymentIntent) {
+    const orderId = pi.metadata?.orderId;
+    if (!orderId) return;
+    if (pi.status !== "succeeded") {
+      this.logger.log(
+        `PaymentIntent ${pi.id} status=${pi.status}; waiting for succeeded`,
+      );
+      return;
+    }
+    await this.orders.markPaid(orderId, {
+      stripePaymentIntentId: pi.id,
     });
   }
 
@@ -191,6 +247,18 @@ export class PaymentsService {
         case "checkout.session.expired": {
           const session = event.data.object as Stripe.Checkout.Session;
           const orderId = session.metadata?.orderId;
+          if (orderId) await this.orders.expirePending(orderId);
+          break;
+        }
+        case "payment_intent.succeeded": {
+          const pi = event.data.object as Stripe.PaymentIntent;
+          await this.markPaidFromPaymentIntent(pi);
+          break;
+        }
+        case "payment_intent.payment_failed":
+        case "payment_intent.canceled": {
+          const pi = event.data.object as Stripe.PaymentIntent;
+          const orderId = pi.metadata?.orderId;
           if (orderId) await this.orders.expirePending(orderId);
           break;
         }
@@ -312,6 +380,21 @@ export class PaymentsService {
     await this.orders.markPaid(orderId, {
       stripeSessionId: sessionId,
       stripePaymentIntentId: `pi_mock_${orderId}`,
+    });
+    return { ok: true, orderId };
+  }
+
+  /** Dev-only helper for express PaymentIntent mock path. */
+  async completeMockPaymentIntent(paymentIntentId: string) {
+    if (!allowMockPayments()) {
+      throw new ForbiddenException("Mock payments are disabled");
+    }
+    if (!paymentIntentId.startsWith("pi_test_mock_")) {
+      return { ok: false };
+    }
+    const orderId = paymentIntentId.replace("pi_test_mock_", "");
+    await this.orders.markPaid(orderId, {
+      stripePaymentIntentId: paymentIntentId,
     });
     return { ok: true, orderId };
   }

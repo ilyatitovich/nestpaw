@@ -1,5 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { CreateCheckoutSchema } from "@online-store/shared-types";
+import {
+  CheckoutCountrySchema,
+  CreateCheckoutSchema,
+  CreateExpressCheckoutSchema,
+} from "@online-store/shared-types";
 import { type TaxClass } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import { CartService } from "../cart/cart.service.js";
@@ -10,6 +14,14 @@ import { TaxService } from "../tax/tax.service.js";
 import { assertAllowedCheckoutUrl } from "./checkout-urls.js";
 
 const DEFAULT_FREE_SHIP_THRESHOLD = 4900;
+
+function assertCheckoutCountry(country: string): string {
+  const parsed = CheckoutCountrySchema.safeParse(country.toUpperCase());
+  if (!parsed.success) {
+    throw new BadRequestException("Unsupported shipping country");
+  }
+  return parsed.data;
+}
 
 @Injectable()
 export class CheckoutService {
@@ -42,11 +54,19 @@ export class CheckoutService {
     shippingRateId?: string,
   ) {
     if (!token) throw new BadRequestException("Cart token required");
-    if (!country || country.length !== 2) {
-      throw new BadRequestException("Country required");
-    }
+    const cc = assertCheckoutCountry(country);
     const cart = await this.cart.requireCart(token);
-    const totals = await this.computeTotals(cart, country, shippingRateId);
+    const totals = await this.computeTotals(cart, cc, shippingRateId);
+    const weight = cart.lines.reduce(
+      (sum, l) => sum + l.variant.weightGrams * l.quantity,
+      0,
+    );
+    const rates = await this.shipping.ratesForCountry(cc, weight);
+    const shippingRates = rates.map((r) => ({
+      id: r.id,
+      displayName: r.name,
+      amount: totals.freeShipping ? 0 : r.price,
+    }));
     return {
       subtotal: totals.subtotal,
       discountTotal: totals.discountTotal,
@@ -58,6 +78,7 @@ export class CheckoutService {
       currency: totals.currency,
       shippingRateId: totals.rate?.id ?? null,
       shippingRateName: totals.rate?.name ?? null,
+      shippingRates,
     };
   }
 
@@ -158,6 +179,7 @@ export class CheckoutService {
 
     assertAllowedCheckoutUrl(data.successUrl, "successUrl");
     assertAllowedCheckoutUrl(data.cancelUrl, "cancelUrl");
+    const country = assertCheckoutCountry(data.shippingAddress.country);
 
     if (idempotencyKey) {
       const existing = await this.prisma.order.findUnique({
@@ -172,87 +194,14 @@ export class CheckoutService {
     }
 
     const cart = await this.cart.requireCart(token);
-    const totals = await this.computeTotals(
+    const { order, totals } = await this.createPendingOrder({
       cart,
-      data.shippingAddress.country,
-      data.shippingRateId,
-    );
-
-    // Stock pre-check (reservation is decrement-at-pay + auto-refund)
-    for (const l of cart.lines) {
-      const inv = l.variant.inventory;
-      if (
-        inv?.policy === "deny" &&
-        inv.quantity < l.quantity
-      ) {
-        throw new BadRequestException(`Insufficient stock for ${l.variant.sku}`);
-      }
-    }
-
-    const taxByVariant = new Map(
-      totals.lineTaxes.map((t) => [t.variantId, t]),
-    );
-
-    const order = await this.prisma.order.create({
-      data: {
-        status: "pending_payment",
-        currency: "EUR",
-        locale: data.locale,
-        email: data.shippingAddress.email,
-        customerId: customerId || undefined,
-        subtotal: totals.subtotal,
-        discountTotal: totals.discountTotal,
-        shippingTotal: totals.shippingTotal,
-        taxTotal: totals.taxTotal,
-        total: totals.total,
-        discountCode: cart.discountCode,
-        shippingAddress: data.shippingAddress,
-        shippingRateId: totals.rate?.id,
-        idempotencyKey,
-        lines: {
-          create: cart.lines.map((l) => {
-            const t =
-              l.variant.product.translations.find(
-                (x) => x.locale === data.locale,
-              ) ?? l.variant.product.translations[0];
-            const variantTitle = [
-              l.variant.option1,
-              l.variant.option2,
-              l.variant.option3,
-            ]
-              .filter(Boolean)
-              .join(" / ");
-            const lt = taxByVariant.get(l.variantId);
-            return {
-              variantId: l.variantId,
-              title: t?.title ?? "Product",
-              variantTitle,
-              sku: l.variant.sku,
-              quantity: l.quantity,
-              unitPrice: l.variant.price,
-              total: l.variant.price * l.quantity,
-              taxClass: lt?.taxClass ?? "standard",
-              taxTotal: lt?.taxTotal ?? 0,
-            };
-          }),
-        },
-        transitions: {
-          create: {
-            toStatus: "pending_payment",
-            actorType: "customer",
-            note: "Checkout started",
-          },
-        },
-      },
-    });
-
-    // Persist email on cart for abandoned-cart recovery
-    await this.prisma.cart.update({
-      where: { id: cart.id },
-      data: {
-        email: data.shippingAddress.email,
-        lastActivityAt: new Date(),
-      },
+      shippingAddress: { ...data.shippingAddress, country },
+      shippingRateId: data.shippingRateId,
+      locale: data.locale,
+      idempotencyKey,
+      customerId,
+      note: "Checkout started",
     });
 
     const session = await this.payments.createCheckoutSession({
@@ -295,5 +244,184 @@ export class CheckoutService {
         currency: "EUR",
       },
     };
+  }
+
+  /** Express wallets: create order + PaymentIntent, return clientSecret. */
+  async createExpress(
+    token: string | undefined,
+    input: unknown,
+    idempotencyKey?: string,
+    customerId?: string,
+  ) {
+    const data = CreateExpressCheckoutSchema.parse(input);
+    if (!token) throw new BadRequestException("Cart token required");
+    if (!data.acceptTerms) {
+      throw new BadRequestException("Terms must be accepted");
+    }
+
+    assertAllowedCheckoutUrl(data.successUrl, "successUrl");
+    const country = assertCheckoutCountry(data.shippingAddress.country);
+
+    if (idempotencyKey) {
+      const existing = await this.prisma.order.findUnique({
+        where: { idempotencyKey },
+      });
+      if (existing?.stripePaymentIntentId) {
+        const intent = await this.payments.retrievePaymentIntent(
+          existing.stripePaymentIntentId,
+        );
+        return {
+          orderId: existing.id,
+          clientSecret: intent.client_secret,
+          totals: {
+            subtotal: existing.subtotal,
+            discountTotal: existing.discountTotal,
+            shippingTotal: existing.shippingTotal,
+            taxTotal: existing.taxTotal,
+            total: existing.total,
+            currency: "EUR" as const,
+          },
+        };
+      }
+    }
+
+    const cart = await this.cart.requireCart(token);
+    const { order, totals } = await this.createPendingOrder({
+      cart,
+      shippingAddress: { ...data.shippingAddress, country },
+      shippingRateId: data.shippingRateId,
+      locale: data.locale,
+      idempotencyKey,
+      customerId,
+      note: "Express checkout started",
+    });
+
+    const intent = await this.payments.createPaymentIntent({
+      orderId: order.id,
+      amount: totals.total,
+      currency: "EUR",
+      email: data.shippingAddress.email,
+    });
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { stripePaymentIntentId: intent.id },
+    });
+
+    return {
+      orderId: order.id,
+      clientSecret: intent.client_secret,
+      totals: {
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        shippingTotal: totals.shippingTotal,
+        taxTotal: totals.taxTotal,
+        total: totals.total,
+        currency: "EUR" as const,
+      },
+    };
+  }
+
+  private async createPendingOrder(params: {
+    cart: Awaited<ReturnType<CartService["requireCart"]>>;
+    shippingAddress: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone?: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      postalCode: string;
+      country: string;
+      state?: string;
+    };
+    shippingRateId?: string;
+    locale: string;
+    idempotencyKey?: string;
+    customerId?: string;
+    note: string;
+  }) {
+    const { cart, shippingAddress, shippingRateId, locale, idempotencyKey, customerId, note } =
+      params;
+
+    const totals = await this.computeTotals(
+      cart,
+      shippingAddress.country,
+      shippingRateId,
+    );
+
+    for (const l of cart.lines) {
+      const inv = l.variant.inventory;
+      if (inv?.policy === "deny" && inv.quantity < l.quantity) {
+        throw new BadRequestException(`Insufficient stock for ${l.variant.sku}`);
+      }
+    }
+
+    const taxByVariant = new Map(
+      totals.lineTaxes.map((t) => [t.variantId, t]),
+    );
+
+    const order = await this.prisma.order.create({
+      data: {
+        status: "pending_payment",
+        currency: "EUR",
+        locale,
+        email: shippingAddress.email,
+        customerId: customerId || undefined,
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        shippingTotal: totals.shippingTotal,
+        taxTotal: totals.taxTotal,
+        total: totals.total,
+        discountCode: cart.discountCode,
+        shippingAddress,
+        shippingRateId: totals.rate?.id,
+        idempotencyKey,
+        lines: {
+          create: cart.lines.map((l) => {
+            const t =
+              l.variant.product.translations.find((x) => x.locale === locale) ??
+              l.variant.product.translations[0];
+            const variantTitle = [
+              l.variant.option1,
+              l.variant.option2,
+              l.variant.option3,
+            ]
+              .filter(Boolean)
+              .join(" / ");
+            const lt = taxByVariant.get(l.variantId);
+            return {
+              variantId: l.variantId,
+              title: t?.title ?? "Product",
+              variantTitle,
+              sku: l.variant.sku,
+              quantity: l.quantity,
+              unitPrice: l.variant.price,
+              total: l.variant.price * l.quantity,
+              taxClass: lt?.taxClass ?? "standard",
+              taxTotal: lt?.taxTotal ?? 0,
+            };
+          }),
+        },
+        transitions: {
+          create: {
+            toStatus: "pending_payment",
+            actorType: "customer",
+            note,
+          },
+        },
+      },
+    });
+
+    await this.prisma.cart.update({
+      where: { id: cart.id },
+      data: {
+        email: shippingAddress.email,
+        lastActivityAt: new Date(),
+      },
+    });
+
+    return { order, totals };
   }
 }

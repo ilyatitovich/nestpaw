@@ -31,6 +31,7 @@ const breadcrumbs = [
       locale={locale}
       storeUrl={import.meta.env.PUBLIC_STORE_URL ?? "http://localhost:4321"}
       cartHref={localizePath(locale, "/cart")}
+      stripePublishableKey={import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""}
       labels={{
         shipping: t(locale, "checkout.shipping"),
         orderSummary: t(locale, "checkout.orderSummary"),
@@ -61,6 +62,8 @@ const breadcrumbs = [
         acceptTerms: t(locale, "checkout.acceptTerms"),
         payObligation: t(locale, "checkout.payObligation"),
         termsRequired: t(locale, "checkout.termsRequired"),
+        expressTitle: t(locale, "checkout.expressTitle"),
+        expressOr: t(locale, "checkout.expressOr"),
         errorRequired: t(locale, "checkout.errorRequired"),
         errorEmailInvalid: t(locale, "checkout.errorEmailInvalid"),
         errorNameInvalid: t(locale, "checkout.errorNameInvalid"),

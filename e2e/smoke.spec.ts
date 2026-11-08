@@ -158,6 +158,77 @@ test.describe("commerce smoke", () => {
       });
       expect(res.status()).toBe(403);
     });
+
+    test("express checkout → mock PI marks order paid", async ({
+      request,
+    }) => {
+      const products = await request.get(`${API}/products`);
+      expect(products.ok()).toBeTruthy();
+      const catalog = await products.json();
+      const variantId = catalog.items?.[0]?.variants?.[0]?.id as
+        | string
+        | undefined;
+      expect(variantId).toBeTruthy();
+
+      const cartRes = await request.get(`${API}/cart`);
+      expect(cartRes.ok()).toBeTruthy();
+      const cartToken =
+        cartRes.headers()["x-cart-token"] ?? (await cartRes.json()).token;
+
+      const add = await request.post(`${API}/cart/items`, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Cart-Token": cartToken,
+        },
+        data: { variantId, quantity: 1 },
+      });
+      expect(add.ok()).toBeTruthy();
+
+      const quote = await request.get(
+        `${API}/checkout/quote?country=DE`,
+        { headers: { "X-Cart-Token": cartToken } },
+      );
+      expect(quote.ok()).toBeTruthy();
+      const quoteBody = await quote.json();
+      expect(Array.isArray(quoteBody.shippingRates)).toBeTruthy();
+      expect(quoteBody.shippingRates.length).toBeGreaterThan(0);
+
+      const checkout = await request.post(`${API}/checkout/express`, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Cart-Token": cartToken,
+          "Idempotency-Key": `e2e-express-${Date.now()}`,
+        },
+        data: {
+          shippingAddress: {
+            firstName: "E2E",
+            lastName: "Express",
+            email: "e2e-express@example.com",
+            line1: "Teststrasse 1",
+            city: "Berlin",
+            postalCode: "10115",
+            country: "DE",
+          },
+          shippingRateId: quoteBody.shippingRates[0].id,
+          locale: "en",
+          currency: "EUR",
+          acceptTerms: true,
+          successUrl: `${STORE}/checkout/success`,
+        },
+      });
+      expect(checkout.ok()).toBeTruthy();
+      const { orderId, clientSecret, totals } = await checkout.json();
+      expect(orderId).toBeTruthy();
+      expect(clientSecret).toContain("pi_test_mock_");
+      expect(totals.total).toBe(quoteBody.total);
+
+      const mock = await request.post(`${API}/payments/mock-complete`, {
+        data: { paymentIntentId: `pi_test_mock_${orderId}` },
+      });
+      expect(mock.ok()).toBeTruthy();
+      const mockBody = await mock.json();
+      expect(mockBody.ok).toBeTruthy();
+    });
   });
 
   test.describe("storefront", () => {

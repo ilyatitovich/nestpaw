@@ -173,6 +173,8 @@ export const ui = {
     "checkout.acceptTerms": "I agree to the terms and acknowledge the right of withdrawal",
     "checkout.payObligation": "Order with obligation to pay",
     "checkout.termsRequired": "Please accept the terms to continue",
+    "checkout.expressTitle": "Express checkout",
+    "checkout.expressOr": "OR",
     "product.unitPrice": "{price} / kg",
     "product.lowestPrice": "Lowest price last 30 days: {price}",
     "footer.tagline":
@@ -457,6 +459,8 @@ export const ui = {
     "checkout.acceptTerms": "Ich akzeptiere die AGB und habe die Widerrufsbelehrung zur Kenntnis genommen",
     "checkout.payObligation": "Zahlungspflichtig bestellen",
     "checkout.termsRequired": "Bitte akzeptieren Sie die AGB, um fortzufahren",
+    "checkout.expressTitle": "Express-Checkout",
+    "checkout.expressOr": "ODER",
     "product.unitPrice": "{price} / kg",
     "product.lowestPrice": "Niedrigster Preis der letzten 30 Tage: {price}",
     "footer.tagline":

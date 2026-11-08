@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_PLAUSIBLE_DOMAIN?: string;
   readonly PUBLIC_GA4_MEASUREMENT_ID?: string;
   readonly PUBLIC_ANALYTICS_PROVIDER?: string;
+  readonly PUBLIC_STRIPE_PUBLISHABLE_KEY?: string;
 }
 
 interface Window {

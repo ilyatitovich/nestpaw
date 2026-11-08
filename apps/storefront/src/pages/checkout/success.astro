@@ -31,10 +31,16 @@ const breadcrumbs = [
   <script is:inline define:vars={{ API_URL, locale }}>
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
+    const paymentIntentId = params.get("payment_intent");
+    const redirectStatus = params.get("redirect_status");
     const cartToken = localStorage.getItem("cart_token");
+    const paid =
+      Boolean(sessionId) ||
+      (Boolean(paymentIntentId) &&
+        (redirectStatus === "succeeded" || params.get("mock") === "1"));
 
     async function clearCart() {
-      if (!cartToken) return;
+      if (!cartToken || !paid) return;
       try {
         await fetch(`${API_URL}/cart`, {
           method: "DELETE",
@@ -44,8 +50,17 @@ const breadcrumbs = [
     }
 
     async function completeMock() {
-      if (!sessionId || params.get("mock") !== "1") return;
+      if (params.get("mock") !== "1") return;
       try {
+        if (paymentIntentId) {
+          await fetch(`${API_URL}/payments/mock-complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentIntentId }),
+          });
+          return;
+        }
+        if (!sessionId) return;
         await fetch(`${API_URL}/payments/mock-complete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -57,10 +72,18 @@ const breadcrumbs = [
     (async () => {
       await completeMock();
       await clearCart();
+      if (!paid) return;
       fetch(`${API_URL}/analytics/events`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "purchase", payload: { sessionId }, locale }),
+        body: JSON.stringify({
+          name: "purchase",
+          payload: {
+            sessionId: sessionId ?? undefined,
+            paymentIntentId: paymentIntentId ?? undefined,
+          },
+          locale,
+        }),
       }).catch(() => {});
     })();
   </script>

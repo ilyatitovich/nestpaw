@@ -28,9 +28,14 @@ export class PaymentsController {
 
   @Public()
   @Post("mock-complete")
-  mockComplete(@Body() body: { sessionId?: string }) {
+  mockComplete(
+    @Body() body: { sessionId?: string; paymentIntentId?: string },
+  ) {
     if (!allowMockPayments()) {
       throw new ForbiddenException("Mock payments are disabled");
+    }
+    if (body.paymentIntentId) {
+      return this.payments.completeMockPaymentIntent(body.paymentIntentId);
     }
     return this.payments.completeMockSession(body.sessionId ?? "");
   }

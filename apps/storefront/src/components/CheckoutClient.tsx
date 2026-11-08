@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { localizePath } from "@/i18n/ui";
 import {
   CHECKOUT_COUNTRIES,
@@ -17,6 +17,7 @@ import {
   setCustomerAccessToken,
 } from "@/lib/customer-auth";
 import FieldError from "./account/FieldError";
+import ExpressCheckout from "./ExpressCheckout";
 
 type Cart = {
   token: string;
@@ -42,6 +43,7 @@ type Props = {
   locale: string;
   storeUrl: string;
   cartHref: string;
+  stripePublishableKey?: string;
   labels: {
     shipping: string;
     orderSummary: string;
@@ -72,6 +74,8 @@ type Props = {
     acceptTerms: string;
     payObligation: string;
     termsRequired: string;
+    expressTitle: string;
+    expressOr: string;
     errorGeneric: string;
     errorLoad: string;
   } & CheckoutValidationLabels;
@@ -93,9 +97,11 @@ export default function CheckoutClient({
   locale,
   storeUrl,
   cartHref,
+  stripePublishableKey = "",
   labels,
 }: Props) {
   const baseId = useId();
+  const termsId = `${baseId}-terms`;
   const fieldIds: Record<CheckoutField, string> = {
     firstName: `${baseId}-first`,
     lastName: `${baseId}-last`,
@@ -232,6 +238,14 @@ export default function CheckoutClient({
     focusField(fieldIds[field]);
   }
 
+  const onExpressError = useCallback((message: string) => {
+    setError(message || null);
+  }, []);
+
+  const onExpressBusy = useCallback((next: boolean) => {
+    setBusy(next);
+  }, []);
+
   async function onSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!cart || submitting) return;
@@ -320,15 +334,58 @@ export default function CheckoutClient({
     BE: labels.countryBE,
   };
 
+  const merchandiseTotal = Math.max(
+    0,
+    cart.totals.subtotal - (cart.totals.discountTotal ?? 0),
+  );
+
   return (
     <div className="checkout-page">
       <div className="checkout-page__layout">
-        <form
-          className="checkout-form account-form"
-          noValidate
-          onSubmit={onSubmit}
-        >
-          <h2 className="checkout-form__title">{labels.shipping}</h2>
+        <div className="checkout-page__main">
+          <label className="checkout-form__terms" htmlFor={termsId}>
+            <input
+              id={termsId}
+              type="checkbox"
+              checked={acceptTerms}
+              disabled={busy}
+              onChange={(e) => {
+                setAcceptTerms(e.target.checked);
+                if (e.target.checked && error === labels.termsRequired) {
+                  setError(null);
+                }
+              }}
+            />
+            <span>{labels.acceptTerms}</span>
+          </label>
+
+          {stripePublishableKey ? (
+            <ExpressCheckout
+              apiUrl={apiUrl}
+              locale={locale}
+              storeUrl={storeUrl}
+              publishableKey={stripePublishableKey}
+              cartToken={cart.token}
+              merchandiseTotal={merchandiseTotal}
+              acceptTerms={acceptTerms}
+              termsCheckboxId={termsId}
+              labels={{
+                title: labels.expressTitle,
+                or: labels.expressOr,
+                termsRequired: labels.termsRequired,
+                errorGeneric: labels.errorGeneric,
+              }}
+              onError={onExpressError}
+              onBusy={onExpressBusy}
+            />
+          ) : null}
+
+          <form
+            className="checkout-form account-form"
+            noValidate
+            onSubmit={onSubmit}
+          >
+            <h2 className="checkout-form__title">{labels.shipping}</h2>
 
           <div className="checkout-form__row">
             <div className="account-field">
@@ -507,16 +564,6 @@ export default function CheckoutClient({
             </div>
           </div>
 
-          <label className="checkout-form__terms">
-            <input
-              type="checkbox"
-              checked={acceptTerms}
-              disabled={busy}
-              onChange={(e) => setAcceptTerms(e.target.checked)}
-            />
-            <span>{labels.acceptTerms}</span>
-          </label>
-
           {error ? (
             <p className="checkout-page__error" role="alert">
               {error}
@@ -531,7 +578,8 @@ export default function CheckoutClient({
             {labels.payObligation}
           </button>
           <p className="checkout-form__note">{labels.secureNote}</p>
-        </form>
+          </form>
+        </div>
 
         <aside className="checkout-summary">
           <div className="checkout-summary__sticky">

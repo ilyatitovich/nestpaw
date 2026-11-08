@@ -37,6 +37,23 @@ export class CheckoutController {
     return this.checkout.create(token, body, idempotencyKey, customerId);
   }
 
+  @Public()
+  @Post("express")
+  async createExpress(
+    @Headers("x-cart-token") token: string | undefined,
+    @Headers("idempotency-key") idempotencyKey: string | undefined,
+    @Headers("authorization") authorization: string | undefined,
+    @Body() body: unknown,
+  ) {
+    const customerId = await this.resolveCustomerId(authorization);
+    return this.checkout.createExpress(
+      token,
+      body,
+      idempotencyKey,
+      customerId,
+    );
+  }
+
   private async resolveCustomerId(
     authorization: string | undefined,
   ): Promise<string | undefined> {
