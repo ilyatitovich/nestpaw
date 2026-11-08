@@ -43,7 +43,6 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
-    profiles: ["full"]
 
 volumes:
   postgres_data:

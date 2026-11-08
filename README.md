@@ -65,7 +65,7 @@ Re-seed (wipes catalog/CMS demo data, keeps admin user):
 pnpm db:seed
 ```
 
-Optional full stack: `docker compose -f docker/docker-compose.yml --profile full up -d`
+`pnpm docker:up` starts Postgres, Redis, and Mailpit (SMTP `localhost:1025`, inbox [http://localhost:8025](http://localhost:8025)). Optional MinIO: `docker compose -f docker/docker-compose.yml --profile full up -d`
 
 ## Scripts
 
