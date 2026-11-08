@@ -322,7 +322,6 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
     ? formatCartMoney(cart.totals.total)
     : formatCartMoney(0);
   const activeUpsell = upsells[upsellIndex] ?? null;
-  const shopHref = `/${locale}`;
 
   return (
     <>
@@ -408,9 +407,13 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                   ) : !hasLines ? (
                     <div className="cart-drawer__empty">
                       <p className="cart-drawer__empty-copy">{labels.empty}</p>
-                      <a className="btn btn--primary" href={shopHref}>
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={() => setOpen(false)}
+                      >
                         {labels.continueShopping}
-                      </a>
+                      </button>
                     </div>
                   ) : (
                     <ul className="cart-drawer__lines">
