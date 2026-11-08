@@ -4198,20 +4198,23 @@ html[data-account-session="guest"] .account-page__title {
 .account-email-submit {
   display: grid;
   grid-template-columns: 1fr auto;
-  align-items: stretch;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.85rem;
   border: 1px solid var(--color-border);
-  border-radius: 0.65rem;
+  border-radius: 0.75rem;
   background: #fff;
-  overflow: hidden;
 }
 
 .account-email-submit:focus-within {
-  border-color: var(--color-ink);
-  box-shadow: 0 0 0 1px var(--color-ink);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 35%, transparent);
 }
 
 .account-email-submit input {
   min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.25rem !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -4222,18 +4225,41 @@ html[data-account-session="guest"] .account-page__title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.75rem;
-  padding: 0 0.85rem;
-  border: 0;
-  background: transparent;
-  color: var(--color-ink);
-  font-size: 1.15rem;
+  width: 2.65rem;
+  height: 2.65rem;
+  padding: 0;
+  border: var(--border-width) solid var(--color-brand);
+  border-radius: 0.55rem;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.account-email-submit__btn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 0 var(--color-brand);
+}
+
+.account-email-submit__btn:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
 .account-email-submit__btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.account-email-submit__icon {
+  display: block;
 }
 
 .account-legal-agree {
