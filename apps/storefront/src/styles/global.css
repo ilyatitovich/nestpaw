@@ -2921,6 +2921,10 @@ html[data-account-session="member"] [data-account-chrome="member"] {
   min-inline-size: 0;
 }
 
+.account-tabpanel[hidden] {
+  display: none;
+}
+
 .account-section {
   display: grid;
   gap: var(--space-4);

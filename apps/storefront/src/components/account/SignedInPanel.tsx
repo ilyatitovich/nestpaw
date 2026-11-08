@@ -119,10 +119,6 @@ export default function SignedInPanel({
     selectTab(next, true);
   }
 
-  function onBeforeMatch(tab: AccountTab) {
-    setActiveTab(tab);
-  }
-
   function panelProps(tab: AccountTab) {
     const selected = activeTab === tab;
     return {
@@ -130,23 +126,9 @@ export default function SignedInPanel({
       role: "tabpanel" as const,
       "aria-labelledby": `${baseId}-tab-${tab}`,
       tabIndex: selected ? 0 : -1,
-      "data-account-tab-panel": tab,
-      ...(selected ? {} : ({ hidden: "until-found" } as any)),
+      hidden: !selected,
     };
   }
-
-  useEffect(() => {
-    const root = document.getElementById(`${baseId}-tabs`);
-    if (!root) return;
-    const onMatch = (event: Event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      const tab = target.dataset.accountTabPanel as AccountTab | undefined;
-      if (tab && TABS.includes(tab)) onBeforeMatch(tab);
-    };
-    root.addEventListener("beforematch", onMatch);
-    return () => root.removeEventListener("beforematch", onMatch);
-  }, [baseId]);
 
   return (
     <div className="account-hub">
@@ -176,7 +158,7 @@ export default function SignedInPanel({
 
       <AccountMessage notice={notice} />
 
-      <div className="account-tabs" id={`${baseId}-tabs`}>
+      <div className="account-tabs">
         <div
           className="account-tabs__list"
           role="tablist"
