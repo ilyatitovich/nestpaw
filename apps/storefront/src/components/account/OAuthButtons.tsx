@@ -5,15 +5,12 @@ import {
   orderedOAuthProviders,
 } from "../../lib/customer-account";
 import type { AuthMethod } from "../../lib/last-auth-method";
-import LastUsedBadge from "./LastUsedBadge";
 import { AppleIcon, GoogleIcon, ShopIcon } from "./OAuthIcons";
 
 type Props = {
   apiUrl: string;
   locale: string;
   lastUsed: AuthMethod | null;
-  lastUsedLabel: string;
-  lastUsedDescribedBy?: string;
   googleLabel: string;
   appleLabel: string;
   shopLabel: string;
@@ -33,8 +30,6 @@ export default function OAuthButtons({
   apiUrl,
   locale,
   lastUsed,
-  lastUsedLabel,
-  lastUsedDescribedBy,
   googleLabel,
   appleLabel,
   shopLabel,
@@ -59,7 +54,6 @@ export default function OAuthButtons({
       </button>
 
       {orderedOAuthProviders(lastUsed).map((provider) => {
-        const isLast = lastUsed === provider;
         const isPending = pendingProvider === provider;
         const Icon = icons[provider];
         const disabled = busy;
@@ -68,7 +62,6 @@ export default function OAuthButtons({
             key={provider}
             className={[
               `account-oauth__btn account-oauth__btn--${provider}`,
-              isLast ? "is-last-used" : "",
               isPending ? "is-busy" : "",
               disabled && !isPending ? "is-disabled" : "",
             ]
@@ -84,15 +77,11 @@ export default function OAuthButtons({
             }}
             aria-disabled={disabled || undefined}
             aria-busy={isPending || undefined}
-            aria-describedby={isLast ? lastUsedDescribedBy : undefined}
           >
             <Icon />
             <span className="account-oauth__label">
               {isPending ? redirectingLabel : labels[provider]}
             </span>
-            {isLast && !isPending ? (
-              <LastUsedBadge label={lastUsedLabel} />
-            ) : null}
           </a>
         );
       })}

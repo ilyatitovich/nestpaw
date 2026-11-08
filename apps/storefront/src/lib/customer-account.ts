@@ -97,7 +97,6 @@ export type AccountLabels = {
   marketingOptIn: string;
   lead: string;
   signIn: string;
-  lastUsed: string;
   loading: string;
   sendingCode: string;
   verifying: string;

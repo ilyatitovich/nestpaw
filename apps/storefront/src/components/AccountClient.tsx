@@ -117,7 +117,6 @@ export default function AccountClient({
   const marketingId = `${baseId}-marketing`;
   const codeHintId = `${baseId}-code-hint`;
   const noticeId = `${baseId}-notice`;
-  const lastUsedDescribedBy = `${baseId}-last-used`;
   const emailErrorId = `${baseId}-email-error`;
   const codeErrorId = `${baseId}-code-error`;
   const firstNameId = `${baseId}-first`;
@@ -554,15 +553,12 @@ export default function AccountClient({
     );
   }
 
-  const preferEmail = lastUsed === "email";
   const controlsBusy = busy || Boolean(oauthPending);
   const oauth = (
     <OAuthButtons
       apiUrl={apiUrl}
       locale={locale}
       lastUsed={lastUsed}
-      lastUsedLabel={labels.lastUsed}
-      lastUsedDescribedBy={lastUsedDescribedBy}
       googleLabel={labels.google}
       appleLabel={labels.apple}
       shopLabel={labels.shop}
@@ -581,7 +577,6 @@ export default function AccountClient({
       emailErrorId={emailErrorId}
       email={email}
       marketingOptIn={marketingOptIn}
-      preferEmail={preferEmail}
       busy={controlsBusy}
       fieldErrors={fieldErrors}
       termsHref={termsHref}
@@ -628,12 +623,6 @@ export default function AccountClient({
                   <h1 className="account-panel__title">{labels.signIn}</h1>
                   <p className="account-panel__lead">{labels.lead}</p>
                 </div>
-
-                {lastUsed ? (
-                  <span id={lastUsedDescribedBy} className="visually-hidden">
-                    {labels.lastUsed}
-                  </span>
-                ) : null}
 
                 {oauth}
                 {divider}

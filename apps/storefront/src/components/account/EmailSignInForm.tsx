@@ -2,7 +2,6 @@ import type { FormEvent, RefObject } from "react";
 import type { FieldErrors } from "../../lib/account-validation";
 import type { AccountLabels } from "../../lib/customer-account";
 import FieldError from "./FieldError";
-import LastUsedBadge from "./LastUsedBadge";
 import TurnstileWidget, { type TurnstileApi } from "./TurnstileWidget";
 
 type Props = {
@@ -12,7 +11,6 @@ type Props = {
   emailErrorId: string;
   email: string;
   marketingOptIn: boolean;
-  preferEmail: boolean;
   busy: boolean;
   fieldErrors: FieldErrors;
   termsHref: string;
@@ -31,7 +29,6 @@ export default function EmailSignInForm({
   emailErrorId,
   email,
   marketingOptIn,
-  preferEmail,
   busy,
   fieldErrors,
   termsHref,
@@ -45,18 +42,7 @@ export default function EmailSignInForm({
   const emailInvalid = Boolean(fieldErrors.email);
 
   return (
-    <form
-      className={preferEmail ? "account-form is-last-used" : "account-form"}
-      onSubmit={onSubmit}
-      method="post"
-      noValidate
-    >
-      {preferEmail ? (
-        <div className="account-form__last-used">
-          <LastUsedBadge label={labels.lastUsed} />
-        </div>
-      ) : null}
-
+    <form className="account-form" onSubmit={onSubmit} method="post" noValidate>
       <div className="account-field account-field--email-submit">
         <label className="visually-hidden" htmlFor={emailId}>
           {labels.email}
