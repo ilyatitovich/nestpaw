@@ -1,17 +1,38 @@
+/**
+ * Storefront design tokens — Petique-inspired palette & type.
+ * Source reference: https://petique-template.webflow.io/
+ */
 :root {
-  --color-bg: #eef2f4;
+  /* Surfaces */
+  --color-bg: #fff6e8;
   --color-bg-elevated: #ffffff;
-  --color-ink: #0b1f1c;
-  --color-ink-muted: #4a5c58;
-  --color-brand: #12352f;
-  --color-brand-hover: #0c2420;
-  --color-accent: #f0a202;
-  --color-accent-ink: #1a1400;
-  --color-border: #d5dee0;
-  --color-danger: #b42318;
-  --color-success: #067647;
-  --font-display: "Outfit", "Segoe UI", sans-serif;
-  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --color-surface-soft: #fff3aa;
+  --color-surface-sky: #77c2f3;
+  --color-surface-mint: #b0ca6c;
+
+  /* Ink & brand */
+  --color-ink: #0a0a0a;
+  --color-ink-muted: #6b5648;
+  --color-brand: #301e13;
+  --color-brand-hover: #472e1e;
+  --color-brand-soft: #472e1e;
+
+  /* Accent */
+  --color-accent: #ff9fa7;
+  --color-accent-hover: #ff8a94;
+  --color-accent-ink: #301e13;
+
+  /* UI chrome */
+  --color-border: #e6d5c2;
+  --color-danger: #da3125;
+  --color-success: #4f6b24;
+  --color-warning: #ef5438;
+
+  /* Typography */
+  --font-display: "Anton", "Arial Narrow", Impact, sans-serif;
+  --font-body: "Mona Sans Variable", "Mona Sans", Arial, sans-serif;
+
+  /* Spacing */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -19,9 +40,23 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-8: 3rem;
-  --radius-sm: 4px;
-  --radius-md: 10px;
+
+  /* Radii — Petique leans soft / pill on CTAs */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-pill: 999px;
+
   --max-width: 72rem;
-  --shadow-sm: 0 1px 2px rgb(11 31 28 / 6%);
+  --border-width: 2px;
+
+  /* Hard offset shadows (Petique graphic style) */
+  --shadow-sm: 2px 2px 0 0 var(--color-brand);
+  --shadow-md: 4px 4px 0 0 var(--color-brand);
+  --shadow-lg: 6px 6px 0 0 var(--color-brand);
+
   --free-ship-threshold: 4900;
+
+  color-scheme: light;
+  accent-color: var(--color-accent);
 }
