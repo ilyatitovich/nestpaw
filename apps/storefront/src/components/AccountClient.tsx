@@ -53,9 +53,6 @@ type Props = {
     saveProfile: string;
     errorGeneric: string;
     oauthDenied: string;
-    stepsLabel: string;
-    stepEmail: string;
-    stepCode: string;
     termsBefore: string;
     terms: string;
     termsAnd: string;
@@ -586,37 +583,6 @@ export default function AccountClient({
   return (
     <div className="account-panel">
       <p className="account-panel__lead">{labels.lead}</p>
-
-      <nav className="account-steps" aria-label={labels.stepsLabel}>
-        <ol className="account-steps__list">
-          <li
-            className={
-              step === "email"
-                ? "account-steps__item is-current"
-                : "account-steps__item is-done"
-            }
-            aria-current={step === "email" ? "step" : undefined}
-          >
-            <span className="account-steps__num" aria-hidden="true">
-              1
-            </span>
-            <span className="account-steps__label">{labels.stepEmail}</span>
-          </li>
-          <li
-            className={
-              step === "code"
-                ? "account-steps__item is-current"
-                : "account-steps__item"
-            }
-            aria-current={step === "code" ? "step" : undefined}
-          >
-            <span className="account-steps__num" aria-hidden="true">
-              2
-            </span>
-            <span className="account-steps__label">{labels.stepCode}</span>
-          </li>
-        </ol>
-      </nav>
 
       {lastUsed ? (
         <span id={`${baseId}-last-used`} className="visually-hidden">

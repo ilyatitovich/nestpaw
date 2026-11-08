@@ -2870,56 +2870,6 @@ html[data-account-session="member"] .account-page__title {
   color: var(--color-ink-muted);
 }
 
-.account-steps__list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.account-steps__item {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 2.75rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / 70%);
-  color: var(--color-ink-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.account-steps__item.is-current {
-  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
-  background: rgb(18 53 47 / 6%);
-  color: var(--color-brand);
-}
-
-.account-steps__item.is-done {
-  color: var(--color-ink);
-}
-
-.account-steps__num {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 999px;
-  background: rgb(18 53 47 / 10%);
-  color: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.account-steps__item.is-current .account-steps__num {
-  background: var(--color-brand);
-  color: #f4f7f6;
-}
-
 .account-oauth {
   display: grid;
   gap: 0.65rem;
