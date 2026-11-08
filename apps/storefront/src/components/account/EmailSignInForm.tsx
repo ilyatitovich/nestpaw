@@ -73,21 +73,25 @@ export default function EmailSignInForm({
             aria-busy={busy || undefined}
             aria-label={busy ? labels.sendingCode : labels.sendCode}
           >
-            <svg
-              className="account-email-submit__icon"
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              aria-hidden="true"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
+            {busy ? (
+              <span className="account-email-submit__spinner" aria-hidden="true" />
+            ) : (
+              <svg
+                className="account-email-submit__icon"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                aria-hidden="true"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            )}
           </button>
         </div>
         <FieldError id={emailErrorId} message={fieldErrors.email} />

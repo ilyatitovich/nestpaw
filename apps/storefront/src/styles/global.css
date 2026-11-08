@@ -4300,14 +4300,43 @@ html[data-account-session="guest"] .account-page__title {
 }
 
 .account-email-submit__btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.72;
+  cursor: wait;
   transform: none;
   box-shadow: none;
 }
 
+.account-email-submit__btn[aria-busy="true"] {
+  opacity: 1;
+}
+
 .account-email-submit__icon {
   display: block;
+}
+
+.account-email-submit__spinner {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid color-mix(in srgb, var(--color-accent-ink) 25%, transparent);
+  border-top-color: var(--color-accent-ink);
+  border-radius: 50%;
+  animation: account-email-submit-spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-email-submit__spinner {
+    animation: none;
+    border-top-color: var(--color-accent-ink);
+    border-right-color: var(--color-accent-ink);
+    opacity: 0.7;
+  }
+}
+
+@keyframes account-email-submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .account-legal-agree {
