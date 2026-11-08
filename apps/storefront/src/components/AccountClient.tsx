@@ -28,6 +28,7 @@ import {
   type AccountOrder,
   type AuthMode,
   type AuthStep,
+  clearAccountTabFromUrl,
   consumeAuthErrorMessage,
   consumeMarketingOptIn,
   fetchCustomerMe,
@@ -480,6 +481,7 @@ export default function AccountClient({
 
   async function onLogout() {
     await logoutCustomer(apiUrl);
+    clearAccountTabFromUrl();
     setToken(null);
     setOrders([]);
     setAddresses([]);

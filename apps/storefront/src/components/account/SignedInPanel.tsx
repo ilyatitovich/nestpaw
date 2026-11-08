@@ -11,15 +11,18 @@ import {
   type AccountAddress,
   type AccountLabels,
   type AccountOrder,
+  type AccountTab,
+  ACCOUNT_TABS,
+  DEFAULT_ACCOUNT_TAB,
   formatAddressLines,
   formatOrderTotal,
+  readAccountTabFromUrl,
+  writeAccountTabToUrl,
 } from "../../lib/customer-account";
 import { localizePath } from "../../i18n/ui";
 import AccountMessage from "./AccountMessage";
 import FieldError from "./FieldError";
 import ProductCard, { type ProductCardProduct } from "../ProductCard";
-
-type AccountTab = "orders" | "profile" | "wishlist" | "addresses";
 
 type Props = {
   labels: AccountLabels;
@@ -49,8 +52,6 @@ type Props = {
   onWishlistChange: (productId: string, saved: boolean) => void;
 };
 
-const TABS: AccountTab[] = ["orders", "profile", "wishlist", "addresses"];
-
 export default function SignedInPanel({
   labels,
   locale,
@@ -79,7 +80,9 @@ export default function SignedInPanel({
   onWishlistChange,
 }: Props) {
   const baseId = useId();
-  const [activeTab, setActiveTab] = useState<AccountTab>("orders");
+  const [activeTab, setActiveTab] = useState<AccountTab>(
+    () => readAccountTabFromUrl() ?? DEFAULT_ACCOUNT_TAB,
+  );
   const tabRefs = useRef<Partial<Record<AccountTab, HTMLButtonElement | null>>>(
     {},
   );
@@ -93,29 +96,45 @@ export default function SignedInPanel({
   };
 
   useEffect(() => {
+    const onPopState = () => {
+      setActiveTab(readAccountTabFromUrl() ?? DEFAULT_ACCOUNT_TAB);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
     if (fieldErrors.firstName || fieldErrors.lastName) {
       setActiveTab("profile");
+      writeAccountTabToUrl("profile", "replace");
     }
   }, [fieldErrors.firstName, fieldErrors.lastName]);
 
   function selectTab(tab: AccountTab, focus = false) {
+    if (tab === activeTab) {
+      if (focus) tabRefs.current[tab]?.focus();
+      return;
+    }
     setActiveTab(tab);
+    writeAccountTabToUrl(tab, "push");
     if (focus) tabRefs.current[tab]?.focus();
   }
 
   function onTabKeyDown(e: KeyboardEvent<HTMLButtonElement>, tab: AccountTab) {
-    const index = TABS.indexOf(tab);
+    const index = ACCOUNT_TABS.indexOf(tab);
     if (index < 0) return;
 
     let next: AccountTab | null = null;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-      next = TABS[(index + 1) % TABS.length] ?? null;
+      next = ACCOUNT_TABS[(index + 1) % ACCOUNT_TABS.length] ?? null;
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-      next = TABS[(index - 1 + TABS.length) % TABS.length] ?? null;
+      next =
+        ACCOUNT_TABS[(index - 1 + ACCOUNT_TABS.length) % ACCOUNT_TABS.length] ??
+        null;
     } else if (e.key === "Home") {
-      next = TABS[0] ?? null;
+      next = ACCOUNT_TABS[0] ?? null;
     } else if (e.key === "End") {
-      next = TABS[TABS.length - 1] ?? null;
+      next = ACCOUNT_TABS[ACCOUNT_TABS.length - 1] ?? null;
     }
 
     if (!next) return;
@@ -168,7 +187,7 @@ export default function SignedInPanel({
           role="tablist"
           aria-label={labels.sectionsNav}
         >
-          {TABS.map((tab) => {
+          {ACCOUNT_TABS.map((tab) => {
             const selected = activeTab === tab;
             return (
               <button

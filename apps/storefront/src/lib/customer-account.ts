@@ -36,6 +36,14 @@ export type AccountCustomer = {
 export type AuthStep = "email" | "code";
 export type AuthMode = "sign_in" | "sign_up";
 export type OAuthProvider = Extract<AuthMethod, "google" | "apple">;
+export const ACCOUNT_TABS = [
+  "orders",
+  "profile",
+  "wishlist",
+  "addresses",
+] as const;
+export type AccountTab = (typeof ACCOUNT_TABS)[number];
+export const DEFAULT_ACCOUNT_TAB: AccountTab = "orders";
 
 export type AccountLabels = {
   login: string;
@@ -164,6 +172,34 @@ export function readAuthModeFromUrl(): AuthMode | null {
   const mode = params.get("mode");
   if (mode === "sign_up" || mode === "sign_in") return mode;
   return null;
+}
+
+export function isAccountTab(value: string | null | undefined): value is AccountTab {
+  return Boolean(value && (ACCOUNT_TABS as readonly string[]).includes(value));
+}
+
+export function readAccountTabFromUrl(): AccountTab | null {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return isAccountTab(tab) ? tab : null;
+}
+
+export function writeAccountTabToUrl(
+  tab: AccountTab,
+  historyMode: "replace" | "push" = "replace",
+) {
+  const next = new URL(window.location.href);
+  if (tab === DEFAULT_ACCOUNT_TAB) next.searchParams.delete("tab");
+  else next.searchParams.set("tab", tab);
+  const url = `${next.pathname}${next.search}`;
+  if (historyMode === "push") window.history.pushState({}, "", url);
+  else window.history.replaceState({}, "", url);
+}
+
+export function clearAccountTabFromUrl() {
+  const next = new URL(window.location.href);
+  if (!next.searchParams.has("tab")) return;
+  next.searchParams.delete("tab");
+  window.history.replaceState({}, "", `${next.pathname}${next.search}`);
 }
 
 export function persistAuthMode(mode: AuthMode) {
