@@ -186,6 +186,8 @@ export const ui = {
       "Network error. Check your connection and try again.",
     "account.errorValidation": "Please check your details and try again.",
     "account.errorNameRequired": "Enter at least one character.",
+    "account.errorNameInvalid":
+      "Use letters only — numbers aren’t allowed.",
     "account.errorAccountNotFound":
       "No account found for this email. Create an account to continue.",
     "account.errorAccountExists":
@@ -422,6 +424,8 @@ export const ui = {
     "account.errorValidation":
       "Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.",
     "account.errorNameRequired": "Bitte geben Sie mindestens ein Zeichen ein.",
+    "account.errorNameInvalid":
+      "Nur Buchstaben — Zahlen sind nicht erlaubt.",
     "account.errorAccountNotFound":
       "Kein Konto für diese E-Mail gefunden. Erstellen Sie ein Konto, um fortzufahren.",
     "account.errorAccountExists":

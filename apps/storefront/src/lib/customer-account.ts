@@ -101,6 +101,7 @@ export type AccountLabels = {
   errorNetwork: string;
   errorValidation: string;
   errorNameRequired: string;
+  errorNameInvalid: string;
   errorAccountNotFound: string;
   errorAccountExists: string;
   switchToSignUp: string;

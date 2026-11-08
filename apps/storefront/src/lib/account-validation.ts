@@ -40,9 +40,14 @@ export function isValidOtpCode(value: string) {
   return /^\d{6}$/.test(value);
 }
 
+/** Letters (any script), with optional spaces / hyphens / apostrophes between parts. */
+const PERSON_NAME_RE = /^[\p{L}]+(?:[\s'.-][\p{L}]+)*$/u;
+
 export function isValidName(value: string) {
   const name = value.trim();
-  return name.length >= 1 && name.length <= 100;
+  return (
+    name.length >= 1 && name.length <= 100 && PERSON_NAME_RE.test(name)
+  );
 }
 
 export function validateEmail(
@@ -75,7 +80,10 @@ export function validateName(
   value: string,
   labels: AccountLabels,
 ): string | undefined {
-  return isValidName(value) ? undefined : labels.errorNameRequired;
+  const name = value.trim();
+  if (!name) return labels.errorNameRequired;
+  if (!isValidName(value)) return labels.errorNameInvalid;
+  return undefined;
 }
 
 export function validateEmailStep(input: {

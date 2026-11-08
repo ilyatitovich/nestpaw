@@ -237,9 +237,16 @@ export const CustomerOtpVerifySchema = z.object({
 });
 export type CustomerOtpVerifyInput = z.infer<typeof CustomerOtpVerifySchema>;
 
+const PersonNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .regex(/^[\p{L}]+(?:[\s'.-][\p{L}]+)*$/u);
+
 export const CustomerProfileUpdateSchema = z.object({
-  firstName: z.string().min(1).max(100).optional(),
-  lastName: z.string().min(1).max(100).optional(),
+  firstName: PersonNameSchema.optional(),
+  lastName: PersonNameSchema.optional(),
 });
 export type CustomerProfileUpdateInput = z.infer<
   typeof CustomerProfileUpdateSchema
