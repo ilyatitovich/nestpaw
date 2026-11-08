@@ -12,6 +12,7 @@ export function getStaticPaths() {
 const locale = Astro.params.locale as Locale;
 const turnstileSiteKey =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
+const shopHref = localizePath(locale, "/shop");
 
 const breadcrumbs = [
   { label: t(locale, "nav.home"), href: localizePath(locale, "/") },
@@ -33,7 +34,7 @@ const breadcrumbs = [
       />
     </div>
     <h1 class="section__title account-page__title">
-      {t(locale, "account.signIn")}
+      {t(locale, "account.login")}
     </h1>
     <AccountClient
       client:only="react"
@@ -42,6 +43,7 @@ const breadcrumbs = [
       turnstileSiteKey={turnstileSiteKey}
       termsHref={localizePath(locale, "/pages/terms")}
       privacyHref={localizePath(locale, "/pages/privacy")}
+      shopHref={shopHref}
       labels={{
         login: t(locale, "account.login"),
         orders: t(locale, "account.orders"),
@@ -67,6 +69,16 @@ const breadcrumbs = [
         nameFirst: t(locale, "account.nameFirst"),
         nameLast: t(locale, "account.nameLast"),
         saveProfile: t(locale, "account.saveProfile"),
+        profile: t(locale, "account.profile"),
+        wishlist: t(locale, "account.wishlist"),
+        wishlistEmpty: t(locale, "account.wishlistEmpty"),
+        wishlistCount: t(locale, "account.wishlistCount"),
+        addresses: t(locale, "account.addresses"),
+        noAddresses: t(locale, "account.noAddresses"),
+        defaultAddress: t(locale, "account.defaultAddress"),
+        emailReadonly: t(locale, "account.emailReadonly"),
+        continueShopping: t(locale, "account.continueShopping"),
+        sectionsNav: t(locale, "account.sectionsNav"),
         errorGeneric: t(locale, "account.errorGeneric"),
         oauthDenied: t(locale, "account.oauthDenied"),
         errorEmailRequired: t(locale, "account.errorEmailRequired"),
@@ -104,31 +116,56 @@ const breadcrumbs = [
     >
       <div slot="fallback">
         <div
-          class="account-panel account-panel--signed-in account-fallback account-fallback--member"
+          class="account-hub account-fallback account-fallback--member"
           hidden
           aria-busy="true"
         >
-          <p class="account-panel__signed-in">
-            {t(locale, "account.signedInAs")}{" "}
-            <strong data-account-fallback-email></strong>
-          </p>
-          <button type="button" class="btn btn--ghost" disabled tabindex="-1">
-            {t(locale, "account.logout")}
-          </button>
-          <h2 class="account-panel__orders-title">
-            {t(locale, "account.orders")}
-          </h2>
-          <p class="account-panel__empty" data-account-fallback-empty>
-            {t(locale, "account.noOrders")}
-          </p>
-          <div class="order-list" data-account-fallback-orders hidden></div>
+          <header class="account-hub__identity">
+            <div class="account-hub__identity-text">
+              <p class="account-hub__greeting">
+                {t(locale, "account.signedInAs")}{" "}
+                <strong data-account-fallback-email></strong>
+              </p>
+            </div>
+            <button type="button" class="btn btn--ghost" disabled tabindex="-1">
+              {t(locale, "account.logout")}
+            </button>
+          </header>
+          <div class="account-tabs">
+            <div
+              class="account-tabs__list"
+              role="tablist"
+              aria-label={t(locale, "account.sectionsNav")}
+            >
+              <span class="account-tabs__tab is-active" role="presentation"
+                >{t(locale, "account.orders")}</span
+              >
+              <span class="account-tabs__tab" role="presentation"
+                >{t(locale, "account.profile")}</span
+              >
+              <span class="account-tabs__tab" role="presentation"
+                >{t(locale, "account.wishlist")}</span
+              >
+              <span class="account-tabs__tab" role="presentation"
+                >{t(locale, "account.addresses")}</span
+              >
+            </div>
+            <div class="account-tabpanel account-section">
+              <p class="account-section__empty-text" data-account-fallback-empty>
+                {t(locale, "account.noOrders")}
+              </p>
+              <div class="order-list" data-account-fallback-orders hidden></div>
+            </div>
+          </div>
         </div>
         <div
-          class="account-panel account-fallback account-fallback--guest"
+          class="account-auth account-fallback account-fallback--guest"
           aria-busy="true"
         >
-          <p class="account-panel__lead">{t(locale, "account.lead")}</p>
-          <div class="account-fallback__guest-body"></div>
+          <div class="account-panel">
+            <p class="account-panel__lead">{t(locale, "account.lead")}</p>
+            <div class="account-fallback__guest-body"></div>
+          </div>
         </div>
       </div>
     </AccountClient>
@@ -166,7 +203,7 @@ const breadcrumbs = [
                     String(order.number) +
                     '</strong><div class="order-row__meta">' +
                     meta +
-                    "</div></div><div></div></div>"
+                    '</div></div><div class="order-row__total"></div></div>'
                   );
                 })
                 .join("");

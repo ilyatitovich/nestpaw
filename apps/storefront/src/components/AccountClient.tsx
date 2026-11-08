@@ -23,6 +23,7 @@ import {
   validateTerms,
 } from "../lib/account-validation";
 import {
+  type AccountAddress,
   type AccountLabels,
   type AccountOrder,
   type AuthMode,
@@ -45,6 +46,7 @@ import {
 } from "../lib/customer-account";
 import { getCustomerAccessToken } from "../lib/customer-auth";
 import { type AuthMethod, getLastAuthMethod } from "../lib/last-auth-method";
+import { readWishlistIds } from "../lib/wishlist";
 import AccountMessage from "./account/AccountMessage";
 import EmailSignInForm from "./account/EmailSignInForm";
 import OAuthButtons from "./account/OAuthButtons";
@@ -57,7 +59,6 @@ function readOptimisticSession(): {
   email: string | null;
   firstName: string;
   lastName: string;
-  needsName: boolean;
   orders: AccountOrder[];
 } {
   if (readAccountSessionHint() === "member") {
@@ -67,7 +68,6 @@ function readOptimisticSession(): {
       email: snap?.email ?? null,
       firstName: snap?.firstName ?? "",
       lastName: snap?.lastName ?? "",
-      needsName: snap ? !snap.firstName || !snap.lastName : false,
       orders: snap?.orders ?? [],
     };
   }
@@ -76,7 +76,6 @@ function readOptimisticSession(): {
     email: null,
     firstName: "",
     lastName: "",
-    needsName: false,
     orders: [],
   };
 }
@@ -92,6 +91,7 @@ type Props = {
   turnstileSiteKey: string;
   termsHref: string;
   privacyHref: string;
+  shopHref: string;
   labels: AccountLabels;
 };
 
@@ -109,6 +109,7 @@ export default function AccountClient({
   turnstileSiteKey,
   termsHref,
   privacyHref,
+  shopHref,
   labels,
 }: Props) {
   const baseId = useId();
@@ -149,7 +150,8 @@ export default function AccountClient({
   );
   const [firstName, setFirstName] = useState(initialSession.firstName);
   const [lastName, setLastName] = useState(initialSession.lastName);
-  const [needsName, setNeedsName] = useState(initialSession.needsName);
+  const [addresses, setAddresses] = useState<AccountAddress[]>([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [resendIn, setResendIn] = useState(0);
   const [lastUsed, setLastUsed] = useState<AuthMethod | null>(null);
   const turnstileApiRef = useRef<TurnstileApi | null>(null);
@@ -157,16 +159,26 @@ export default function AccountClient({
 
   useEffect(() => {
     setLastUsed(getLastAuthMethod());
+    setWishlistCount(readWishlistIds().length);
   }, []);
 
   useEffect(() => {
     persistAuthMode(authMode);
     const title = document.querySelector(".account-page__title");
-    if (title) {
-      title.textContent =
-        authMode === "sign_up" ? labels.signUp : labels.signIn;
+    if (!title) return;
+    if (sessionStatus === "member") {
+      title.textContent = labels.login;
+      return;
     }
-  }, [authMode, labels.signIn, labels.signUp]);
+    title.textContent =
+      authMode === "sign_up" ? labels.signUp : labels.signIn;
+  }, [
+    authMode,
+    sessionStatus,
+    labels.login,
+    labels.signIn,
+    labels.signUp,
+  ]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
@@ -222,14 +234,16 @@ export default function AccountClient({
       return false;
     }
     const nextOrders = customer.orders ?? [];
+    const nextAddresses = customer.addresses ?? [];
     const nextFirst = customer.firstName ?? "";
     const nextLast = customer.lastName ?? "";
     setToken(accessToken);
     setCustomerEmail(customer.email);
     setOrders(nextOrders);
+    setAddresses(nextAddresses);
     setFirstName(nextFirst);
     setLastName(nextLast);
-    setNeedsName(!customer.firstName || !customer.lastName);
+    setWishlistCount(readWishlistIds().length);
     writeAccountSnapshot({
       email: customer.email,
       firstName: nextFirst,
@@ -437,7 +451,10 @@ export default function AccountClient({
     await logoutCustomer(apiUrl);
     setToken(null);
     setOrders([]);
+    setAddresses([]);
     setCustomerEmail(null);
+    setFirstName("");
+    setLastName("");
     setStep("email");
     setCode("");
     setAcceptedTerms(false);
@@ -476,7 +493,12 @@ export default function AccountClient({
         });
         return;
       }
-      setNeedsName(false);
+      writeAccountSnapshot({
+        email: customerEmail ?? "",
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        orders,
+      });
     } finally {
       setBusy(false);
     }
@@ -486,9 +508,12 @@ export default function AccountClient({
     return (
       <SignedInPanel
         labels={labels}
+        locale={locale}
+        shopHref={shopHref}
         customerEmail={customerEmail}
         orders={orders}
-        needsName={needsName}
+        addresses={addresses}
+        wishlistCount={wishlistCount}
         firstName={firstName}
         lastName={lastName}
         firstNameId={firstNameId}
@@ -606,118 +631,120 @@ export default function AccountClient({
   );
 
   return (
-    <div className="account-panel">
-      {step === "email" ? (
-        <div
-          className="account-mode-toggle"
-          role="tablist"
-          aria-label={labels.login}
-          id={modeTablistId}
-        >
-          <button
-            type="button"
-            role="tab"
-            className={
-              authMode === "sign_in"
-                ? "account-mode-toggle__btn is-active"
-                : "account-mode-toggle__btn"
-            }
-            aria-selected={authMode === "sign_in"}
-            disabled={controlsBusy}
-            onClick={() => switchAuthMode("sign_in")}
+    <div className="account-auth">
+      <div className="account-panel">
+        {step === "email" ? (
+          <div
+            className="account-mode-toggle"
+            role="tablist"
+            aria-label={labels.login}
+            id={modeTablistId}
           >
-            {labels.signIn}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={
-              authMode === "sign_up"
-                ? "account-mode-toggle__btn is-active"
-                : "account-mode-toggle__btn"
-            }
-            aria-selected={authMode === "sign_up"}
-            disabled={controlsBusy}
-            onClick={() => switchAuthMode("sign_up")}
-          >
-            {labels.signUp}
-          </button>
-        </div>
-      ) : null}
+            <button
+              type="button"
+              role="tab"
+              className={
+                authMode === "sign_in"
+                  ? "account-mode-toggle__btn is-active"
+                  : "account-mode-toggle__btn"
+              }
+              aria-selected={authMode === "sign_in"}
+              disabled={controlsBusy}
+              onClick={() => switchAuthMode("sign_in")}
+            >
+              {labels.signIn}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className={
+                authMode === "sign_up"
+                  ? "account-mode-toggle__btn is-active"
+                  : "account-mode-toggle__btn"
+              }
+              aria-selected={authMode === "sign_up"}
+              disabled={controlsBusy}
+              onClick={() => switchAuthMode("sign_up")}
+            >
+              {labels.signUp}
+            </button>
+          </div>
+        ) : null}
 
-      <p className="account-panel__lead">
-        {authMode === "sign_up" ? labels.leadSignUp : labels.lead}
-      </p>
+        <p className="account-panel__lead">
+          {authMode === "sign_up" ? labels.leadSignUp : labels.lead}
+        </p>
 
-      {lastUsed ? (
-        <span id={lastUsedDescribedBy} className="visually-hidden">
-          {labels.lastUsed}
-        </span>
-      ) : null}
+        {lastUsed ? (
+          <span id={lastUsedDescribedBy} className="visually-hidden">
+            {labels.lastUsed}
+          </span>
+        ) : null}
 
-      {step === "email" ? (
-        preferEmail ? (
-          <>
-            {emailForm}
-            {divider}
-            {oauth}
-          </>
+        {step === "email" ? (
+          preferEmail ? (
+            <>
+              {emailForm}
+              {divider}
+              {oauth}
+            </>
+          ) : (
+            <>
+              {oauth}
+              {divider}
+              {emailForm}
+            </>
+          )
         ) : (
-          <>
-            {oauth}
-            {divider}
-            {emailForm}
-          </>
-        )
-      ) : (
-        <OtpVerifyForm
-          labels={labels}
-          authMode={authMode}
-          codeId={codeId}
-          codeHintId={codeHintId}
-          codeErrorId={codeErrorId}
-          email={email}
-          code={code}
-          busy={controlsBusy}
-          resendIn={resendIn}
-          fieldErrors={fieldErrors}
-          codeInputRef={codeInputRef}
-          turnstileSiteKey={turnstileSiteKey}
-          turnstileApiRef={turnstileApiRef}
-          onCodeChange={(value) => {
-            setCode(value);
-            clearFieldError("code");
-            if (notice?.tone === "error") setNotice(null);
-          }}
-          onCodeBlur={() => {
-            const error = validateOtpCode(code, labels);
-            setFieldErrors((prev) =>
-              error
-                ? { ...prev, code: error }
-                : (() => {
-                    const next = { ...prev };
-                    delete next.code;
-                    return next;
-                  })(),
-            );
-          }}
-          onSubmit={onVerifyOtp}
-          onResend={onResendOtp}
-          onBack={() => {
-            setStep("email");
-            setCode("");
-            setFieldErrors({});
-            setNotice(null);
-            turnstileApiRef.current?.reset();
-          }}
-        />
-      )}
+          <OtpVerifyForm
+            labels={labels}
+            authMode={authMode}
+            codeId={codeId}
+            codeHintId={codeHintId}
+            codeErrorId={codeErrorId}
+            email={email}
+            code={code}
+            busy={controlsBusy}
+            resendIn={resendIn}
+            fieldErrors={fieldErrors}
+            codeInputRef={codeInputRef}
+            turnstileSiteKey={turnstileSiteKey}
+            turnstileApiRef={turnstileApiRef}
+            onCodeChange={(value) => {
+              setCode(value);
+              clearFieldError("code");
+              if (notice?.tone === "error") setNotice(null);
+            }}
+            onCodeBlur={() => {
+              const error = validateOtpCode(code, labels);
+              setFieldErrors((prev) =>
+                error
+                  ? { ...prev, code: error }
+                  : (() => {
+                      const next = { ...prev };
+                      delete next.code;
+                      return next;
+                    })(),
+              );
+            }}
+            onSubmit={onVerifyOtp}
+            onResend={onResendOtp}
+            onBack={() => {
+              setStep("email");
+              setCode("");
+              setFieldErrors({});
+              setNotice(null);
+              turnstileApiRef.current?.reset();
+            }}
+          />
+        )}
 
-      <AccountMessage
-        id={noticeId}
-        notice={notice}
-        onAction={(mode) => switchAuthMode(mode)}
-      />
+        <AccountMessage
+          id={noticeId}
+          notice={notice}
+          onAction={(mode) => switchAuthMode(mode)}
+        />
+      </div>
     </div>
   );
 }

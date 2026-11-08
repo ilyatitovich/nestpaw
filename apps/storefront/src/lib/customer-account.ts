@@ -11,11 +11,26 @@ export type AccountOrder = {
   createdAt: string;
 };
 
+export type AccountAddress = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  postalCode: string;
+  country: string;
+  state?: string | null;
+  phone?: string | null;
+  isDefault: boolean;
+};
+
 export type AccountCustomer = {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
   orders?: AccountOrder[];
+  addresses?: AccountAddress[];
 };
 
 export type AuthStep = "email" | "code";
@@ -47,6 +62,16 @@ export type AccountLabels = {
   nameFirst: string;
   nameLast: string;
   saveProfile: string;
+  profile: string;
+  wishlist: string;
+  wishlistEmpty: string;
+  wishlistCount: string;
+  addresses: string;
+  noAddresses: string;
+  defaultAddress: string;
+  emailReadonly: string;
+  continueShopping: string;
+  sectionsNav: string;
   errorGeneric: string;
   oauthDenied: string;
   termsBefore: string;
@@ -81,6 +106,17 @@ export type AccountLabels = {
   switchToSignUp: string;
   switchToSignIn: string;
 };
+
+export function formatAddressLines(address: AccountAddress): string[] {
+  const lines = [
+    `${address.firstName} ${address.lastName}`.trim(),
+    address.line1,
+    address.line2?.trim() || null,
+    [address.postalCode, address.city].filter(Boolean).join(" "),
+    [address.state, address.country].filter(Boolean).join(", "),
+  ];
+  return lines.filter((line): line is string => Boolean(line));
+}
 
 const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
 const TURNSTILE_SCRIPT_SRC =
