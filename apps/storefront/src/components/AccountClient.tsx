@@ -1,29 +1,32 @@
-import {
-  type ReactElement,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { setAccountChrome } from "../lib/account-chrome";
 import {
-  getCustomerAccessToken,
-  setCustomerAccessToken,
-} from "../lib/customer-auth";
+  type AccountLabels,
+  type AccountOrder,
+  type AuthStep,
+  type OAuthProvider,
+  consumeAuthErrorMessage,
+  ensureTurnstileScript,
+  fetchCustomerMe,
+  logoutCustomer,
+  readTurnstileToken,
+  refreshCustomerSession,
+  rememberAuthMethod,
+  requestCustomerOtp,
+  resetTurnstile,
+  updateCustomerProfile,
+  verifyCustomerOtp,
+} from "../lib/customer-account";
+import { getCustomerAccessToken } from "../lib/customer-auth";
 import {
   type AuthMethod,
   getLastAuthMethod,
-  setLastAuthMethod,
 } from "../lib/last-auth-method";
-
-type Order = {
-  id: string;
-  number: number;
-  status: string;
-  total: number;
-  currency: string;
-  createdAt: string;
-};
+import AccountMessage from "./account/AccountMessage";
+import EmailSignInForm from "./account/EmailSignInForm";
+import OAuthButtons from "./account/OAuthButtons";
+import OtpVerifyForm from "./account/OtpVerifyForm";
+import SignedInPanel from "./account/SignedInPanel";
 
 type Props = {
   apiUrl: string;
@@ -31,89 +34,8 @@ type Props = {
   turnstileSiteKey: string;
   termsHref: string;
   privacyHref: string;
-  labels: {
-    orders: string;
-    logout: string;
-    noOrders: string;
-    email: string;
-    continue: string;
-    code: string;
-    verify: string;
-    resend: string;
-    resendIn: string;
-    google: string;
-    apple: string;
-    or: string;
-    signedInAs: string;
-    sendCode: string;
-    codeSent: string;
-    codeHint: string;
-    nameFirst: string;
-    nameLast: string;
-    saveProfile: string;
-    errorGeneric: string;
-    oauthDenied: string;
-    termsBefore: string;
-    terms: string;
-    termsAnd: string;
-    privacy: string;
-    termsAfter: string;
-    marketingOptIn: string;
-    termsRequired: string;
-    lead: string;
-    lastUsed: string;
-  };
+  labels: AccountLabels;
 };
-
-type Step = "email" | "code";
-
-function GoogleIcon() {
-  return (
-    <svg
-      className="account-oauth__icon"
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      aria-hidden="true"
-    >
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      />
-    </svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <svg
-      className="account-oauth__icon"
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      aria-hidden="true"
-      fill="currentColor"
-    >
-      <path d="M16.365 1.43c0 1.14-.42 2.2-1.18 3.03-.8.88-2.13 1.56-3.25 1.47-.14-1.1.4-2.27 1.15-3.07.82-.89 2.23-1.55 3.28-1.43zM20.8 17.4c-.58 1.33-.85 1.92-1.59 3.1-1.03 1.6-2.48 3.59-4.28 3.61-1.6.02-2.02-1.05-4.2-1.03-2.18.01-2.64 1.06-4.24 1.04-1.8-.03-3.17-1.82-4.2-3.42C.5 17.1-.7 12.3 1.2 9.05c1.1-1.9 2.85-3.1 4.5-3.1 1.68 0 2.74 1.1 4.13 1.1 1.35 0 2.17-1.11 4.17-1.11 1.49 0 3.06.81 4.16 2.21-3.65 2-3.05 7.2.64 9.25z" />
-    </svg>
-  );
-}
-
-function LastUsedBadge({ label }: { label: string }) {
-  return <span className="account-last-used">{label}</span>;
-}
 
 export default function AccountClient({
   apiUrl,
@@ -130,8 +52,9 @@ export default function AccountClient({
   const marketingId = `${baseId}-marketing`;
   const codeHintId = `${baseId}-code-hint`;
   const messageId = `${baseId}-message`;
+  const lastUsedDescribedBy = `${baseId}-last-used`;
 
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<AuthStep>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -139,7 +62,7 @@ export default function AccountClient({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<AccountOrder[]>([]);
   const [customerEmail, setCustomerEmail] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -155,33 +78,17 @@ export default function AccountClient({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("authError")) {
-      setMessage(
-        params.get("authError") === "oauth_denied"
-          ? labels.oauthDenied
-          : labels.errorGeneric,
-      );
-      window.history.replaceState({}, "", window.location.pathname);
-    }
+    const authError = consumeAuthErrorMessage(labels);
+    if (authError) setMessage(authError);
 
     void (async () => {
       try {
-        const res = await fetch(`${apiUrl}/customers/auth/refresh`, {
-          method: "POST",
-          credentials: "include",
-        });
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          accessToken: string | null;
-          customer: { email: string } | null;
-        };
-        if (!data.accessToken) return;
-        setCustomerAccessToken(data.accessToken);
-        setToken(data.accessToken);
-        await loadMe(data.accessToken);
+        const accessToken = await refreshCustomerSession(apiUrl);
+        if (!accessToken) return;
+        setToken(accessToken);
+        await applyCustomer(accessToken);
       } catch {
-        setCustomerAccessToken(null);
+        // stay signed out
       }
     })();
   }, []);
@@ -198,107 +105,61 @@ export default function AccountClient({
 
   useEffect(() => {
     if (step !== "email" || token) return;
-    const scriptId = "cf-turnstile-script";
-    if (!document.getElementById(scriptId)) {
-      const s = document.createElement("script");
-      s.id = scriptId;
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      s.async = true;
-      s.defer = true;
-      document.body.appendChild(s);
-    }
+    ensureTurnstileScript();
   }, [step, token]);
 
-  useEffect(() => {
-    if (step === "code") {
-      codeInputRef.current?.focus();
-    }
-  }, [step]);
-
-  async function loadMe(accessToken: string) {
-    const res = await fetch(`${apiUrl}/customers/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      credentials: "include",
-    });
-    if (!res.ok) {
-      setCustomerAccessToken(null);
+  async function applyCustomer(accessToken: string) {
+    const customer = await fetchCustomerMe(apiUrl, accessToken);
+    if (!customer) {
       setToken(null);
       return;
     }
-    const data = (await res.json()) as {
-      email: string;
-      firstName?: string | null;
-      lastName?: string | null;
-      orders?: Order[];
-    };
-    setCustomerEmail(data.email);
-    setOrders(data.orders ?? []);
-    setFirstName(data.firstName ?? "");
-    setLastName(data.lastName ?? "");
-    setNeedsName(!data.firstName || !data.lastName);
+    setCustomerEmail(customer.email);
+    setOrders(customer.orders ?? []);
+    setFirstName(customer.firstName ?? "");
+    setLastName(customer.lastName ?? "");
+    setNeedsName(!customer.firstName || !customer.lastName);
   }
 
-  function turnstileToken(): string {
-    const input = turnstileRef.current?.querySelector(
-      "[name='cf-turnstile-response']",
-    );
-    return input instanceof HTMLInputElement ? input.value : "";
+  function remember(method: AuthMethod) {
+    setLastUsed(rememberAuthMethod(method));
   }
 
-  function resetTurnstile() {
-    const widget = turnstileRef.current?.querySelector(".cf-turnstile");
-    if (widget instanceof HTMLElement) {
-      window.turnstile?.reset(widget);
-    }
-  }
-
-  function requireTerms(): boolean {
-    if (acceptedTerms) return true;
-    setMessage(labels.termsRequired);
-    return false;
-  }
-
-  function rememberMethod(method: AuthMethod) {
-    setLastAuthMethod(method);
-    setLastUsed(method);
-  }
-
-  function onOAuthClick(
+  function onOAuthSelect(
     e: React.MouseEvent<HTMLAnchorElement>,
-    method: Extract<AuthMethod, "google" | "apple">,
+    provider: OAuthProvider,
   ) {
     if (!acceptedTerms) {
       e.preventDefault();
       setMessage(labels.termsRequired);
       return;
     }
-    rememberMethod(method);
+    remember(provider);
   }
 
-  async function requestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function onRequestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!requireTerms()) return;
+    if (!acceptedTerms) {
+      setMessage(labels.termsRequired);
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      const ts = turnstileToken();
-      if (!ts) {
+      const turnstileToken = readTurnstileToken(turnstileRef.current);
+      if (!turnstileToken) {
         setMessage(labels.errorGeneric);
         return;
       }
-      const res = await fetch(`${apiUrl}/customers/auth/otp/request`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          locale,
-          turnstileToken: ts,
-        }),
+      const ok = await requestCustomerOtp({
+        apiUrl,
+        email,
+        locale,
+        turnstileToken,
       });
-      if (!res.ok) {
+      if (!ok) {
         setMessage(labels.errorGeneric);
-        resetTurnstile();
+        resetTurnstile(turnstileRef.current);
         return;
       }
       setStep("code");
@@ -306,32 +167,25 @@ export default function AccountClient({
       setMessage(labels.codeSent);
     } catch {
       setMessage(labels.errorGeneric);
-      resetTurnstile();
+      resetTurnstile(turnstileRef.current);
     } finally {
       setBusy(false);
     }
   }
 
-  async function verifyOtp(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function onVerifyOtp(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
     try {
-      const res = await fetch(`${apiUrl}/customers/auth/otp/verify`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      if (!res.ok) {
+      const accessToken = await verifyCustomerOtp({ apiUrl, email, code });
+      if (!accessToken) {
         setMessage(labels.errorGeneric);
         return;
       }
-      const data = (await res.json()) as { accessToken: string };
-      rememberMethod("email");
-      setCustomerAccessToken(data.accessToken);
-      setToken(data.accessToken);
-      await loadMe(data.accessToken);
+      remember("email");
+      setToken(accessToken);
+      await applyCustomer(accessToken);
     } catch {
       setMessage(labels.errorGeneric);
     } finally {
@@ -339,12 +193,8 @@ export default function AccountClient({
     }
   }
 
-  async function logout() {
-    await fetch(`${apiUrl}/customers/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => undefined);
-    setCustomerAccessToken(null);
+  async function onLogout() {
+    await logoutCustomer(apiUrl);
     setToken(null);
     setOrders([]);
     setCustomerEmail(null);
@@ -354,22 +204,19 @@ export default function AccountClient({
     setMarketingOptIn(false);
   }
 
-  async function saveProfile(e: React.SyntheticEvent<HTMLFormElement>) {
+  async function onSaveProfile(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const access = getCustomerAccessToken();
     if (!access) return;
     setBusy(true);
     try {
-      const res = await fetch(`${apiUrl}/customers/me`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-        body: JSON.stringify({ firstName, lastName }),
+      const ok = await updateCustomerProfile({
+        apiUrl,
+        accessToken: access,
+        firstName,
+        lastName,
       });
-      if (!res.ok) {
+      if (!ok) {
         setMessage(labels.errorGeneric);
         return;
       }
@@ -379,296 +226,115 @@ export default function AccountClient({
     }
   }
 
-  function goBackToEmail() {
-    setStep("email");
-    setCode("");
-    setMessage(null);
-  }
-
-  const oauthProviders: Array<{
-    id: Extract<AuthMethod, "google" | "apple">;
-    label: string;
-    icon: ReactElement;
-  }> = [
-    { id: "google", label: labels.google, icon: <GoogleIcon /> },
-    { id: "apple", label: labels.apple, icon: <AppleIcon /> },
-  ];
-  if (lastUsed === "apple") {
-    oauthProviders.reverse();
+  if (token) {
+    return (
+      <SignedInPanel
+        labels={labels}
+        customerEmail={customerEmail}
+        orders={orders}
+        needsName={needsName}
+        firstName={firstName}
+        lastName={lastName}
+        busy={busy}
+        message={message}
+        onFirstNameChange={setFirstName}
+        onLastNameChange={setLastName}
+        onSaveProfile={onSaveProfile}
+        onLogout={onLogout}
+      />
+    );
   }
 
   const preferEmail = lastUsed === "email";
-
-  const oauthBlock = (
-    <div className="account-oauth">
-      {oauthProviders.map((provider) => {
-        const isLast = lastUsed === provider.id;
-        return (
-          <a
-            key={provider.id}
-            className={
-              isLast
-                ? `account-oauth__btn account-oauth__btn--${provider.id} is-last-used`
-                : `account-oauth__btn account-oauth__btn--${provider.id}`
-            }
-            href={`${apiUrl}/customers/auth/oauth/${provider.id}/start?locale=${locale}`}
-            onClick={(e) => onOAuthClick(e, provider.id)}
-            aria-describedby={isLast ? `${baseId}-last-used` : undefined}
-          >
-            {provider.icon}
-            <span className="account-oauth__label">{provider.label}</span>
-            {isLast ? <LastUsedBadge label={labels.lastUsed} /> : null}
-          </a>
-        );
-      })}
-    </div>
+  const oauth = (
+    <OAuthButtons
+      apiUrl={apiUrl}
+      locale={locale}
+      lastUsed={lastUsed}
+      lastUsedLabel={labels.lastUsed}
+      lastUsedDescribedBy={lastUsedDescribedBy}
+      googleLabel={labels.google}
+      appleLabel={labels.apple}
+      onSelect={onOAuthSelect}
+    />
   );
-
   const emailForm = (
-    <form
-      className={
-        preferEmail ? "account-form is-last-used" : "account-form"
-      }
-      onSubmit={requestOtp}
-      method="post"
-    >
-      {preferEmail ? (
-        <div className="account-form__last-used">
-          <LastUsedBadge label={labels.lastUsed} />
-        </div>
-      ) : null}
-      <div className="account-field">
-        <label htmlFor={emailId}>{labels.email}</label>
-        <input
-          id={emailId}
-          name="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-          enterKeyHint="next"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          aria-describedby={message ? messageId : undefined}
-        />
-      </div>
-
-      <fieldset className="account-consents">
-        <legend className="visually-hidden">{labels.terms}</legend>
-        <label className="account-check" htmlFor={termsId}>
-          <input
-            id={termsId}
-            name="terms"
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => {
-              setAcceptedTerms(e.target.checked);
-              if (e.target.checked && message === labels.termsRequired) {
-                setMessage(null);
-              }
-            }}
-            required
-          />
-          <span>
-            {labels.termsBefore}
-            <a href={termsHref} target="_blank" rel="noopener noreferrer">
-              {labels.terms}
-            </a>
-            {labels.termsAnd}
-            <a href={privacyHref} target="_blank" rel="noopener noreferrer">
-              {labels.privacy}
-            </a>
-            {labels.termsAfter}
-          </span>
-        </label>
-        <label className="account-check" htmlFor={marketingId}>
-          <input
-            id={marketingId}
-            name="marketing"
-            type="checkbox"
-            checked={marketingOptIn}
-            onChange={(e) => setMarketingOptIn(e.target.checked)}
-          />
-          <span>{labels.marketingOptIn}</span>
-        </label>
-      </fieldset>
-
-      <div ref={turnstileRef} className="account-turnstile">
-        <div
-          className="cf-turnstile"
-          data-sitekey={turnstileSiteKey}
-          data-theme="light"
-          data-size="flexible"
-        />
-      </div>
-
-      <button
-        className="btn btn--primary account-form__submit"
-        type="submit"
-        disabled={busy}
-      >
-        {labels.sendCode}
-      </button>
-    </form>
+    <EmailSignInForm
+      labels={labels}
+      emailId={emailId}
+      termsId={termsId}
+      marketingId={marketingId}
+      messageId={messageId}
+      email={email}
+      acceptedTerms={acceptedTerms}
+      marketingOptIn={marketingOptIn}
+      preferEmail={preferEmail}
+      busy={busy}
+      message={message}
+      termsHref={termsHref}
+      privacyHref={privacyHref}
+      turnstileSiteKey={turnstileSiteKey}
+      turnstileRef={turnstileRef}
+      onEmailChange={setEmail}
+      onAcceptedTermsChange={setAcceptedTerms}
+      onMarketingOptInChange={setMarketingOptIn}
+      onClearTermsMessage={() => {
+        if (message === labels.termsRequired) setMessage(null);
+      }}
+      onSubmit={onRequestOtp}
+    />
   );
-
-  if (token) {
-    return (
-      <div className="account-panel account-panel--signed-in">
-        <p className="account-panel__signed-in">
-          {labels.signedInAs} <strong>{customerEmail}</strong>
-        </p>
-        {needsName ? (
-          <form className="account-form" onSubmit={saveProfile}>
-            <div className="account-field">
-              <label htmlFor={`${baseId}-first`}>{labels.nameFirst}</label>
-              <input
-                id={`${baseId}-first`}
-                name="given-name"
-                autoComplete="given-name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="account-field">
-              <label htmlFor={`${baseId}-last`}>{labels.nameLast}</label>
-              <input
-                id={`${baseId}-last`}
-                name="family-name"
-                autoComplete="family-name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-            </div>
-            <button className="btn btn--primary" type="submit" disabled={busy}>
-              {labels.saveProfile}
-            </button>
-          </form>
-        ) : null}
-        <button type="button" className="btn btn--ghost" onClick={logout}>
-          {labels.logout}
-        </button>
-        <h2 className="account-panel__orders-title">{labels.orders}</h2>
-        {!orders.length ? (
-          <p className="account-panel__empty">{labels.noOrders}</p>
-        ) : null}
-        <div className="order-list">
-          {orders.map((o) => (
-            <div className="order-row" key={o.id}>
-              <div>
-                <strong>#{o.number}</strong>
-                <div className="order-row__meta">
-                  {new Date(o.createdAt).toLocaleDateString()} · {o.status}
-                </div>
-              </div>
-              <div>
-                €{((o.total ?? 0) / 100).toFixed(2)} {o.currency ?? "EUR"}
-              </div>
-            </div>
-          ))}
-        </div>
-        {message ? (
-          <p className="account-message" role="status" aria-live="polite">
-            {message}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
+  const divider = (
+    <p className="account-divider">
+      <span>{labels.or}</span>
+    </p>
+  );
 
   return (
     <div className="account-panel">
       <p className="account-panel__lead">{labels.lead}</p>
 
       {lastUsed ? (
-        <span id={`${baseId}-last-used`} className="visually-hidden">
+        <span id={lastUsedDescribedBy} className="visually-hidden">
           {labels.lastUsed}
         </span>
       ) : null}
 
       {step === "email" ? (
-        <>
-          {preferEmail ? (
-            <>
-              {emailForm}
-              <p className="account-divider">
-                <span>{labels.or}</span>
-              </p>
-              {oauthBlock}
-            </>
-          ) : (
-            <>
-              {oauthBlock}
-              <p className="account-divider">
-                <span>{labels.or}</span>
-              </p>
-              {emailForm}
-            </>
-          )}
-        </>
+        preferEmail ? (
+          <>
+            {emailForm}
+            {divider}
+            {oauth}
+          </>
+        ) : (
+          <>
+            {oauth}
+            {divider}
+            {emailForm}
+          </>
+        )
       ) : (
-        <form className="account-form" onSubmit={verifyOtp} method="post">
-          <div className="account-field">
-            <label htmlFor={codeId}>{labels.code}</label>
-            <p id={codeHintId} className="account-field__hint">
-              {labels.codeHint.replace("{email}", email)}
-            </p>
-            <input
-              ref={codeInputRef}
-              id={codeId}
-              name="otp"
-              type="text"
-              inputMode="numeric"
-              pattern="\d{6}"
-              maxLength={6}
-              value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-              }
-              required
-              autoComplete="one-time-code"
-              enterKeyHint="done"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              aria-describedby={codeHintId}
-              className="account-otp-input"
-            />
-          </div>
-          <button
-            className="btn btn--primary account-form__submit"
-            type="submit"
-            disabled={busy}
-          >
-            {labels.verify}
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost"
-            disabled={busy}
-            onClick={goBackToEmail}
-          >
-            {resendIn > 0
-              ? labels.resendIn.replace("{n}", String(resendIn))
-              : labels.resend}
-          </button>
-        </form>
+        <OtpVerifyForm
+          labels={labels}
+          codeId={codeId}
+          codeHintId={codeHintId}
+          email={email}
+          code={code}
+          busy={busy}
+          resendIn={resendIn}
+          codeInputRef={codeInputRef}
+          onCodeChange={setCode}
+          onSubmit={onVerifyOtp}
+          onBack={() => {
+            setStep("email");
+            setCode("");
+            setMessage(null);
+          }}
+        />
       )}
 
-      {message ? (
-        <p
-          id={messageId}
-          className="account-message"
-          role="status"
-          aria-live="polite"
-        >
-          {message}
-        </p>
-      ) : null}
+      <AccountMessage id={messageId} message={message} />
     </div>
   );
 }
