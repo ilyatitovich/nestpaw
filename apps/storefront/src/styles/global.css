@@ -2054,7 +2054,6 @@ a.cart-drawer__upsell-name:hover {
   color: var(--color-ink-muted);
 }
 
-.plp-toolbar select,
 .plp-toolbar input,
 .search-form input,
 .review-form input,
@@ -2065,6 +2064,118 @@ a.cart-drawer__upsell-name:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg-elevated);
+}
+
+/* Closed control in every browser. base-select (below) restyles the menu
+   where the browser supports it; otherwise the OS list stays native. */
+select {
+  appearance: none;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-inline-size: 9rem;
+  min-block-size: 2.75rem;
+  padding-block: 0.55rem;
+  padding-inline: 0.7rem 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-elevated);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23301e13' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+  color: var(--color-ink);
+  font: inherit;
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+select:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
+}
+
+select:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+select[aria-invalid="true"],
+select:user-invalid {
+  border-color: var(--color-danger);
+}
+
+select[aria-invalid="true"]:focus-visible,
+select:user-invalid:focus-visible {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
+}
+
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.account-field select {
+  inline-size: 100%;
+  min-block-size: 3rem;
+}
+
+.review-form select {
+  inline-size: 100%;
+}
+
+@supports (appearance: base-select) {
+  select,
+  select::picker(select) {
+    appearance: base-select;
+  }
+
+  select {
+    background-image: none;
+    padding-inline-end: 0.7rem;
+  }
+
+  select::picker-icon {
+    color: var(--color-brand);
+    margin-inline-start: 0.65rem;
+  }
+
+  select::picker(select) {
+    padding: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+    color: var(--color-ink);
+    font: inherit;
+    box-shadow: var(--shadow-sm);
+    scrollbar-color: var(--color-brand) transparent;
+    scrollbar-width: thin;
+  }
+
+  select option {
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.35rem;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:focus-visible {
+    background: color-mix(in srgb, var(--color-accent) 45%, white);
+    outline: none;
+  }
+
+  select option:checked {
+    background: color-mix(in srgb, var(--color-brand) 8%, white);
+  }
+
+  select option::checkmark {
+    color: var(--color-brand);
+  }
 }
 
 .search-form {
@@ -2382,16 +2493,6 @@ a.cart-drawer__upsell-name:hover {
   gap: 0.25rem;
   font-size: 0.85rem;
   color: var(--color-ink-muted);
-}
-
-.search-toolbar__sort select {
-  font: inherit;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  color: var(--color-ink);
-  min-block-size: 44px;
 }
 
 .view-toggle {
@@ -4025,26 +4126,15 @@ a.cart-line__title:hover {
 }
 
 .checkout-form .account-field select {
-  width: 100%;
-  min-height: 3rem;
-  font: inherit;
   font-size: 1rem;
-  box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  color: var(--color-ink);
-  padding: 0.65rem 0.85rem;
+  padding-block: 0.65rem;
+  padding-inline: 0.85rem 2.4rem;
 }
 
-.checkout-form .account-field select:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
-}
-
-.checkout-form .account-field select[aria-invalid="true"] {
-  border-color: var(--color-danger);
+@supports (appearance: base-select) {
+  .checkout-form .account-field select {
+    padding-inline-end: 0.85rem;
+  }
 }
 
 .checkout-form__note,
@@ -5142,6 +5232,7 @@ html[data-account-session="guest"] .account-page__title {
 
 @media (pointer: coarse) {
   .account-field input:not([type="checkbox"]),
+  .account-field select,
   .account-oauth__btn,
   .account-form__submit {
     min-height: 3.25rem;
