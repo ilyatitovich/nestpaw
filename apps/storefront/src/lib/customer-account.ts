@@ -35,6 +35,10 @@ export type AccountCustomer = {
 
 export type AuthStep = "email" | "code";
 export type OAuthProvider = Extract<AuthMethod, "google" | "apple">;
+export type PendingAuth = {
+  email: string;
+  marketingOptIn: boolean;
+};
 export const ACCOUNT_TABS = [
   "orders",
   "profile",
@@ -131,11 +135,67 @@ export function formatAddressLines(address: AccountAddress): string[] {
 const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
 const TURNSTILE_SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js";
+const PENDING_AUTH_STORAGE_KEY = "nestpaw:pending-auth";
 
 export function orderedOAuthProviders(
   lastUsed: AuthMethod | null,
 ): OAuthProvider[] {
   return lastUsed === "apple" ? ["apple", "google"] : ["google", "apple"];
+}
+
+export function readAuthStepFromUrl(): AuthStep {
+  const step = new URLSearchParams(window.location.search).get("step");
+  return step === "code" ? "code" : "email";
+}
+
+export function writeAuthStepToUrl(
+  step: AuthStep,
+  historyMode: "replace" | "push" = "replace",
+) {
+  const next = new URL(window.location.href);
+  if (step === "email") next.searchParams.delete("step");
+  else next.searchParams.set("step", "code");
+  const url = `${next.pathname}${next.search}`;
+  const state = { ...(window.history.state ?? {}), authStep: step };
+  if (historyMode === "push") window.history.pushState(state, "", url);
+  else window.history.replaceState(state, "", url);
+}
+
+export function persistPendingAuth(pending: PendingAuth) {
+  try {
+    sessionStorage.setItem(
+      PENDING_AUTH_STORAGE_KEY,
+      JSON.stringify({
+        email: pending.email.trim(),
+        marketingOptIn: pending.marketingOptIn,
+      }),
+    );
+  } catch {
+    // private mode
+  }
+}
+
+export function readPendingAuth(): PendingAuth | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingAuth>;
+    if (typeof parsed.email !== "string" || !parsed.email.trim()) return null;
+    return {
+      email: parsed.email.trim(),
+      marketingOptIn: Boolean(parsed.marketingOptIn),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingAuth() {
+  try {
+    sessionStorage.removeItem(PENDING_AUTH_STORAGE_KEY);
+  } catch {
+    // private mode
+  }
 }
 
 export function oauthStartUrl(

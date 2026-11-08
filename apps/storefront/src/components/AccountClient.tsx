@@ -27,6 +27,7 @@ import {
   type AccountOrder,
   type AuthStep,
   clearAccountTabFromUrl,
+  clearPendingAuth,
   consumeAuthErrorMessage,
   consumeMarketingOptIn,
   fetchCustomerMe,
@@ -34,11 +35,15 @@ import {
   type OAuthProvider,
   optInCustomerNewsletter,
   persistMarketingOptIn,
+  persistPendingAuth,
+  readAuthStepFromUrl,
+  readPendingAuth,
   refreshCustomerSession,
   rememberAuthMethod,
   requestCustomerOtp,
   updateCustomerProfile,
   verifyCustomerOtp,
+  writeAuthStepToUrl,
 } from "../lib/customer-account";
 import { getCustomerAccessToken } from "../lib/customer-auth";
 import { type AuthMethod, getLastAuthMethod } from "../lib/last-auth-method";
@@ -77,6 +82,30 @@ function readOptimisticSession(): {
     firstName: "",
     lastName: "",
     orders: [],
+  };
+}
+
+function readInitialGuestAuth(): {
+  step: AuthStep;
+  email: string;
+  marketingOptIn: boolean;
+} {
+  if (typeof window === "undefined") {
+    return { step: "email", email: "", marketingOptIn: false };
+  }
+  const pending = readPendingAuth();
+  const step = readAuthStepFromUrl();
+  if (step === "code" && pending?.email) {
+    return {
+      step: "code",
+      email: pending.email,
+      marketingOptIn: pending.marketingOptIn,
+    };
+  }
+  return {
+    step: "email",
+    email: pending?.email ?? "",
+    marketingOptIn: pending?.marketingOptIn ?? false,
   };
 }
 
@@ -124,10 +153,13 @@ export default function AccountClient({
   const firstNameErrorId = `${baseId}-first-error`;
   const lastNameErrorId = `${baseId}-last-error`;
 
-  const [step, setStep] = useState<AuthStep>("email");
-  const [email, setEmail] = useState("");
+  const [initialGuestAuth] = useState(readInitialGuestAuth);
+  const [step, setStep] = useState<AuthStep>(initialGuestAuth.step);
+  const [email, setEmail] = useState(initialGuestAuth.email);
   const [code, setCode] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(
+    initialGuestAuth.marketingOptIn,
+  );
   const [notice, setNotice] = useState<FormNotice | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
@@ -157,6 +189,38 @@ export default function AccountClient({
 
   useEffect(() => {
     setLastUsed(getLastAuthMethod());
+  }, []);
+
+  useEffect(() => {
+    if (readAuthStepFromUrl() === "code" && !readPendingAuth()?.email) {
+      writeAuthStepToUrl("email", "replace");
+    }
+  }, []);
+
+  useEffect(() => {
+    function onPopState() {
+      const nextStep = readAuthStepFromUrl();
+      const pending = readPendingAuth();
+      if (nextStep === "code" && !pending?.email) {
+        writeAuthStepToUrl("email", "replace");
+        setStep("email");
+        setCode("");
+        setFieldErrors({});
+        setNotice(null);
+        return;
+      }
+      setStep(nextStep);
+      setCode("");
+      setFieldErrors({});
+      setNotice(null);
+      if (nextStep === "code" && pending) {
+        setEmail(pending.email);
+        setMarketingOptIn(pending.marketingOptIn);
+      }
+      turnstileApiRef.current?.reset();
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   useEffect(() => {
@@ -203,12 +267,16 @@ export default function AccountClient({
           if (!cancelled) {
             setSessionStatus(ok ? "member" : "guest");
           }
-          if (ok && pendingMarketing) {
-            void optInCustomerNewsletter({
-              apiUrl,
-              accessToken,
-              locale,
-            });
+          if (ok) {
+            clearPendingAuth();
+            writeAuthStepToUrl("email", "replace");
+            if (pendingMarketing) {
+              void optInCustomerNewsletter({
+                apiUrl,
+                accessToken,
+                locale,
+              });
+            }
           }
           return;
         }
@@ -334,7 +402,10 @@ export default function AccountClient({
         turnstileApiRef.current?.reset();
         return false;
       }
+      persistPendingAuth({ email, marketingOptIn });
+      writeAuthStepToUrl("code", "push");
       setStep("code");
+      setCode("");
       setResendIn(60);
       setNotice({
         tone: "success",
@@ -344,6 +415,20 @@ export default function AccountClient({
     } finally {
       setBusy(false);
     }
+  }
+
+  function goToEmailStep() {
+    setCode("");
+    setFieldErrors({});
+    setNotice(null);
+    turnstileApiRef.current?.reset();
+    const historyState = window.history.state as { authStep?: AuthStep } | null;
+    if (historyState?.authStep === "code") {
+      window.history.back();
+      return;
+    }
+    writeAuthStepToUrl("email", "replace");
+    setStep("email");
   }
 
   async function onRequestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -421,6 +506,9 @@ export default function AccountClient({
       }
       remember("email");
       setNotice(null);
+      clearPendingAuth();
+      writeAuthStepToUrl("email", "replace");
+      setStep("email");
       const ok = await applyCustomer(response.accessToken);
       setSessionStatus(ok ? "member" : "guest");
     } finally {
@@ -431,6 +519,8 @@ export default function AccountClient({
   async function onLogout() {
     await logoutCustomer(apiUrl);
     clearAccountTabFromUrl();
+    clearPendingAuth();
+    writeAuthStepToUrl("email", "replace");
     setToken(null);
     setOrders([]);
     setAddresses([]);
@@ -661,13 +751,7 @@ export default function AccountClient({
                 }}
                 onSubmit={onVerifyOtp}
                 onResend={onResendOtp}
-                onBack={() => {
-                  setStep("email");
-                  setCode("");
-                  setFieldErrors({});
-                  setNotice(null);
-                  turnstileApiRef.current?.reset();
-                }}
+                onBack={goToEmailStep}
               />
             )}
 
