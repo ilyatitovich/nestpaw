@@ -4208,7 +4208,17 @@ html[data-account-session="guest"] .account-page__title {
 
 .account-email-submit:focus-within {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 35%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.account-email-submit:has(input[aria-invalid="true"]),
+.account-email-submit:has(input:user-invalid) {
+  border-color: var(--color-danger);
+}
+
+.account-email-submit:has(input[aria-invalid="true"]):focus-within,
+.account-email-submit:has(input:user-invalid):focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 22%, transparent);
 }
 
 .account-email-submit input {
@@ -4219,6 +4229,12 @@ html[data-account-session="guest"] .account-page__title {
   border-radius: 0 !important;
   box-shadow: none !important;
   background: transparent;
+  outline: none !important;
+}
+
+.account-email-submit input:focus,
+.account-email-submit input:focus-visible {
+  outline: none !important;
 }
 
 .account-email-submit__btn {
