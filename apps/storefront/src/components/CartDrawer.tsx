@@ -55,10 +55,21 @@ type UpsellItem = {
   productId: string;
   variantId: string;
   title: string;
+  slug?: string;
   image?: { url: string; alt: string };
   price: number;
   compareAtPrice?: number | null;
 };
+
+function productHref(
+  locale: string,
+  translations: { locale: string; slug?: string }[],
+) {
+  const slug =
+    translations.find((t) => t.locale === locale)?.slug ??
+    translations.find((t) => t.slug)?.slug;
+  return slug ? `/${locale}/products/${slug}` : undefined;
+}
 
 function CartGlyph({ className }: { className?: string }) {
   return (
@@ -96,23 +107,6 @@ function CloseGlyph({ className }: { className?: string }) {
   );
 }
 
-function ChevronGlyph({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m9 6 6 6-6 6" />
-    </svg>
-  );
-}
-
 function toUpsell(product: ProductCardProduct, locale: string): UpsellItem | null {
   const variant = product.variants?.[0];
   if (!variant) return null;
@@ -124,6 +118,7 @@ function toUpsell(product: ProductCardProduct, locale: string): UpsellItem | nul
     productId: product.id,
     variantId: variant.id,
     title: tr?.title ?? "Item",
+    slug: tr?.slug,
     image: media ? { url: media.url, alt: media.alt || tr?.title || "" } : undefined,
     price: variant.price,
     compareAtPrice: variant.compareAtPrice,
@@ -387,7 +382,15 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
 
                 <div className="cart-drawer__notices">
                   <p className="cart-drawer__promo">{labels.promo}</p>
-                  <p className="cart-drawer__freeship">{freeShipMsg}</p>
+                  <div
+                    className={
+                      remaining === 0
+                        ? "cart-drawer__freeship is-unlocked"
+                        : "cart-drawer__freeship"
+                    }
+                  >
+                    <p className="cart-drawer__freeship-copy">{freeShipMsg}</p>
+                  </div>
                 </div>
 
                 <div className="cart-drawer__body">
@@ -401,38 +404,71 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                         const title = lineTitle(line, locale);
                         const variantLabel = lineVariantLabel(line);
                         const img = line.variant.product.media?.[0];
+                        const href = productHref(
+                          locale,
+                          line.variant.product.translations,
+                        );
                         return (
-                          <li className="cart-drawer__line" key={line.id}>
-                            <div className="cart-drawer__line-media">
-                              {img ? (
-                                <img
-                                  src={img.url}
-                                  alt={img.alt || title}
-                                  loading="lazy"
-                                />
-                              ) : null}
-                            </div>
-                            <div className="cart-drawer__line-meta">
-                              <p className="cart-drawer__line-title">{title}</p>
-                              {variantLabel ? (
-                                <p className="cart-drawer__line-variant">
-                                  {variantLabel}
+                          <li className="cart-line cart-drawer__line" key={line.id}>
+                            {href ? (
+                              <a
+                                className="cart-line__media"
+                                href={href}
+                                aria-label={title}
+                              >
+                                {img ? (
+                                  <img
+                                    src={img.url}
+                                    alt=""
+                                    loading="lazy"
+                                  />
+                                ) : null}
+                              </a>
+                            ) : (
+                              <div
+                                className="cart-line__media"
+                                aria-hidden={!img}
+                              >
+                                {img ? (
+                                  <img
+                                    src={img.url}
+                                    alt={img.alt || title}
+                                    loading="lazy"
+                                  />
+                                ) : null}
+                              </div>
+                            )}
+                            <div className="cart-line__body">
+                              <div className="cart-line__header">
+                                <div className="cart-line__info">
+                                  {href ? (
+                                    <a className="cart-line__title" href={href}>
+                                      {title}
+                                    </a>
+                                  ) : (
+                                    <p className="cart-line__title">{title}</p>
+                                  )}
+                                  {variantLabel ? (
+                                    <p className="cart-line__variant">
+                                      {variantLabel}
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <p className="cart-line__price">
+                                  {formatCartMoney(
+                                    line.variant.price * line.quantity,
+                                  )}
                                 </p>
-                              ) : null}
-                              <p className="cart-drawer__line-price">
-                                {formatCartMoney(
-                                  line.variant.price * line.quantity,
-                                )}
-                              </p>
-                              <div className="cart-drawer__line-controls">
+                              </div>
+                              <div className="cart-line__controls">
                                 <div
-                                  className="cart-drawer__qty"
+                                  className="cart-line__qty pdp-qty"
                                   role="group"
                                   aria-label={labels.qty}
                                 >
                                   <button
                                     type="button"
-                                    className="cart-drawer__qty-btn"
+                                    className="pdp-qty__btn"
                                     aria-label={labels.decreaseQty}
                                     disabled={busy || line.quantity <= 1}
                                     onClick={() =>
@@ -444,17 +480,26 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                                   >
                                     −
                                   </button>
-                                  <span
-                                    className="cart-drawer__qty-value"
-                                    aria-live="polite"
-                                  >
-                                    {line.quantity}
-                                  </span>
+                                  <input
+                                    className="pdp-qty__input"
+                                    type="number"
+                                    min={1}
+                                    max={99}
+                                    value={line.quantity}
+                                    disabled={busy}
+                                    aria-label={labels.qty}
+                                    onChange={(ev) => {
+                                      const qty = Number(ev.target.value);
+                                      if (Number.isFinite(qty) && qty >= 1) {
+                                        void setLineQuantity(line.id, qty);
+                                      }
+                                    }}
+                                  />
                                   <button
                                     type="button"
-                                    className="cart-drawer__qty-btn"
+                                    className="pdp-qty__btn"
                                     aria-label={labels.increaseQty}
-                                    disabled={busy}
+                                    disabled={busy || line.quantity >= 99}
                                     onClick={() =>
                                       void setLineQuantity(
                                         line.id,
@@ -467,7 +512,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                                 </div>
                                 <button
                                   type="button"
-                                  className="cart-drawer__remove"
+                                  className="cart-line__remove"
                                   disabled={busy}
                                   onClick={() =>
                                     void setLineQuantity(line.id, 0)
@@ -518,19 +563,44 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                         ) : null}
                       </div>
                       <div className="cart-drawer__upsell-item">
-                        <div className="cart-drawer__upsell-media">
-                          {activeUpsell.image ? (
-                            <img
-                              src={activeUpsell.image.url}
-                              alt={activeUpsell.image.alt}
-                              loading="lazy"
-                            />
-                          ) : null}
-                        </div>
+                        {activeUpsell.slug ? (
+                          <a
+                            className="cart-drawer__upsell-media"
+                            href={`/${locale}/products/${activeUpsell.slug}`}
+                            aria-label={activeUpsell.title}
+                          >
+                            {activeUpsell.image ? (
+                              <img
+                                src={activeUpsell.image.url}
+                                alt=""
+                                loading="lazy"
+                              />
+                            ) : null}
+                          </a>
+                        ) : (
+                          <div className="cart-drawer__upsell-media">
+                            {activeUpsell.image ? (
+                              <img
+                                src={activeUpsell.image.url}
+                                alt={activeUpsell.image.alt}
+                                loading="lazy"
+                              />
+                            ) : null}
+                          </div>
+                        )}
                         <div className="cart-drawer__upsell-meta">
-                          <p className="cart-drawer__upsell-name">
-                            {activeUpsell.title}
-                          </p>
+                          {activeUpsell.slug ? (
+                            <a
+                              className="cart-drawer__upsell-name"
+                              href={`/${locale}/products/${activeUpsell.slug}`}
+                            >
+                              {activeUpsell.title}
+                            </a>
+                          ) : (
+                            <p className="cart-drawer__upsell-name">
+                              {activeUpsell.title}
+                            </p>
+                          )}
                           <p className="cart-drawer__upsell-prices">
                             <span className="cart-drawer__upsell-price">
                               {formatCartMoney(activeUpsell.price)}
@@ -560,7 +630,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                 <footer className="cart-drawer__footer">
                   <p className="cart-drawer__taxes">{labels.taxesNote}</p>
                   <form
-                    className="cart-drawer__discount"
+                    className="cart-summary__discount"
                     onSubmit={(event) => {
                       event.preventDefault();
                       void applyDiscount();
@@ -571,7 +641,7 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                     </label>
                     <input
                       id={discountId}
-                      className="cart-drawer__discount-input"
+                      className="cart-summary__discount-input"
                       name="discount"
                       autoComplete="off"
                       placeholder={labels.discount}
@@ -581,24 +651,23 @@ export default function CartDrawer({ apiUrl, locale, labels }: Props) {
                     />
                     <button
                       type="submit"
-                      className="cart-drawer__discount-submit"
-                      aria-label={labels.apply}
+                      className="btn btn--ghost cart-summary__discount-btn"
                       disabled={busy || !code.trim()}
                     >
-                      <ChevronGlyph className="cart-drawer__discount-icon" />
+                      {labels.apply}
                     </button>
                   </form>
                   {error ? (
-                    <p className="cart-drawer__error" role="alert">
+                    <p className="cart-page__error" role="alert">
                       {error}
                     </p>
                   ) : null}
                   <a
-                    className="cart-drawer__checkout"
+                    className="btn btn--primary cart-drawer__checkout"
                     href={`/${locale}/checkout`}
                   >
                     <span>{labels.checkout}</span>
-                    <span aria-hidden="true">•</span>
+                    <span aria-hidden="true">·</span>
                     <span>{checkoutTotal}</span>
                   </a>
                   <a
