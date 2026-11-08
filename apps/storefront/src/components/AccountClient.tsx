@@ -1,9 +1,20 @@
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  type ReactElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { setAccountChrome } from "../lib/account-chrome";
 import {
   getCustomerAccessToken,
   setCustomerAccessToken,
 } from "../lib/customer-auth";
+import {
+  type AuthMethod,
+  getLastAuthMethod,
+  setLastAuthMethod,
+} from "../lib/last-auth-method";
 
 type Order = {
   id: string;
@@ -53,6 +64,7 @@ type Props = {
     marketingOptIn: string;
     termsRequired: string;
     lead: string;
+    lastUsed: string;
   };
 };
 
@@ -102,6 +114,10 @@ function AppleIcon() {
   );
 }
 
+function LastUsedBadge({ label }: { label: string }) {
+  return <span className="account-last-used">{label}</span>;
+}
+
 export default function AccountClient({
   apiUrl,
   locale,
@@ -132,8 +148,13 @@ export default function AccountClient({
   const [lastName, setLastName] = useState("");
   const [needsName, setNeedsName] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [lastUsed, setLastUsed] = useState<AuthMethod | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLastUsed(getLastAuthMethod());
+  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
@@ -240,11 +261,21 @@ export default function AccountClient({
     return false;
   }
 
-  function onOAuthClick(e: React.MouseEvent<HTMLAnchorElement>) {
+  function rememberMethod(method: AuthMethod) {
+    setLastAuthMethod(method);
+    setLastUsed(method);
+  }
+
+  function onOAuthClick(
+    e: React.MouseEvent<HTMLAnchorElement>,
+    method: Extract<AuthMethod, "google" | "apple">,
+  ) {
     if (!acceptedTerms) {
       e.preventDefault();
       setMessage(labels.termsRequired);
+      return;
     }
+    rememberMethod(method);
   }
 
   async function requestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -300,6 +331,7 @@ export default function AccountClient({
         return;
       }
       const data = (await res.json()) as { accessToken: string };
+      rememberMethod("email");
       setCustomerAccessToken(data.accessToken);
       setToken(data.accessToken);
       await loadMe(data.accessToken);
@@ -355,6 +387,135 @@ export default function AccountClient({
     setCode("");
     setMessage(null);
   }
+
+  const oauthProviders: Array<{
+    id: Extract<AuthMethod, "google" | "apple">;
+    label: string;
+    icon: ReactElement;
+  }> = [
+    { id: "google", label: labels.google, icon: <GoogleIcon /> },
+    { id: "apple", label: labels.apple, icon: <AppleIcon /> },
+  ];
+  if (lastUsed === "apple") {
+    oauthProviders.reverse();
+  }
+
+  const preferEmail = lastUsed === "email";
+
+  const oauthBlock = (
+    <div className="account-oauth">
+      {oauthProviders.map((provider) => {
+        const isLast = lastUsed === provider.id;
+        return (
+          <a
+            key={provider.id}
+            className={
+              isLast
+                ? `account-oauth__btn account-oauth__btn--${provider.id} is-last-used`
+                : `account-oauth__btn account-oauth__btn--${provider.id}`
+            }
+            href={`${apiUrl}/customers/auth/oauth/${provider.id}/start?locale=${locale}`}
+            onClick={(e) => onOAuthClick(e, provider.id)}
+            aria-describedby={isLast ? `${baseId}-last-used` : undefined}
+          >
+            {provider.icon}
+            <span className="account-oauth__label">{provider.label}</span>
+            {isLast ? <LastUsedBadge label={labels.lastUsed} /> : null}
+          </a>
+        );
+      })}
+    </div>
+  );
+
+  const emailForm = (
+    <form
+      className={
+        preferEmail ? "account-form is-last-used" : "account-form"
+      }
+      onSubmit={requestOtp}
+      method="post"
+    >
+      {preferEmail ? (
+        <div className="account-form__last-used">
+          <LastUsedBadge label={labels.lastUsed} />
+        </div>
+      ) : null}
+      <div className="account-field">
+        <label htmlFor={emailId}>{labels.email}</label>
+        <input
+          id={emailId}
+          name="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          enterKeyHint="next"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-describedby={message ? messageId : undefined}
+        />
+      </div>
+
+      <fieldset className="account-consents">
+        <legend className="visually-hidden">{labels.terms}</legend>
+        <label className="account-check" htmlFor={termsId}>
+          <input
+            id={termsId}
+            name="terms"
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => {
+              setAcceptedTerms(e.target.checked);
+              if (e.target.checked && message === labels.termsRequired) {
+                setMessage(null);
+              }
+            }}
+            required
+          />
+          <span>
+            {labels.termsBefore}
+            <a href={termsHref} target="_blank" rel="noopener noreferrer">
+              {labels.terms}
+            </a>
+            {labels.termsAnd}
+            <a href={privacyHref} target="_blank" rel="noopener noreferrer">
+              {labels.privacy}
+            </a>
+            {labels.termsAfter}
+          </span>
+        </label>
+        <label className="account-check" htmlFor={marketingId}>
+          <input
+            id={marketingId}
+            name="marketing"
+            type="checkbox"
+            checked={marketingOptIn}
+            onChange={(e) => setMarketingOptIn(e.target.checked)}
+          />
+          <span>{labels.marketingOptIn}</span>
+        </label>
+      </fieldset>
+
+      <div ref={turnstileRef} className="account-turnstile">
+        <div
+          className="cf-turnstile"
+          data-sitekey={turnstileSiteKey}
+          data-theme="light"
+          data-size="flexible"
+        />
+      </div>
+
+      <button
+        className="btn btn--primary account-form__submit"
+        type="submit"
+        disabled={busy}
+      >
+        {labels.sendCode}
+      </button>
+    </form>
+  );
 
   if (token) {
     return (
@@ -457,111 +618,31 @@ export default function AccountClient({
         </ol>
       </nav>
 
+      {lastUsed ? (
+        <span id={`${baseId}-last-used`} className="visually-hidden">
+          {labels.lastUsed}
+        </span>
+      ) : null}
+
       {step === "email" ? (
         <>
-          <div className="account-oauth">
-            <a
-              className="account-oauth__btn account-oauth__btn--google"
-              href={`${apiUrl}/customers/auth/oauth/google/start?locale=${locale}`}
-              onClick={onOAuthClick}
-            >
-              <GoogleIcon />
-              {labels.google}
-            </a>
-            <a
-              className="account-oauth__btn account-oauth__btn--apple"
-              href={`${apiUrl}/customers/auth/oauth/apple/start?locale=${locale}`}
-              onClick={onOAuthClick}
-            >
-              <AppleIcon />
-              {labels.apple}
-            </a>
-          </div>
-
-          <p className="account-divider">
-            <span>{labels.or}</span>
-          </p>
-
-          <form className="account-form" onSubmit={requestOtp} method="post">
-            <div className="account-field">
-              <label htmlFor={emailId}>{labels.email}</label>
-              <input
-                id={emailId}
-                name="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                enterKeyHint="next"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-describedby={message ? messageId : undefined}
-              />
-            </div>
-
-            <fieldset className="account-consents">
-              <legend className="visually-hidden">{labels.terms}</legend>
-              <label className="account-check" htmlFor={termsId}>
-                <input
-                  id={termsId}
-                  name="terms"
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => {
-                    setAcceptedTerms(e.target.checked);
-                    if (e.target.checked && message === labels.termsRequired) {
-                      setMessage(null);
-                    }
-                  }}
-                  required
-                />
-                <span>
-                  {labels.termsBefore}
-                  <a href={termsHref} target="_blank" rel="noopener noreferrer">
-                    {labels.terms}
-                  </a>
-                  {labels.termsAnd}
-                  <a
-                    href={privacyHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {labels.privacy}
-                  </a>
-                  {labels.termsAfter}
-                </span>
-              </label>
-              <label className="account-check" htmlFor={marketingId}>
-                <input
-                  id={marketingId}
-                  name="marketing"
-                  type="checkbox"
-                  checked={marketingOptIn}
-                  onChange={(e) => setMarketingOptIn(e.target.checked)}
-                />
-                <span>{labels.marketingOptIn}</span>
-              </label>
-            </fieldset>
-
-            <div ref={turnstileRef} className="account-turnstile">
-              <div
-                className="cf-turnstile"
-                data-sitekey={turnstileSiteKey}
-                data-theme="light"
-                data-size="flexible"
-              />
-            </div>
-
-            <button
-              className="btn btn--primary account-form__submit"
-              type="submit"
-              disabled={busy}
-            >
-              {labels.sendCode}
-            </button>
-          </form>
+          {preferEmail ? (
+            <>
+              {emailForm}
+              <p className="account-divider">
+                <span>{labels.or}</span>
+              </p>
+              {oauthBlock}
+            </>
+          ) : (
+            <>
+              {oauthBlock}
+              <p className="account-divider">
+                <span>{labels.or}</span>
+              </p>
+              {emailForm}
+            </>
+          )}
         </>
       ) : (
         <form className="account-form" onSubmit={verifyOtp} method="post">

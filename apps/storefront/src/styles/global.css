@@ -2926,9 +2926,10 @@ html[data-account-session="member"] .account-page__title {
 }
 
 .account-oauth__btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.65rem;
   min-height: 3rem;
   padding: 0.7rem 1rem;
@@ -2942,7 +2943,8 @@ html[data-account-session="member"] .account-page__title {
   transition:
     transform 0.2s ease,
     background 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .account-oauth__btn:hover {
@@ -2951,19 +2953,52 @@ html[data-account-session="member"] .account-page__title {
   background: #fbfcfc;
 }
 
-.account-oauth__btn--apple {
-  background: #111;
-  border-color: #111;
-  color: #fff;
+.account-oauth__btn.is-last-used {
+  border-color: var(--color-brand);
+  border-width: 2px;
+  background: rgb(18 53 47 / 5%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent);
 }
 
-.account-oauth__btn--apple:hover {
-  background: #222;
-  border-color: #222;
+.account-oauth__label {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
 }
 
 .account-oauth__icon {
   flex-shrink: 0;
+}
+
+.account-last-used {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: auto;
+  padding: 0.15rem 0.45rem;
+  border: 1px dashed color-mix(in srgb, var(--color-brand) 45%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-brand);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.account-form.is-last-used {
+  position: relative;
+  padding: var(--space-4);
+  border: 2px solid var(--color-brand);
+  border-radius: var(--radius-md);
+  background: rgb(18 53 47 / 4%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.account-form__last-used {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: -0.25rem 0.15rem;
 }
 
 .account-divider {
