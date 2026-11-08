@@ -1,10 +1,15 @@
-import { type FormEvent, useId } from "react";
+import type { FormEvent } from "react";
+import type {
+  FieldErrors,
+  FormNotice,
+} from "../../lib/account-validation";
 import {
   type AccountLabels,
   type AccountOrder,
   formatOrderTotal,
 } from "../../lib/customer-account";
 import AccountMessage from "./AccountMessage";
+import FieldError from "./FieldError";
 
 type Props = {
   labels: AccountLabels;
@@ -13,10 +18,17 @@ type Props = {
   needsName: boolean;
   firstName: string;
   lastName: string;
+  firstNameId: string;
+  lastNameId: string;
+  firstNameErrorId: string;
+  lastNameErrorId: string;
   busy: boolean;
-  message: string | null;
+  notice: FormNotice | null;
+  fieldErrors: FieldErrors;
   onFirstNameChange: (value: string) => void;
   onLastNameChange: (value: string) => void;
+  onFirstNameBlur: () => void;
+  onLastNameBlur: () => void;
   onSaveProfile: (e: FormEvent<HTMLFormElement>) => void;
   onLogout: () => void;
 };
@@ -28,14 +40,20 @@ export default function SignedInPanel({
   needsName,
   firstName,
   lastName,
+  firstNameId,
+  lastNameId,
+  firstNameErrorId,
+  lastNameErrorId,
   busy,
-  message,
+  notice,
+  fieldErrors,
   onFirstNameChange,
   onLastNameChange,
+  onFirstNameBlur,
+  onLastNameBlur,
   onSaveProfile,
   onLogout,
 }: Props) {
-  const baseId = useId();
 
   return (
     <div className="account-panel account-panel--signed-in">
@@ -44,28 +62,47 @@ export default function SignedInPanel({
       </p>
 
       {needsName ? (
-        <form className="account-form" onSubmit={onSaveProfile}>
+        <form
+          className="account-form"
+          onSubmit={onSaveProfile}
+          noValidate
+        >
           <div className="account-field">
-            <label htmlFor={`${baseId}-first`}>{labels.nameFirst}</label>
+            <label htmlFor={firstNameId}>{labels.nameFirst}</label>
             <input
-              id={`${baseId}-first`}
+              id={firstNameId}
               name="given-name"
               autoComplete="given-name"
               value={firstName}
               onChange={(e) => onFirstNameChange(e.target.value)}
+              onBlur={onFirstNameBlur}
               required
+              aria-invalid={Boolean(fieldErrors.firstName) || undefined}
+              aria-describedby={
+                fieldErrors.firstName ? firstNameErrorId : undefined
+              }
+            />
+            <FieldError
+              id={firstNameErrorId}
+              message={fieldErrors.firstName}
             />
           </div>
           <div className="account-field">
-            <label htmlFor={`${baseId}-last`}>{labels.nameLast}</label>
+            <label htmlFor={lastNameId}>{labels.nameLast}</label>
             <input
-              id={`${baseId}-last`}
+              id={lastNameId}
               name="family-name"
               autoComplete="family-name"
               value={lastName}
               onChange={(e) => onLastNameChange(e.target.value)}
+              onBlur={onLastNameBlur}
               required
+              aria-invalid={Boolean(fieldErrors.lastName) || undefined}
+              aria-describedby={
+                fieldErrors.lastName ? lastNameErrorId : undefined
+              }
             />
+            <FieldError id={lastNameErrorId} message={fieldErrors.lastName} />
           </div>
           <button className="btn btn--primary" type="submit" disabled={busy}>
             {labels.saveProfile}
@@ -96,7 +133,7 @@ export default function SignedInPanel({
         ))}
       </div>
 
-      <AccountMessage message={message} />
+      <AccountMessage notice={notice} />
     </div>
   );
 }

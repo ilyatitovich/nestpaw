@@ -13,6 +13,15 @@ interface ImportMetaEnv {
 interface Window {
   __activateAnalyticsConsent?: () => void;
   turnstile?: {
-    reset: (el?: HTMLElement | string) => void;
+    render: (
+      element: HTMLElement | string,
+      options: {
+        sitekey: string;
+        theme?: "light" | "dark" | "auto";
+        size?: "normal" | "flexible" | "compact";
+      },
+    ) => string;
+    reset: (widgetId?: string | HTMLElement) => void;
+    remove: (widgetId: string) => void;
   };
 }

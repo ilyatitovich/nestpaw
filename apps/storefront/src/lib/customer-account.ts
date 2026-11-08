@@ -1,3 +1,7 @@
+import {
+  type AuthApiFailure,
+  readAuthFailure,
+} from "./account-validation";
 import { setCustomerAccessToken } from "./customer-auth";
 import { type AuthMethod, setLastAuthMethod } from "./last-auth-method";
 
@@ -51,6 +55,16 @@ export type AccountLabels = {
   termsRequired: string;
   lead: string;
   lastUsed: string;
+  errorEmailRequired: string;
+  errorEmailInvalid: string;
+  errorCodeRequired: string;
+  errorCodeInvalid: string;
+  errorTurnstile: string;
+  errorRateLimit: string;
+  errorInvalidCode: string;
+  errorNetwork: string;
+  errorValidation: string;
+  errorNameRequired: string;
 };
 
 const TURNSTILE_SCRIPT_ID = "cf-turnstile-script";
@@ -98,15 +112,16 @@ export function readTurnstileToken(root: ParentNode | null): string {
   return input instanceof HTMLInputElement ? input.value : "";
 }
 
-export function resetTurnstile(root: ParentNode | null) {
-  const widget = root?.querySelector(".cf-turnstile");
-  if (widget instanceof HTMLElement) {
-    window.turnstile?.reset(widget);
-  }
-}
-
 export function ensureTurnstileScript() {
   if (document.getElementById(TURNSTILE_SCRIPT_ID)) return;
+  // Reuse a script already present (e.g. newsletter) without injecting a duplicate.
+  const existing = document.querySelector<HTMLScriptElement>(
+    `script[src="${TURNSTILE_SCRIPT_SRC}"]`,
+  );
+  if (existing) {
+    existing.id = TURNSTILE_SCRIPT_ID;
+    return;
+  }
   const script = document.createElement("script");
   script.id = TURNSTILE_SCRIPT_ID;
   script.src = TURNSTILE_SCRIPT_SRC;
@@ -147,35 +162,47 @@ export async function requestCustomerOtp(params: {
   email: string;
   locale: string;
   turnstileToken: string;
-}) {
-  const res = await fetch(`${params.apiUrl}/customers/auth/otp/request`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: params.email,
-      locale: params.locale,
-      turnstileToken: params.turnstileToken,
-    }),
-  });
-  return res.ok;
+}): Promise<{ ok: true } | AuthApiFailure> {
+  try {
+    const res = await fetch(`${params.apiUrl}/customers/auth/otp/request`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: params.email.trim(),
+        locale: params.locale,
+        turnstileToken: params.turnstileToken,
+      }),
+    });
+    if (!res.ok) return readAuthFailure(res);
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 0, kind: "network" };
+  }
 }
 
 export async function verifyCustomerOtp(params: {
   apiUrl: string;
   email: string;
   code: string;
-}) {
-  const res = await fetch(`${params.apiUrl}/customers/auth/otp/verify`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: params.email, code: params.code }),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { accessToken: string };
-  setCustomerAccessToken(data.accessToken);
-  return data.accessToken;
+}): Promise<{ ok: true; accessToken: string } | AuthApiFailure> {
+  try {
+    const res = await fetch(`${params.apiUrl}/customers/auth/otp/verify`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: params.email.trim(),
+        code: params.code,
+      }),
+    });
+    if (!res.ok) return readAuthFailure(res);
+    const data = (await res.json()) as { accessToken: string };
+    setCustomerAccessToken(data.accessToken);
+    return { ok: true, accessToken: data.accessToken };
+  } catch {
+    return { ok: false, status: 0, kind: "network" };
+  }
 }
 
 export async function logoutCustomer(apiUrl: string) {
@@ -191,18 +218,23 @@ export async function updateCustomerProfile(params: {
   accessToken: string;
   firstName: string;
   lastName: string;
-}) {
-  const res = await fetch(`${params.apiUrl}/customers/me`, {
-    method: "PATCH",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${params.accessToken}`,
-    },
-    body: JSON.stringify({
-      firstName: params.firstName,
-      lastName: params.lastName,
-    }),
-  });
-  return res.ok;
+}): Promise<{ ok: true } | AuthApiFailure> {
+  try {
+    const res = await fetch(`${params.apiUrl}/customers/me`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${params.accessToken}`,
+      },
+      body: JSON.stringify({
+        firstName: params.firstName.trim(),
+        lastName: params.lastName.trim(),
+      }),
+    });
+    if (!res.ok) return readAuthFailure(res);
+    return { ok: true };
+  } catch {
+    return { ok: false, status: 0, kind: "network" };
+  }
 }

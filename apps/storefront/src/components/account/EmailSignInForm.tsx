@@ -1,27 +1,31 @@
 import type { FormEvent, RefObject } from "react";
+import type { FieldErrors } from "../../lib/account-validation";
 import type { AccountLabels } from "../../lib/customer-account";
+import FieldError from "./FieldError";
 import LastUsedBadge from "./LastUsedBadge";
+import TurnstileWidget, { type TurnstileApi } from "./TurnstileWidget";
 
 type Props = {
   labels: AccountLabels;
   emailId: string;
   termsId: string;
   marketingId: string;
-  messageId: string;
+  emailErrorId: string;
+  termsErrorId: string;
   email: string;
   acceptedTerms: boolean;
   marketingOptIn: boolean;
   preferEmail: boolean;
   busy: boolean;
-  message: string | null;
+  fieldErrors: FieldErrors;
   termsHref: string;
   privacyHref: string;
   turnstileSiteKey: string;
-  turnstileRef: RefObject<HTMLDivElement | null>;
+  turnstileApiRef: RefObject<TurnstileApi | null>;
   onEmailChange: (value: string) => void;
+  onEmailBlur: () => void;
   onAcceptedTermsChange: (value: boolean) => void;
   onMarketingOptInChange: (value: boolean) => void;
-  onClearTermsMessage: () => void;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -30,28 +34,33 @@ export default function EmailSignInForm({
   emailId,
   termsId,
   marketingId,
-  messageId,
+  emailErrorId,
+  termsErrorId,
   email,
   acceptedTerms,
   marketingOptIn,
   preferEmail,
   busy,
-  message,
+  fieldErrors,
   termsHref,
   privacyHref,
   turnstileSiteKey,
-  turnstileRef,
+  turnstileApiRef,
   onEmailChange,
+  onEmailBlur,
   onAcceptedTermsChange,
   onMarketingOptInChange,
-  onClearTermsMessage,
   onSubmit,
 }: Props) {
+  const emailInvalid = Boolean(fieldErrors.email);
+  const termsInvalid = Boolean(fieldErrors.terms);
+
   return (
     <form
       className={preferEmail ? "account-form is-last-used" : "account-form"}
       onSubmit={onSubmit}
       method="post"
+      noValidate
     >
       {preferEmail ? (
         <div className="account-form__last-used">
@@ -67,17 +76,24 @@ export default function EmailSignInForm({
           type="email"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
+          onBlur={onEmailBlur}
           required
           autoComplete="email"
           enterKeyHint="next"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          aria-describedby={message ? messageId : undefined}
+          aria-invalid={emailInvalid || undefined}
+          aria-describedby={emailInvalid ? emailErrorId : undefined}
         />
+        <FieldError id={emailErrorId} message={fieldErrors.email} />
       </div>
 
-      <fieldset className="account-consents">
+      <fieldset
+        className={
+          termsInvalid ? "account-consents is-invalid" : "account-consents"
+        }
+      >
         <legend className="visually-hidden">{labels.terms}</legend>
         <label className="account-check" htmlFor={termsId}>
           <input
@@ -85,11 +101,10 @@ export default function EmailSignInForm({
             name="terms"
             type="checkbox"
             checked={acceptedTerms}
-            onChange={(e) => {
-              onAcceptedTermsChange(e.target.checked);
-              if (e.target.checked) onClearTermsMessage();
-            }}
+            onChange={(e) => onAcceptedTermsChange(e.target.checked)}
             required
+            aria-invalid={termsInvalid || undefined}
+            aria-describedby={termsInvalid ? termsErrorId : undefined}
           />
           <span>
             {labels.termsBefore}
@@ -103,6 +118,7 @@ export default function EmailSignInForm({
             {labels.termsAfter}
           </span>
         </label>
+        <FieldError id={termsErrorId} message={fieldErrors.terms} />
         <label className="account-check" htmlFor={marketingId}>
           <input
             id={marketingId}
@@ -115,14 +131,7 @@ export default function EmailSignInForm({
         </label>
       </fieldset>
 
-      <div ref={turnstileRef} className="account-turnstile">
-        <div
-          className="cf-turnstile"
-          data-sitekey={turnstileSiteKey}
-          data-theme="light"
-          data-size="flexible"
-        />
-      </div>
+      <TurnstileWidget siteKey={turnstileSiteKey} apiRef={turnstileApiRef} />
 
       <button
         className="btn btn--primary account-form__submit"

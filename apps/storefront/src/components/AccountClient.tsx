@@ -1,19 +1,30 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { setAccountChrome } from "../lib/account-chrome";
 import {
+  type AuthField,
+  type FieldErrors,
+  type FormNotice,
+  authFailureMessage,
+  firstErrorField,
+  validateEmail,
+  validateEmailStep,
+  validateName,
+  validateOtpCode,
+  validateOtpStep,
+  validateProfileStep,
+  validateTerms,
+} from "../lib/account-validation";
+import {
   type AccountLabels,
   type AccountOrder,
   type AuthStep,
   type OAuthProvider,
   consumeAuthErrorMessage,
-  ensureTurnstileScript,
   fetchCustomerMe,
   logoutCustomer,
-  readTurnstileToken,
   refreshCustomerSession,
   rememberAuthMethod,
   requestCustomerOtp,
-  resetTurnstile,
   updateCustomerProfile,
   verifyCustomerOtp,
 } from "../lib/customer-account";
@@ -27,6 +38,7 @@ import EmailSignInForm from "./account/EmailSignInForm";
 import OAuthButtons from "./account/OAuthButtons";
 import OtpVerifyForm from "./account/OtpVerifyForm";
 import SignedInPanel from "./account/SignedInPanel";
+import type { TurnstileApi } from "./account/TurnstileWidget";
 
 type Props = {
   apiUrl: string;
@@ -36,6 +48,14 @@ type Props = {
   privacyHref: string;
   labels: AccountLabels;
 };
+
+const EMAIL_FOCUS_ORDER: AuthField[] = ["email", "terms"];
+const OTP_FOCUS_ORDER: AuthField[] = ["code"];
+const PROFILE_FOCUS_ORDER: AuthField[] = ["firstName", "lastName"];
+
+function focusField(id: string) {
+  document.getElementById(id)?.focus();
+}
 
 export default function AccountClient({
   apiUrl,
@@ -51,15 +71,23 @@ export default function AccountClient({
   const termsId = `${baseId}-terms`;
   const marketingId = `${baseId}-marketing`;
   const codeHintId = `${baseId}-code-hint`;
-  const messageId = `${baseId}-message`;
+  const noticeId = `${baseId}-notice`;
   const lastUsedDescribedBy = `${baseId}-last-used`;
+  const emailErrorId = `${baseId}-email-error`;
+  const termsErrorId = `${baseId}-terms-error`;
+  const codeErrorId = `${baseId}-code-error`;
+  const firstNameId = `${baseId}-first`;
+  const lastNameId = `${baseId}-last`;
+  const firstNameErrorId = `${baseId}-first-error`;
+  const lastNameErrorId = `${baseId}-last-error`;
 
   const [step, setStep] = useState<AuthStep>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<FormNotice | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [orders, setOrders] = useState<AccountOrder[]>([]);
@@ -69,7 +97,7 @@ export default function AccountClient({
   const [needsName, setNeedsName] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [lastUsed, setLastUsed] = useState<AuthMethod | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileApiRef = useRef<TurnstileApi | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -79,7 +107,7 @@ export default function AccountClient({
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only session restore
   useEffect(() => {
     const authError = consumeAuthErrorMessage(labels);
-    if (authError) setMessage(authError);
+    if (authError) setNotice({ tone: "error", text: authError });
 
     void (async () => {
       try {
@@ -103,11 +131,6 @@ export default function AccountClient({
     return () => window.clearTimeout(id);
   }, [resendIn]);
 
-  useEffect(() => {
-    if (step !== "email" || token) return;
-    ensureTurnstileScript();
-  }, [step, token]);
-
   async function applyCustomer(accessToken: string) {
     const customer = await fetchCustomerMe(apiUrl, accessToken);
     if (!customer) {
@@ -125,49 +148,83 @@ export default function AccountClient({
     setLastUsed(rememberAuthMethod(method));
   }
 
+  function clearFieldError(field: AuthField) {
+    setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function focusFirstError(errors: FieldErrors, order: AuthField[]) {
+    const field = firstErrorField(errors, order);
+    if (!field) return;
+    const ids: Record<AuthField, string> = {
+      email: emailId,
+      terms: termsId,
+      code: codeId,
+      firstName: firstNameId,
+      lastName: lastNameId,
+    };
+    focusField(ids[field]);
+  }
+
   function onOAuthSelect(
     e: React.MouseEvent<HTMLAnchorElement>,
     provider: OAuthProvider,
   ) {
-    if (!acceptedTerms) {
+    const termsError = validateTerms(acceptedTerms, labels);
+    if (termsError) {
       e.preventDefault();
-      setMessage(labels.termsRequired);
+      const errors = { terms: termsError };
+      setFieldErrors(errors);
+      setNotice({ tone: "error", text: termsError });
+      focusField(termsId);
       return;
     }
+    clearFieldError("terms");
+    setNotice(null);
     remember(provider);
   }
 
   async function onRequestOtp(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!acceptedTerms) {
-      setMessage(labels.termsRequired);
+    setNotice(null);
+    const turnstileToken = turnstileApiRef.current?.getToken() ?? "";
+    const result = validateEmailStep({
+      email,
+      acceptedTerms,
+      turnstileToken,
+      labels,
+    });
+    if (!result.ok) {
+      setFieldErrors(result.errors);
+      if (result.notice) setNotice(result.notice);
+      focusFirstError(result.errors, EMAIL_FOCUS_ORDER);
       return;
     }
+
+    setFieldErrors({});
     setBusy(true);
-    setMessage(null);
     try {
-      const turnstileToken = readTurnstileToken(turnstileRef.current);
-      if (!turnstileToken) {
-        setMessage(labels.errorGeneric);
-        return;
-      }
-      const ok = await requestCustomerOtp({
+      const response = await requestCustomerOtp({
         apiUrl,
         email,
         locale,
         turnstileToken,
       });
-      if (!ok) {
-        setMessage(labels.errorGeneric);
-        resetTurnstile(turnstileRef.current);
+      if (!response.ok) {
+        setNotice({
+          tone: "error",
+          text: authFailureMessage(response, labels),
+        });
+        turnstileApiRef.current?.reset();
         return;
       }
       setStep("code");
       setResendIn(60);
-      setMessage(labels.codeSent);
-    } catch {
-      setMessage(labels.errorGeneric);
-      resetTurnstile(turnstileRef.current);
+      setNotice({ tone: "success", text: labels.codeSent });
     } finally {
       setBusy(false);
     }
@@ -175,19 +232,35 @@ export default function AccountClient({
 
   async function onVerifyOtp(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    setNotice(null);
+    const result = validateOtpStep({ code, labels });
+    if (!result.ok) {
+      setFieldErrors(result.errors);
+      focusFirstError(result.errors, OTP_FOCUS_ORDER);
+      return;
+    }
+
+    setFieldErrors({});
     setBusy(true);
-    setMessage(null);
     try {
-      const accessToken = await verifyCustomerOtp({ apiUrl, email, code });
-      if (!accessToken) {
-        setMessage(labels.errorGeneric);
+      const response = await verifyCustomerOtp({ apiUrl, email, code });
+      if (!response.ok) {
+        setFieldErrors(
+          response.kind === "invalid_code"
+            ? { code: labels.errorInvalidCode }
+            : {},
+        );
+        setNotice({
+          tone: "error",
+          text: authFailureMessage(response, labels),
+        });
+        if (response.kind === "invalid_code") focusField(codeId);
         return;
       }
       remember("email");
-      setToken(accessToken);
-      await applyCustomer(accessToken);
-    } catch {
-      setMessage(labels.errorGeneric);
+      setToken(response.accessToken);
+      setNotice(null);
+      await applyCustomer(response.accessToken);
     } finally {
       setBusy(false);
     }
@@ -202,22 +275,36 @@ export default function AccountClient({
     setCode("");
     setAcceptedTerms(false);
     setMarketingOptIn(false);
+    setFieldErrors({});
+    setNotice(null);
   }
 
   async function onSaveProfile(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    setNotice(null);
+    const result = validateProfileStep({ firstName, lastName, labels });
+    if (!result.ok) {
+      setFieldErrors(result.errors);
+      focusFirstError(result.errors, PROFILE_FOCUS_ORDER);
+      return;
+    }
+
     const access = getCustomerAccessToken();
     if (!access) return;
+    setFieldErrors({});
     setBusy(true);
     try {
-      const ok = await updateCustomerProfile({
+      const response = await updateCustomerProfile({
         apiUrl,
         accessToken: access,
         firstName,
         lastName,
       });
-      if (!ok) {
-        setMessage(labels.errorGeneric);
+      if (!response.ok) {
+        setNotice({
+          tone: "error",
+          text: authFailureMessage(response, labels),
+        });
         return;
       }
       setNeedsName(false);
@@ -235,10 +322,45 @@ export default function AccountClient({
         needsName={needsName}
         firstName={firstName}
         lastName={lastName}
+        firstNameId={firstNameId}
+        lastNameId={lastNameId}
+        firstNameErrorId={firstNameErrorId}
+        lastNameErrorId={lastNameErrorId}
         busy={busy}
-        message={message}
-        onFirstNameChange={setFirstName}
-        onLastNameChange={setLastName}
+        notice={notice}
+        fieldErrors={fieldErrors}
+        onFirstNameChange={(value) => {
+          setFirstName(value);
+          clearFieldError("firstName");
+        }}
+        onLastNameChange={(value) => {
+          setLastName(value);
+          clearFieldError("lastName");
+        }}
+        onFirstNameBlur={() => {
+          const error = validateName(firstName, labels);
+          setFieldErrors((prev) =>
+            error
+              ? { ...prev, firstName: error }
+              : (() => {
+                  const next = { ...prev };
+                  delete next.firstName;
+                  return next;
+                })(),
+          );
+        }}
+        onLastNameBlur={() => {
+          const error = validateName(lastName, labels);
+          setFieldErrors((prev) =>
+            error
+              ? { ...prev, lastName: error }
+              : (() => {
+                  const next = { ...prev };
+                  delete next.lastName;
+                  return next;
+                })(),
+          );
+        }}
         onSaveProfile={onSaveProfile}
         onLogout={onLogout}
       />
@@ -264,23 +386,42 @@ export default function AccountClient({
       emailId={emailId}
       termsId={termsId}
       marketingId={marketingId}
-      messageId={messageId}
+      emailErrorId={emailErrorId}
+      termsErrorId={termsErrorId}
       email={email}
       acceptedTerms={acceptedTerms}
       marketingOptIn={marketingOptIn}
       preferEmail={preferEmail}
       busy={busy}
-      message={message}
+      fieldErrors={fieldErrors}
       termsHref={termsHref}
       privacyHref={privacyHref}
       turnstileSiteKey={turnstileSiteKey}
-      turnstileRef={turnstileRef}
-      onEmailChange={setEmail}
-      onAcceptedTermsChange={setAcceptedTerms}
-      onMarketingOptInChange={setMarketingOptIn}
-      onClearTermsMessage={() => {
-        if (message === labels.termsRequired) setMessage(null);
+      turnstileApiRef={turnstileApiRef}
+      onEmailChange={(value) => {
+        setEmail(value);
+        clearFieldError("email");
       }}
+      onEmailBlur={() => {
+        const error = validateEmail(email, labels);
+        setFieldErrors((prev) =>
+          error
+            ? { ...prev, email: error }
+            : (() => {
+                const next = { ...prev };
+                delete next.email;
+                return next;
+              })(),
+        );
+      }}
+      onAcceptedTermsChange={(value) => {
+        setAcceptedTerms(value);
+        if (value) {
+          clearFieldError("terms");
+          if (notice?.text === labels.termsRequired) setNotice(null);
+        }
+      }}
+      onMarketingOptInChange={setMarketingOptIn}
       onSubmit={onRequestOtp}
     />
   );
@@ -319,22 +460,41 @@ export default function AccountClient({
           labels={labels}
           codeId={codeId}
           codeHintId={codeHintId}
+          codeErrorId={codeErrorId}
           email={email}
           code={code}
           busy={busy}
           resendIn={resendIn}
+          fieldErrors={fieldErrors}
           codeInputRef={codeInputRef}
-          onCodeChange={setCode}
+          onCodeChange={(value) => {
+            setCode(value);
+            clearFieldError("code");
+            if (notice?.tone === "error") setNotice(null);
+          }}
+          onCodeBlur={() => {
+            const error = validateOtpCode(code, labels);
+            setFieldErrors((prev) =>
+              error
+                ? { ...prev, code: error }
+                : (() => {
+                    const next = { ...prev };
+                    delete next.code;
+                    return next;
+                  })(),
+            );
+          }}
           onSubmit={onVerifyOtp}
           onBack={() => {
             setStep("email");
             setCode("");
-            setMessage(null);
+            setFieldErrors({});
+            setNotice(null);
           }}
         />
       )}
 
-      <AccountMessage id={messageId} message={message} />
+      <AccountMessage id={noticeId} notice={notice} />
     </div>
   );
 }
